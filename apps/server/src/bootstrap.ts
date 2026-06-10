@@ -34,6 +34,18 @@ export async function bootstrap(
   const { userId, workspaceId } = await ensureOwner(db, config);
   const now = nowIso();
 
+  // Sweep zombie connector runs left 'running' by a previous process exit —
+  // otherwise they sit in the UI as in-progress forever.
+  await db
+    .updateTable('connectorRuns')
+    .set({
+      status: 'error',
+      completedAt: now,
+      errors: toJson(['Interrupted by server restart']),
+    })
+    .where('status', '=', 'running')
+    .execute();
+
   // ---- Default app settings (only when missing) ----
   const settings = await services.settings.getAll(workspaceId);
   if (settings[SETTING_KEYS.digestSchedule] === undefined) {

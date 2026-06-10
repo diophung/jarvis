@@ -89,25 +89,40 @@ export class GoogleDriveConnector implements Connector {
     const limit = req.limit !== undefined && req.limit > 0 ? req.limit : DEFAULT_LIMIT;
     const cursor = parseJsonCursor<GoogleDriveCursor>(req.cursor) ?? {};
 
-    const sinceIso = req.mode === 'incremental' ? cursor.sinceIso : undefined;
-    const qParts = ['trashed = false'];
-    if (typeof sinceIso === 'string' && sinceIso) {
-      qParts.push(`modifiedTime > '${sinceIso}'`);
-    }
+    // Drive pageTokens are bound to the exact original query and expire;
+    // a stale one returns HTTP 400. Self-heal by retrying without the token,
+    // falling back to a modifiedTime floor so the sync continues from where
+    // the data left off instead of failing forever.
+    const sinceFloor =
+      req.mode === 'incremental' ? (cursor.sinceIso ?? cursor.maxModified) : undefined;
 
-    const params = new URLSearchParams({
-      pageSize: String(limit),
-      orderBy: 'modifiedTime',
-      q: qParts.join(' and '),
-      fields: FILE_FIELDS,
-    });
-    if (typeof cursor.pageToken === 'string' && cursor.pageToken) {
-      params.set('pageToken', cursor.pageToken);
-    }
+    const listPage = async (opts: { pageToken?: string; sinceIso?: string }) => {
+      const qParts = ['trashed = false'];
+      if (typeof opts.sinceIso === 'string' && opts.sinceIso) {
+        qParts.push(`modifiedTime > '${opts.sinceIso}'`);
+      }
+      const params = new URLSearchParams({
+        pageSize: String(limit),
+        // Newest first: when a large Drive hits the page cap, keep the files
+        // that matter to an assistant (recent ones), not decade-old archives.
+        orderBy: 'modifiedTime desc',
+        q: qParts.join(' and '),
+        fields: FILE_FIELDS,
+      });
+      if (typeof opts.pageToken === 'string' && opts.pageToken) {
+        params.set('pageToken', opts.pageToken);
+      }
+      return fetch(`${GOOGLE_DRIVE_BASE_URL}/files?${params.toString()}`, {
+        headers: { authorization: `Bearer ${token}` },
+      });
+    };
 
-    const res = await fetch(`${GOOGLE_DRIVE_BASE_URL}/files?${params.toString()}`, {
-      headers: { authorization: `Bearer ${token}` },
-    });
+    const sinceIso = sinceFloor;
+    let res = await listPage({ pageToken: cursor.pageToken, sinceIso });
+    if (res.status === 400 && cursor.pageToken) {
+      ctx.logger.warn('google-drive: stale pageToken rejected; restarting from modifiedTime floor');
+      res = await listPage({ sinceIso });
+    }
     if (!res.ok) throw new Error(`Google Drive list failed: ${await httpErrorDetail(res)}`);
     const json = (await res.json()) as { files?: GoogleDriveFile[]; nextPageToken?: string };
 
