@@ -1,5 +1,10 @@
-import { createDefaultRegistry, createDemoDataset } from '@donna/connectors';
-import { fromJson, newId, nowIso, toJson } from '@donna/core';
+import {
+  ConnectorRegistry,
+  createDefaultRegistry,
+  createDemoDataset,
+  type Connector,
+} from '@donna/connectors';
+import { fromJson, newId, nowIso, toJson, type RawSourceItem } from '@donna/core';
 import type { Db } from '@donna/db';
 import { describe, expect, it } from 'vitest';
 import type { IndexingService } from '../context.js';
@@ -61,17 +66,45 @@ async function insertAccount(
   return id;
 }
 
-function makeService(db: Db) {
+function makeService(db: Db, connectors: ConnectorRegistry = createDefaultRegistry()) {
   const indexing = stubIndexing();
   const service = createIngestionService({
     db,
-    connectors: createDefaultRegistry(),
+    connectors,
     secrets: createSecretsService({ appSecret: 'test-secret' }),
     audit: createAuditService({ db }),
     settings: createSettingsService({ db }),
     indexing,
   });
   return { service, indexing };
+}
+
+/** Registry with one 'scripted' connector that emits one page per sync run. */
+function scriptedRegistry(runs: RawSourceItem[][]): ConnectorRegistry {
+  let run = 0;
+  const connector: Connector = {
+    descriptor: {
+      provider: 'scripted',
+      category: 'email',
+      label: 'Scripted',
+      description: 'Scripted test connector',
+      capabilities: ['read'],
+      scopes: [],
+      requiredEnv: [],
+      local: true,
+    },
+    async healthCheck() {
+      return { ok: true, message: 'ok' };
+    },
+    async sync() {
+      const items = runs[run] ?? [];
+      run += 1;
+      return { items, nextCursor: `scripted:${run}`, done: true };
+    },
+  };
+  const registry = new ConnectorRegistry();
+  registry.register(connector);
+  return registry;
 }
 
 describe('ingestion service', () => {
@@ -241,6 +274,161 @@ describe('ingestion service', () => {
       .where('workspaceId', '=', workspaceId)
       .execute();
     expect(items).toHaveLength(dataset.calendarEvents.length);
+  });
+
+  it('persists rescheduled times and people when a changed item is re-synced', async () => {
+    const db = await createTestDb();
+    const { userId, workspaceId } = await seedWorkspace(db);
+    const t1 = '2026-06-08T10:00:00.000Z';
+    const t2 = '2026-06-09T15:00:00.000Z';
+    const base = {
+      externalId: 'evt-1',
+      category: 'calendar' as const,
+      title: 'Planning sync',
+      dedupeHint: 'ics-uid-1',
+    };
+    const registry = scriptedRegistry([
+      [
+        {
+          ...base,
+          timestamp: t1,
+          startsAt: t1,
+          endsAt: '2026-06-08T11:00:00.000Z',
+          sender: { email: 'old-organizer@example.com' },
+        },
+      ],
+      [
+        {
+          ...base,
+          timestamp: t2,
+          startsAt: t2,
+          endsAt: '2026-06-09T16:00:00.000Z',
+          sender: { email: 'new-organizer@example.com' },
+          participants: [{ email: 'guest@example.com' }],
+          url: 'https://calendar.example.com/evt-1',
+        },
+      ],
+    ]);
+    const accountId = await insertAccount(db, workspaceId, userId, 'scripted', {
+      category: 'calendar',
+    });
+    const { service } = makeService(db, registry);
+
+    await service.syncAccount(workspaceId, accountId, { mode: 'full', triggeredBy: 'manual' });
+    const run2 = await service.syncAccount(workspaceId, accountId, {
+      mode: 'incremental',
+      triggeredBy: 'manual',
+    });
+    expect(run2.itemsCreated).toBe(0);
+    expect(run2.itemsUpdated).toBe(1);
+
+    const item = await db
+      .selectFrom('sourceItems')
+      .selectAll()
+      .where('accountId', '=', accountId)
+      .where('externalId', '=', 'evt-1')
+      .executeTakeFirstOrThrow();
+    expect(item.itemTimestamp).toBe(t2);
+    expect(item.startsAt).toBe(t2);
+    expect(item.endsAt).toBe('2026-06-09T16:00:00.000Z');
+    expect(item.url).toBe('https://calendar.example.com/evt-1');
+    expect(fromJson(item.sender, null)).toEqual({ email: 'new-organizer@example.com' });
+    expect(fromJson(item.participants, [])).toEqual([{ email: 'guest@example.com' }]);
+  });
+
+  it('persists an isRead/label flip even when the content hash is unchanged', async () => {
+    const db = await createTestDb();
+    const { userId, workspaceId } = await seedWorkspace(db);
+    const base = {
+      externalId: 'msg-1',
+      category: 'email' as const,
+      title: 'Quarterly numbers',
+      bodyText: 'Numbers attached.',
+      timestamp: '2026-06-08T09:00:00.000Z',
+      sender: { email: 'maya@example.com' },
+    };
+    const registry = scriptedRegistry([
+      [{ ...base, isRead: false, labels: ['INBOX', 'UNREAD'] }],
+      [{ ...base, isRead: true, labels: ['INBOX'] }],
+      [{ ...base, isRead: true, labels: ['INBOX'] }],
+    ]);
+    const accountId = await insertAccount(db, workspaceId, userId, 'scripted');
+    const { service, indexing } = makeService(db, registry);
+
+    await service.syncAccount(workspaceId, accountId, { mode: 'full', triggeredBy: 'manual' });
+    const indexedAfterCreate = indexing.calls.length;
+    const run2 = await service.syncAccount(workspaceId, accountId, {
+      mode: 'incremental',
+      triggeredBy: 'manual',
+    });
+    expect(run2.itemsCreated).toBe(0);
+    expect(run2.itemsUpdated).toBe(1);
+    // Metadata-only update: no re-index needed.
+    expect(indexing.calls.length).toBe(indexedAfterCreate);
+
+    const item = await db
+      .selectFrom('sourceItems')
+      .selectAll()
+      .where('accountId', '=', accountId)
+      .where('externalId', '=', 'msg-1')
+      .executeTakeFirstOrThrow();
+    expect(item.isRead).toBe(1);
+    expect(fromJson(item.labels, [])).toEqual(['INBOX']);
+
+    // A third run with identical content AND metadata is a pure no-op.
+    const run3 = await service.syncAccount(workspaceId, accountId, {
+      mode: 'incremental',
+      triggeredBy: 'manual',
+    });
+    expect(run3.itemsSeen).toBe(1);
+    expect(run3.itemsUpdated).toBe(0);
+  });
+
+  it('does not dedupe-skip same-account items that share a fallback dedupeKey', async () => {
+    const db = await createTestDb();
+    const { userId, workspaceId } = await seedWorkspace(db);
+    // Two distinct same-day emails from one sender with the same subject: the
+    // fallback dedupeKey (category|title|day|sender) collides, but they are
+    // legitimate separate items from the SAME account.
+    const registry = scriptedRegistry([
+      [
+        {
+          externalId: 'msg-a',
+          category: 'email' as const,
+          title: 'Re: invoice',
+          bodyText: 'First reply.',
+          timestamp: '2026-06-08T09:00:00.000Z',
+          sender: { email: 'billing@example.com' },
+        },
+        {
+          externalId: 'msg-b',
+          category: 'email' as const,
+          title: 'Re: invoice',
+          bodyText: 'Second reply, same day.',
+          timestamp: '2026-06-08T14:00:00.000Z',
+          sender: { email: 'billing@example.com' },
+        },
+      ],
+    ]);
+    const accountId = await insertAccount(db, workspaceId, userId, 'scripted');
+    const { service } = makeService(db, registry);
+
+    const run = await service.syncAccount(workspaceId, accountId, {
+      mode: 'full',
+      triggeredBy: 'manual',
+    });
+    expect(run.itemsSeen).toBe(2);
+    expect(run.itemsCreated).toBe(2);
+    expect(run.log).toBeNull();
+
+    const items = await db
+      .selectFrom('sourceItems')
+      .select(['externalId', 'dedupeKey'])
+      .where('accountId', '=', accountId)
+      .execute();
+    expect(items.map((i) => i.externalId).sort()).toEqual(['msg-a', 'msg-b']);
+    // Both rows really share the fallback dedupeKey.
+    expect(new Set(items.map((i) => i.dedupeKey)).size).toBe(1);
   });
 
   it('throws 404 for a missing account', async () => {

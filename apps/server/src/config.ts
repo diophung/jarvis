@@ -25,6 +25,16 @@ const EnvSchema = z.object({
     .string()
     .default('true')
     .transform((v) => v !== 'false' && v !== '0'),
+  /** Set the Secure attribute on session cookies (enable when serving over HTTPS). */
+  DONNA_COOKIE_SECURE: z
+    .string()
+    .default('false')
+    .transform((v) => v !== 'false' && v !== '0'),
+  /** Run the background worker in-process (docker-compose sets this to false on the API service). */
+  DONNA_INLINE_WORKER: z
+    .string()
+    .default('true')
+    .transform((v) => v !== 'false' && v !== '0'),
   DONNA_WEB_ORIGIN: z.string().default('http://localhost:5173'),
   DONNA_PUBLIC_DIR: z.string().optional(),
   // Optional LLM bootstrap (creates provider configs on first boot)

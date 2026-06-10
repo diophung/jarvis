@@ -1,4 +1,11 @@
-import type { Citation, Conversation, FeedbackKind, Message, SuggestedAction } from '@donna/core';
+import type {
+  Citation,
+  Conversation,
+  FeedbackKind,
+  Message,
+  SuggestedAction,
+  UserPreference,
+} from '@donna/core';
 import { FEEDBACK_KINDS } from '@donna/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
@@ -376,7 +383,25 @@ function ConversationView({ conversationId }: { conversationId: string }) {
             note: str(p.note),
           });
           return 'Priority feedback recorded';
-        case 'add_preference':
+        case 'add_preference': {
+          // The assistant emits { key: 'people.vip', person } — append to the
+          // preference list. Payloads carrying feedback refs fall through to
+          // the feedback endpoint.
+          const prefKey = str(p.key);
+          const person = str(p.person);
+          if (prefKey && person) {
+            const prefs = await api.get<{ items: UserPreference[] }>('/api/preferences');
+            const current = prefs.items.find((it) => it.key === prefKey)?.value;
+            const list = Array.isArray(current)
+              ? current.filter((x): x is string => typeof x === 'string')
+              : [];
+            if (!list.includes(person)) {
+              await api.put(`/api/preferences/${encodeURIComponent(prefKey)}`, {
+                value: [...list, person],
+              });
+            }
+            return 'Preference saved';
+          }
           await api.post('/api/feedback', {
             kind: isFeedbackKind(p.kind) ? p.kind : 'more_like_this',
             sourceItemId,
@@ -385,6 +410,7 @@ function ConversationView({ conversationId }: { conversationId: string }) {
             note: str(p.note) ?? str(p.preference),
           });
           return 'Preference saved';
+        }
         case 'ignore_similar':
           await api.post('/api/feedback', {
             kind: 'not_important',

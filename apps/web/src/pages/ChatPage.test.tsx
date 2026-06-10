@@ -113,10 +113,35 @@ function renderChat(path = '/') {
           <Route path="/" element={<ChatPage />} />
           <Route path="/c/:conversationId" element={<ChatPage />} />
           <Route path="/approvals" element={<div>Approvals page</div>} />
+          <Route path="/memory" element={<div>Memory page</div>} />
+          <Route path="/files" element={<div>Files page</div>} />
+          <Route path="/digests/:digestId" element={<div>Digest page</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   );
+}
+
+/** Replace the messages SSE stream with a single final message, plus optional extra routes. */
+function mockAssistantMessage(
+  message: Record<string, unknown>,
+  extraRoutes?: (url: string, init?: RequestInit) => Response | undefined,
+) {
+  const frames = [frame('message', { message })];
+  fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = init?.method ?? 'GET';
+    const extra = extraRoutes?.(url, init);
+    if (extra) return extra;
+    if (url === '/api/me') return jsonRes(me);
+    if (url === '/api/conversations' && method === 'POST') return jsonRes({ conversation });
+    if (url === '/api/conversations/conv1/messages' && method === 'POST') return sseRes(frames);
+    if (url === '/api/conversations/conv1' && method === 'GET') {
+      return jsonRes({ conversation, messages: [] });
+    }
+    if (url === '/api/feedback' && method === 'POST') return jsonRes({ ok: true });
+    return jsonRes({ items: [] });
+  });
 }
 
 describe('ChatPage', () => {
@@ -184,5 +209,120 @@ describe('ChatPage', () => {
       );
     });
     expect(await screen.findByText('Marked as done')).toBeInTheDocument();
+  });
+
+  it('add_preference with key+person appends the person to the preference list', async () => {
+    mockAssistantMessage(
+      {
+        ...assistantMessage,
+        suggestedActions: [
+          {
+            type: 'add_preference',
+            label: 'Treat Alice as important',
+            payload: { key: 'people.vip', person: 'alice@example.com' },
+          },
+        ],
+      },
+      (url, init) => {
+        const method = init?.method ?? 'GET';
+        if (url === '/api/preferences' && method === 'GET') {
+          return jsonRes({ items: [{ key: 'people.vip', value: ['boss@example.com'] }] });
+        }
+        if (url === '/api/preferences/people.vip' && method === 'PUT') {
+          return jsonRes({ preference: { key: 'people.vip' } });
+        }
+        return undefined;
+      },
+    );
+    renderChat('/');
+    fireEvent.click(screen.getByText('What needs my attention today?'));
+
+    fireEvent.click(await screen.findByRole('button', { name: /treat alice as important/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/preferences/people.vip',
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({ value: ['boss@example.com', 'alice@example.com'] }),
+        }),
+      );
+    });
+    expect(await screen.findByText('Preference saved')).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith('/api/feedback', expect.anything());
+  });
+
+  it('add_preference without key+person still falls back to a feedback POST', async () => {
+    mockAssistantMessage({
+      ...assistantMessage,
+      suggestedActions: [
+        {
+          type: 'add_preference',
+          label: 'More like this',
+          payload: { kind: 'more_like_this', taskCandidateId: 'task1' },
+        },
+      ],
+    });
+    renderChat('/');
+    fireEvent.click(screen.getByText('What needs my attention today?'));
+
+    fireEvent.click(await screen.findByRole('button', { name: /more like this/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/feedback',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ kind: 'more_like_this', taskCandidateId: 'task1' }),
+        }),
+      );
+    });
+    expect(await screen.findByText('Preference saved')).toBeInTheDocument();
+  });
+
+  it('routes memory citations to /memory and renders unknown citations as inert chips', async () => {
+    mockAssistantMessage({
+      ...assistantMessage,
+      citations: [
+        { sourceType: 'memory', refId: 'mem1', title: 'A memory citation' },
+        { sourceType: 'task_candidate', refId: 'tc1', title: 'A task citation' },
+      ],
+      suggestedActions: [],
+    });
+    renderChat('/');
+    fireEvent.click(screen.getByText('What needs my attention today?'));
+
+    // Unknown source type with no url: not a dead button, just a chip.
+    const taskChip = await screen.findByText('A task citation');
+    expect(taskChip.closest('button')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /a memory citation/i }));
+    expect(await screen.findByText('Memory page')).toBeInTheDocument();
+  });
+
+  it('routes digest citations to /digests/:id', async () => {
+    mockAssistantMessage({
+      ...assistantMessage,
+      citations: [{ sourceType: 'digest', refId: 'dig1', title: 'A digest citation' }],
+      suggestedActions: [],
+    });
+    renderChat('/');
+    fireEvent.click(screen.getByText('What needs my attention today?'));
+
+    fireEvent.click(await screen.findByRole('button', { name: /a digest citation/i }));
+    expect(await screen.findByText('Digest page')).toBeInTheDocument();
+  });
+
+  it('routes uploaded-file citations to /files', async () => {
+    mockAssistantMessage({
+      ...assistantMessage,
+      citations: [{ sourceType: 'uploaded_file', refId: 'file1', title: 'A file citation' }],
+      suggestedActions: [],
+    });
+    renderChat('/');
+    fireEvent.click(screen.getByText('What needs my attention today?'));
+
+    fireEvent.click(await screen.findByRole('button', { name: /a file citation/i }));
+    expect(await screen.findByText('Files page')).toBeInTheDocument();
   });
 });

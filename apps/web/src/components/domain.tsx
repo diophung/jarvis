@@ -8,6 +8,7 @@ import type {
 import { useQuery } from '@tanstack/react-query';
 import { Calendar, File, FileUp, HardDrive, Inbox, Mail, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { fullDate, smartTime } from '../lib/format.js';
 import { Badge, LoadingPane, Markdown, Modal } from './ui.js';
@@ -144,26 +145,55 @@ export function SourceItemModal({
 
 /** Citation chips under an assistant message; click opens the source. */
 export function CitationChips({ citations }: { citations: Citation[] }) {
+  const navigate = useNavigate();
   const [openItem, setOpenItem] = useState<string | null>(null);
   if (!citations.length) return null;
+  const openCitation = (c: Citation): (() => void) | null => {
+    switch (c.sourceType) {
+      case 'source_item':
+        return () => setOpenItem(c.refId);
+      case 'uploaded_file':
+        return () => navigate('/files');
+      case 'memory':
+        return () => navigate('/memory');
+      case 'digest':
+        return () => navigate(`/digests/${c.refId}`);
+      default:
+        return c.url ? () => window.open(c.url, '_blank') : null;
+    }
+  };
   return (
     <>
       <div className="flex flex-wrap gap-1.5 mt-2">
-        {citations.map((c, i) => (
-          <button
-            key={`${c.refId}-${i}`}
-            onClick={() => {
-              if (c.sourceType === 'source_item') setOpenItem(c.refId);
-              else if (c.url) window.open(c.url, '_blank');
-            }}
-            title={c.snippet ?? c.title}
-            className="inline-flex items-center gap-1 rounded-full border border-surface-border bg-surface-raised px-2 py-0.5 text-[11px] text-ink-muted hover:border-donna-300 hover:text-ink transition-colors"
-          >
-            <span className="text-donna-600 font-semibold">{i + 1}</span>
-            <span className="max-w-[180px] truncate">{c.title}</span>
-            {c.sourceLabel && <span className="text-ink-faint">· {c.sourceLabel}</span>}
-          </button>
-        ))}
+        {citations.map((c, i) => {
+          const onOpen = openCitation(c);
+          const inner = (
+            <>
+              <span className="text-donna-600 font-semibold">{i + 1}</span>
+              <span className="max-w-[180px] truncate">{c.title}</span>
+              {c.sourceLabel && <span className="text-ink-faint">· {c.sourceLabel}</span>}
+            </>
+          );
+          const baseClass =
+            'inline-flex items-center gap-1 rounded-full border border-surface-border bg-surface-raised px-2 py-0.5 text-[11px] text-ink-muted';
+          if (!onOpen) {
+            return (
+              <span key={`${c.refId}-${i}`} title={c.snippet ?? c.title} className={baseClass}>
+                {inner}
+              </span>
+            );
+          }
+          return (
+            <button
+              key={`${c.refId}-${i}`}
+              onClick={onOpen}
+              title={c.snippet ?? c.title}
+              className={`${baseClass} hover:border-donna-300 hover:text-ink transition-colors`}
+            >
+              {inner}
+            </button>
+          );
+        })}
       </div>
       <SourceItemModal itemId={openItem} onClose={() => setOpenItem(null)} />
     </>

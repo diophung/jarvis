@@ -55,6 +55,7 @@ interface GoogleCalendarEvent {
   iCalUID?: string;
   start?: { dateTime?: string; date?: string };
   end?: { dateTime?: string; date?: string };
+  originalStartTime?: { dateTime?: string; date?: string };
   organizer?: GoogleCalendarAttendee;
   attendees?: GoogleCalendarAttendee[];
 }
@@ -232,6 +233,17 @@ export function mapGoogleCalendarEvent(event: GoogleCalendarEvent): RawSourceIte
   if (event.attendees && event.attendees.length > 0) {
     item.participants = event.attendees.map(toRef);
   }
-  if (event.iCalUID) item.dedupeHint = event.iCalUID;
+  if (event.iCalUID) {
+    // Recurring series expanded by singleEvents=true share one iCalUID, so the
+    // hint must include the occurrence or every instance after the first would
+    // be dropped as a duplicate.
+    const occurrence =
+      event.originalStartTime?.dateTime ??
+      event.originalStartTime?.date ??
+      event.start?.dateTime ??
+      event.start?.date ??
+      '';
+    item.dedupeHint = `${event.iCalUID}:${occurrence}`;
+  }
   return item;
 }

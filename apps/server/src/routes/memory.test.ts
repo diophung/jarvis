@@ -82,6 +82,29 @@ describe('memory routes', () => {
     expect(empty.json().items).toHaveLength(0);
   });
 
+  it('accepts SQLite-style 0/1 for enabled in PATCH', async () => {
+    const entry = await memory.create(workspaceId, userId, {
+      kind: 'fact',
+      content: 'Numeric toggle',
+      origin: 'explicit',
+    });
+    const disabled = await app.inject({
+      method: 'PATCH',
+      url: `/api/memory/${entry.id}`,
+      payload: { enabled: 0 },
+    });
+    expect(disabled.statusCode).toBe(200);
+    expect(disabled.json().memory.enabled).toBe(0);
+
+    const enabled = await app.inject({
+      method: 'PATCH',
+      url: `/api/memory/${entry.id}`,
+      payload: { enabled: 1 },
+    });
+    expect(enabled.statusCode).toBe(200);
+    expect(enabled.json().memory.enabled).toBe(1);
+  });
+
   it('validates input and 404s on missing entries', async () => {
     const badKind = await app.inject({
       method: 'POST',

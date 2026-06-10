@@ -96,6 +96,15 @@ function stubFetch() {
       if (url === '/api/llm/providers' && method === 'POST') {
         return ok({ provider: { ...provider, id: 'prov-new' } });
       }
+      if (url === '/api/llm/providers/prov-1' && method === 'PATCH') {
+        return ok({ provider: { ...provider, enabled: 0 } });
+      }
+      if (url === '/api/settings' && method === 'GET') {
+        return ok({ settings: { 'assistant.responseStyle': 'detailed' } });
+      }
+      if (url === '/api/settings/assistant.responseStyle' && method === 'PUT') {
+        return ok({ ok: true });
+      }
       if (url === '/api/llm/routes') return ok(emptyRoutes);
       if (url.startsWith('/api/llm/routes/') && method === 'PUT') {
         return ok({ route: { task: 'digest' } });
@@ -168,14 +177,77 @@ describe('SettingsPage', () => {
     await waitFor(() => {
       const post = calls.find((c) => c.method === 'POST' && c.url === '/api/llm/providers');
       expect(post).toBeTruthy();
+      // isLocal / supportsEmbeddings must be real booleans — the server zod
+      // schema rejects 1/0 with a 400.
       expect(post?.body).toMatchObject({
         name: 'Ollama',
         kind: 'openai_compatible',
         baseUrl: 'http://localhost:11434/v1',
         model: 'llama3.1:8b',
-        isLocal: 1,
+        isLocal: true,
+        supportsEmbeddings: false,
       });
     });
+  });
+
+  it('toggles a provider off with a boolean enabled PATCH', async () => {
+    renderAt('/settings/providers');
+    await userEvent.click(await screen.findByRole('switch', { name: 'Enabled' }));
+    await waitFor(() => {
+      const patch = calls.find(
+        (c) => c.method === 'PATCH' && c.url === '/api/llm/providers/prov-1',
+      );
+      expect(patch?.body).toEqual({ enabled: false });
+    });
+  });
+
+  it('shows inline feedback when the enabled toggle PATCH fails', async () => {
+    const base = globalThis.fetch;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = init?.method ?? 'GET';
+        if (url === '/api/llm/providers/prov-1' && method === 'PATCH') {
+          return {
+            ok: false,
+            status: 400,
+            statusText: 'Bad Request',
+            json: async () => ({ error: { code: 'bad_request', message: 'Invalid provider patch' } }),
+          };
+        }
+        return base(input, init);
+      }),
+    );
+
+    renderAt('/settings/providers');
+    await userEvent.click(await screen.findByRole('switch', { name: 'Enabled' }));
+
+    expect(
+      await screen.findByText(/Couldn’t disable this provider — Invalid provider patch/),
+    ).toBeInTheDocument();
+    // The switch reflects server state, so it stays on rather than lying.
+    expect(screen.getByRole('switch', { name: 'Enabled' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+  });
+
+  it('reads response style from app settings and saves it via PUT /api/settings', async () => {
+    renderAt('/settings/preferences');
+    // Initial value comes from GET /api/settings, not /api/preferences.
+    const select = await screen.findByLabelText('Response style');
+    await waitFor(() => expect(select).toHaveValue('detailed'));
+
+    await userEvent.selectOptions(select, 'concise');
+    await waitFor(() => {
+      const put = calls.find(
+        (c) => c.method === 'PUT' && c.url === '/api/settings/assistant.responseStyle',
+      );
+      expect(put?.body).toEqual({ value: 'concise' });
+    });
+    // It must not write to the preferences store the assistant never reads.
+    expect(calls.find((c) => c.url.startsWith('/api/preferences/'))).toBeUndefined();
   });
 
   it('confirms before auto-approving an externally visible capability, then PUTs', async () => {

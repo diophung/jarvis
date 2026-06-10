@@ -30,8 +30,7 @@ if (boot.seededDemo) {
 
 // Run the scheduler in-process unless a dedicated worker handles it
 // (docker-compose sets DONNA_INLINE_WORKER=false on the API service).
-const inlineWorker = process.env.DONNA_INLINE_WORKER !== 'false';
-const worker = inlineWorker ? createWorkerLoop(ctx) : null;
+const worker = config.env.DONNA_INLINE_WORKER ? createWorkerLoop(ctx) : null;
 worker?.start();
 
 const close = async () => {

@@ -366,14 +366,17 @@ export function createActionsService(deps: {
 
     async execute(actionId) {
       const row = await getActionRow(actionId);
-      if (row.status !== 'auto_approved' && row.status !== 'approved') {
-        throw conflict(`Action cannot be executed from status '${row.status}'`);
-      }
-      await db
+      // Atomically claim the action: only the request that moves it to
+      // 'executing' may run it, so execute() can never run twice.
+      const claim = await db
         .updateTable('agentActions')
         .set({ status: 'executing', updatedAt: nowIso() })
         .where('id', '=', actionId)
+        .where('status', 'in', ['auto_approved', 'approved'])
         .execute();
+      if (Number(claim[0]?.numUpdatedRows ?? 0n) === 0) {
+        throw conflict(`Action cannot be executed from status '${row.status}'`);
+      }
 
       const params = fromJson<Record<string, unknown>>(row.params, {});
       const target = fromJson<AgentAction['target']>(row.target, {});
@@ -452,16 +455,29 @@ export function createActionsService(deps: {
         throw conflict('Approval request has expired');
       }
 
+      // Atomically claim the pending→decided transition: only one request can
+      // win, so a decision (and its execution) can never be applied twice.
+      const claim = await db
+        .updateTable('approvalRequests')
+        .set({
+          status: decision === 'deny' ? 'denied' : 'approved',
+          decidedAt: now,
+          decisionNote: opts.note ?? null,
+          updatedAt: now,
+        })
+        .where('id', '=', approvalId)
+        .where('status', '=', 'pending')
+        .execute();
+      if (Number(claim[0]?.numUpdatedRows ?? 0n) === 0) {
+        throw conflict('Approval already decided');
+      }
+
       if (decision === 'deny') {
-        await db
-          .updateTable('approvalRequests')
-          .set({ status: 'denied', decidedAt: now, decisionNote: opts.note ?? null, updatedAt: now })
-          .where('id', '=', approvalId)
-          .execute();
         await db
           .updateTable('agentActions')
           .set({ status: 'denied', updatedAt: now })
           .where('id', '=', row.agentActionId)
+          .where('status', '=', 'awaiting_approval')
           .execute();
         await audit.log({
           workspaceId,
@@ -476,15 +492,15 @@ export function createActionsService(deps: {
         });
       } else {
         await db
-          .updateTable('approvalRequests')
-          .set({ status: 'approved', decidedAt: now, decisionNote: opts.note ?? null, updatedAt: now })
-          .where('id', '=', approvalId)
-          .execute();
-        await db
           .updateTable('agentActions')
           .set({ status: 'approved', updatedAt: now })
           .where('id', '=', row.agentActionId)
+          .where('status', '=', 'awaiting_approval')
           .execute();
+        // Critical-risk capabilities (e.g. source.delete) are never
+        // auto-approved: approve this single action but skip rule creation.
+        const alwaysAllowSkipped =
+          opts.alwaysAllow === true && getCapabilityDef(row.capability)?.risk === 'critical';
         await audit.log({
           workspaceId,
           userId,
@@ -494,38 +510,69 @@ export function createActionsService(deps: {
           targetType: 'approval_request',
           targetId: approvalId,
           summary: `Approved '${row.capability}' (${row.actionType})`,
-          metadata: { note: opts.note ?? null, alwaysAllow: opts.alwaysAllow === true },
+          metadata: {
+            note: opts.note ?? null,
+            alwaysAllow: opts.alwaysAllow === true,
+            ...(alwaysAllowSkipped
+              ? {
+                  alwaysAllowSkipped: true,
+                  alwaysAllowSkipReason: 'critical-risk capabilities are never auto-approved',
+                }
+              : {}),
+          },
         });
 
-        if (opts.alwaysAllow) {
-          const policyId = newId('pol');
-          await db
-            .insertInto('permissionPolicies')
-            .values({
-              id: policyId,
+        if (opts.alwaysAllow && !alwaysAllowSkipped) {
+          // Scope the rule to the approved target (workspace-wide only for
+          // local capabilities with no provider/account).
+          const scope: Record<string, string> = {};
+          if (row.targetProvider !== null) scope.provider = row.targetProvider;
+          if (row.targetAccountId !== null) scope.accountId = row.targetAccountId;
+          const scopeJson = toJson(scope);
+          const existingRule = await db
+            .selectFrom('permissionPolicies')
+            .select(['id'])
+            .where('workspaceId', '=', workspaceId)
+            .where('capability', '=', row.capability)
+            .where('effect', '=', 'auto_approve')
+            .where('enabled', '=', 1)
+            .where('scope', '=', scopeJson)
+            .executeTakeFirst();
+          if (!existingRule) {
+            const scopeSummary = row.targetProvider
+              ? `${row.targetProvider}${row.targetAccountId ? ` (account ${row.targetAccountId})` : ''}`
+              : null;
+            const policyId = newId('pol');
+            await db
+              .insertInto('permissionPolicies')
+              .values({
+                id: policyId,
+                workspaceId,
+                userId,
+                capability: row.capability,
+                effect: 'auto_approve',
+                scope: scopeJson,
+                description: scopeSummary
+                  ? `Always allow on ${scopeSummary} — created from approval`
+                  : 'Always allow — created from approval',
+                createdBy: 'approval_flow',
+                enabled: 1,
+                createdAt: now,
+                updatedAt: now,
+              })
+              .execute();
+            await audit.log({
               workspaceId,
               userId,
+              eventType: 'policy.updated',
+              actor: 'user',
               capability: row.capability,
-              effect: 'auto_approve',
-              scope: toJson({}),
-              description: 'Always allow — created from approval',
-              createdBy: 'approval_flow',
-              enabled: 1,
-              createdAt: now,
-              updatedAt: now,
-            })
-            .execute();
-          await audit.log({
-            workspaceId,
-            userId,
-            eventType: 'policy.updated',
-            actor: 'user',
-            capability: row.capability,
-            targetType: 'permission_policy',
-            targetId: policyId,
-            summary: `Always allow '${row.capability}' (created from approval)`,
-            metadata: { effect: 'auto_approve', createdBy: 'approval_flow' },
-          });
+              targetType: 'permission_policy',
+              targetId: policyId,
+              summary: `Always allow '${row.capability}' (created from approval)`,
+              metadata: { effect: 'auto_approve', createdBy: 'approval_flow', scope },
+            });
+          }
         }
 
         await service.execute(row.agentActionId);

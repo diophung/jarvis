@@ -1,7 +1,7 @@
 import { createDefaultRegistry } from '@donna/connectors';
 import { newId, nowIso, toJson } from '@donna/core';
 import type { Db } from '@donna/db';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { AppConfig } from './config.js';
 import type {
   AppContext,
@@ -143,13 +143,8 @@ describe('worker loop tick', () => {
     expect(ingestion.syncCalls).toBe(2);
   });
 
-  it('does not generate when the schedule is disabled or absent', async () => {
+  it('does not generate when the schedule is disabled', async () => {
     const { settings, digest, ctx, workspaceId } = await makeWorld();
-    const loop = createWorkerLoop(ctx);
-
-    await loop.tick(); // no schedule setting at all
-    expect(digest.calls).toHaveLength(0);
-
     await settings.set(workspaceId, SETTING_KEYS.digestSchedule, {
       cron: '0 8 * * *',
       enabled: false,
@@ -159,8 +154,65 @@ describe('worker loop tick', () => {
       SETTING_KEYS.digestLastScheduledAt,
       new Date(Date.now() - 25 * HOUR_MS).toISOString(),
     );
+    const loop = createWorkerLoop(ctx);
     await loop.tick();
     expect(digest.calls).toHaveLength(0);
+  });
+
+  it('falls back to the default enabled daily schedule when the setting is absent', async () => {
+    const { digest, ctx, workspaceId, userId } = await makeWorld();
+    const loop = createWorkerLoop(ctx);
+    // Default is { cron: '0 7 * * *', enabled: true } (matches the bootstrap
+    // seed); the 24h lookback always contains one 07:00 occurrence.
+    await loop.tick();
+    expect(digest.calls).toEqual([{ workspaceId, userId, kind: 'scheduled' }]);
+  });
+
+  it('skips a tick while a previous tick is still running, then resumes', async () => {
+    const { settings, digest, ingestion, ctx, workspaceId } = await makeWorld();
+    await settings.set(workspaceId, SETTING_KEYS.digestSchedule, {
+      cron: '0 8 * * *',
+      enabled: true,
+    });
+    await settings.set(
+      workspaceId,
+      SETTING_KEYS.digestLastScheduledAt,
+      new Date(Date.now() - 25 * HOUR_MS).toISOString(),
+    );
+
+    // Make the first digest.generate hang on a deferred promise (a real-LLM
+    // digest can outlast the tick interval).
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let hung = false;
+    const originalGenerate = digest.generate.bind(digest);
+    digest.generate = async (wsId, usrId, opts) => {
+      const result = await originalGenerate(wsId, usrId, opts);
+      if (!hung) {
+        hung = true;
+        await gate;
+      }
+      return result;
+    };
+
+    const loop = createWorkerLoop(ctx);
+    const first = loop.tick();
+    await vi.waitFor(() => expect(digest.calls).toHaveLength(1));
+
+    // Reentrant tick: returns without generating again or running sub-jobs.
+    await loop.tick();
+    expect(digest.calls).toHaveLength(1);
+    expect(ingestion.syncCalls).toBe(0);
+
+    release();
+    await first;
+    expect(ingestion.syncCalls).toBe(1);
+
+    // The latch is freed: the next tick runs normally.
+    await loop.tick();
+    expect(ingestion.syncCalls).toBe(2);
   });
 
   it('expires overdue pending approvals and audits them', async () => {

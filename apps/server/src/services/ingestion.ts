@@ -273,19 +273,40 @@ export function createIngestionService(deps: {
 
           const existing = await db
             .selectFrom('sourceItems')
-            .select(['id', 'contentHash'])
+            .select(['id', 'contentHash', 'isRead', 'labels'])
             .where('accountId', '=', accountId)
             .where('externalId', '=', normalized.externalId)
             .executeTakeFirst();
 
           if (existing) {
-            if (existing.contentHash === normalized.contentHash) continue; // unchanged
+            if (existing.contentHash === normalized.contentHash) {
+              // Content unchanged; still persist cheap metadata flips
+              // (read state, labels) so they never go stale.
+              const labelsJson = toJson(normalized.labels);
+              if (existing.isRead === normalized.isRead && existing.labels === labelsJson) {
+                continue; // unchanged
+              }
+              await db
+                .updateTable('sourceItems')
+                .set({ isRead: normalized.isRead, labels: labelsJson, updatedAt: now })
+                .where('id', '=', existing.id)
+                .execute();
+              counts.updated += 1;
+              continue;
+            }
             await db
               .updateTable('sourceItems')
               .set({
                 title: normalized.title,
                 bodyText: normalized.bodyText,
                 snippet: normalized.snippet,
+                sender: normalized.sender ? toJson(normalized.sender) : null,
+                participants: toJson(normalized.participants),
+                itemTimestamp: normalized.itemTimestamp,
+                dueAt: normalized.dueAt,
+                startsAt: normalized.startsAt,
+                endsAt: normalized.endsAt,
+                url: normalized.url,
                 labels: toJson(normalized.labels),
                 isRead: normalized.isRead,
                 rawMetadata: toJson(normalized.rawMetadata),
@@ -300,11 +321,15 @@ export function createIngestionService(deps: {
           }
 
           // Basic cross-source dedupe: the same meeting/file can arrive via
-          // multiple accounts; skip when the workspace already has the key.
+          // multiple accounts; skip when another account already has the key.
+          // Same-account items are excluded: the fallback dedupeKey
+          // (title+day+sender) would otherwise drop legitimate distinct items,
+          // and (accountId, externalId) already catches true duplicates.
           const dupe = await db
             .selectFrom('sourceItems')
             .select(['id'])
             .where('workspaceId', '=', workspaceId)
+            .where('accountId', '!=', accountId)
             .where('dedupeKey', '=', normalized.dedupeKey)
             .executeTakeFirst();
           if (dupe) {

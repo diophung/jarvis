@@ -33,6 +33,11 @@ export interface LlmProviderConfigPublic extends Omit<LlmProviderConfig, 'apiKey
   apiKeyMasked: string | null;
 }
 
+/** Accepts JSON booleans plus SQLite-style 0/1, normalized to a boolean. */
+const BoolLike = z
+  .union([z.boolean(), z.literal(0), z.literal(1)])
+  .transform((v) => v === true || v === 1);
+
 const ProviderCreateSchema = z.object({
   name: z.string().min(1).max(120),
   kind: z.enum(LLM_PROVIDER_KINDS),
@@ -43,15 +48,15 @@ const ProviderCreateSchema = z.object({
   temperature: z.number().min(0).max(2).nullish(),
   maxTokens: z.number().int().positive().nullish(),
   timeoutMs: z.number().int().positive().nullish(),
-  isLocal: z.boolean().optional(),
-  supportsEmbeddings: z.boolean().optional(),
+  isLocal: BoolLike.optional(),
+  supportsEmbeddings: BoolLike.optional(),
   embeddingModel: z.string().min(1).nullish(),
 });
 
 /** PATCH: same fields, all optional; `apiKey: null` clears the stored key. */
 const ProviderPatchSchema = ProviderCreateSchema.partial().extend({
   apiKey: z.string().min(1).nullish(),
-  enabled: z.boolean().optional(),
+  enabled: BoolLike.optional(),
 });
 
 const RoutePutSchema = z.object({

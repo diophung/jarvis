@@ -12,6 +12,8 @@ services:
       - "3001:3001"
     environment:
       DONNA_DATA_DIR: /data
+      # The dedicated worker container handles scheduling — keep it off here.
+      DONNA_INLINE_WORKER: "false"
       DONNA_SECRET: ${DONNA_SECRET:-change-me-in-production}
       DONNA_AUTH_MODE: ${DONNA_AUTH_MODE:-local}
       DONNA_DEMO_SEED: ${DONNA_DEMO_SEED:-true}

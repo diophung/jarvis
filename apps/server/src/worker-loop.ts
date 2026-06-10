@@ -35,6 +35,8 @@ export function createWorkerLoop(ctx: AppContext, opts: { tickMs?: number } = {}
   const { db } = ctx;
   const { settings, digest, ingestion, audit } = ctx.services;
   let timer: ReturnType<typeof setInterval> | null = null;
+  /** Reentrancy latch: a slow tick (e.g. real-LLM digest >60s) must not overlap the next. */
+  let running = false;
 
   async function runScheduledDigests(): Promise<void> {
     const workspaces = await db.selectFrom('workspaces').select(['id', 'ownerUserId']).execute();
@@ -98,20 +100,26 @@ export function createWorkerLoop(ctx: AppContext, opts: { tickMs?: number } = {}
   }
 
   async function tick(): Promise<void> {
+    if (running) return;
+    running = true;
     try {
-      await runScheduledDigests();
-    } catch (err) {
-      console.error('[worker] scheduled digest job failed', err);
-    }
-    try {
-      await ingestion.syncDueAccounts({ triggeredBy: 'scheduled' });
-    } catch (err) {
-      console.error('[worker] scheduled connector sync failed', err);
-    }
-    try {
-      await expireApprovals();
-    } catch (err) {
-      console.error('[worker] approval expiry failed', err);
+      try {
+        await runScheduledDigests();
+      } catch (err) {
+        console.error('[worker] scheduled digest job failed', err);
+      }
+      try {
+        await ingestion.syncDueAccounts({ triggeredBy: 'scheduled' });
+      } catch (err) {
+        console.error('[worker] scheduled connector sync failed', err);
+      }
+      try {
+        await expireApprovals();
+      } catch (err) {
+        console.error('[worker] approval expiry failed', err);
+      }
+    } finally {
+      running = false;
     }
   }
 

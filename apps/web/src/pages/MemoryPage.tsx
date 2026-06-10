@@ -61,6 +61,7 @@ export function MemoryPage() {
   const [newContent, setNewContent] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['memory'] });
 
@@ -85,8 +86,11 @@ export function MemoryPage() {
       api.patch<{ memory: MemoryEntry }>(`/api/memory/${id}`, patch),
     onSuccess: () => {
       setEditingId(null);
+      setUpdateError(null);
       invalidate();
     },
+    onError: (e) =>
+      setUpdateError(e instanceof Error ? e.message : 'Couldn’t update that memory.'),
   });
   const remove = useMutation({
     mutationFn: (id: string) => api.del<{ ok: true }>(`/api/memory/${id}`),
@@ -136,6 +140,12 @@ export function MemoryPage() {
             </div>
             <Switch checked={enabled} onChange={(v) => setEnabled.mutate(v)} />
           </Card>
+
+          {updateError && (
+            <p role="alert" className="text-sm text-red-600 mb-4">
+              Couldn’t update memory — {updateError}
+            </p>
+          )}
 
           <div className={clsx(!enabled && 'opacity-50')}>
             <form
@@ -234,9 +244,7 @@ export function MemoryPage() {
                           </div>
                           <Switch
                             checked={m.enabled === 1}
-                            onChange={(v) =>
-                              update.mutate({ id: m.id, patch: { enabled: v ? 1 : 0 } })
-                            }
+                            onChange={(v) => update.mutate({ id: m.id, patch: { enabled: v } })}
                           />
                           <button
                             type="button"

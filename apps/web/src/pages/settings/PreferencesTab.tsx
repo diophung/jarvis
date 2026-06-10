@@ -279,12 +279,24 @@ function SourcesSection() {
 function WorkingStyleSection() {
   const { data: prefs } = usePreferences();
   const setPref = useSetPreference();
+  const qc = useQueryClient();
   const wh = prefValue(prefs?.items, 'workingHours') as
     | { start?: string; end?: string }
     | undefined;
   const start = wh?.start ?? '09:00';
   const end = wh?.end ?? '17:00';
-  const responseStyle = (prefValue(prefs?.items, 'assistant.responseStyle') as string) ?? 'concise';
+  // The assistant reads response style from the app settings store, not
+  // user preferences — see GET/PUT /api/settings ('assistant.responseStyle').
+  const { data: settingsData } = useQuery({
+    queryKey: ['app-settings'],
+    queryFn: () => api.get<{ settings: Record<string, unknown> }>('/api/settings'),
+  });
+  const storedStyle = settingsData?.settings['assistant.responseStyle'];
+  const responseStyle = typeof storedStyle === 'string' ? storedStyle : 'concise';
+  const setResponseStyle = useMutation({
+    mutationFn: (value: string) => api.put('/api/settings/assistant.responseStyle', { value }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['app-settings'] }),
+  });
   const serverPlanning = (prefValue(prefs?.items, 'planning.style') as string) ?? '';
   const [planningDraft, setPlanningDraft] = useState<string | null>(null);
   const planning = planningDraft ?? serverPlanning;
@@ -324,7 +336,7 @@ function WorkingStyleSection() {
           <Field label="Response style">
             <Select
               value={responseStyle}
-              onChange={(v) => setPref.mutate({ key: 'assistant.responseStyle', value: v })}
+              onChange={(v) => setResponseStyle.mutate(v)}
               options={[
                 { value: 'concise', label: 'Concise — short, to the point' },
                 { value: 'detailed', label: 'Detailed — thorough explanations' },

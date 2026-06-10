@@ -81,6 +81,7 @@ export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
           path: '/',
           httpOnly: true,
           sameSite: 'lax',
+          secure: config.env.DONNA_COOKIE_SECURE,
           signed: true,
           maxAge: 60 * 60 * 24 * 30,
         });
@@ -113,6 +114,7 @@ export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
+      secure: config.env.DONNA_COOKIE_SECURE,
       signed: true,
       maxAge: 60 * 60 * 24 * 30,
     });

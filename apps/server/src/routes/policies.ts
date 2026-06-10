@@ -58,6 +58,12 @@ export function registerPolicyRoutes(app: FastifyInstance, ctx: AppContext): voi
       throw badRequest("effect must be one of 'auto_approve', 'require_approval', 'deny'");
     }
     const effect = body.data.effect;
+    if (effect === 'auto_approve' && getCapabilityDef(capability)?.risk === 'critical') {
+      throw badRequest(
+        `'${capability}' can cause irreversible damage, so Donna will always ask before doing it. It cannot be set to run automatically.`,
+        'critical_capability',
+      );
+    }
 
     const existing = await ctx.db
       .selectFrom('permissionPolicies')

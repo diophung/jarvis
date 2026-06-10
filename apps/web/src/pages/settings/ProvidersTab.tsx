@@ -151,8 +151,8 @@ function ProviderFormModal({
         temperature: form.temperature === '' ? null : Number(form.temperature),
         maxTokens: form.maxTokens === '' ? null : Number(form.maxTokens),
         timeoutMs: form.timeoutMs === '' ? null : Number(form.timeoutMs),
-        isLocal: form.isLocal ? 1 : 0,
-        supportsEmbeddings: form.supportsEmbeddings ? 1 : 0,
+        isLocal: form.isLocal,
+        supportsEmbeddings: form.supportsEmbeddings,
         embeddingModel: form.embeddingModel.trim() || null,
       };
       if (form.apiKey) payload.apiKey = form.apiKey;
@@ -373,7 +373,7 @@ function ProviderCard({
   };
   const toggleEnabled = useMutation({
     mutationFn: (enabled: boolean) =>
-      api.patch(`/api/llm/providers/${provider.id}`, { enabled: enabled ? 1 : 0 }),
+      api.patch(`/api/llm/providers/${provider.id}`, { enabled }),
     onSuccess: invalidate,
   });
   const del = useMutation({
@@ -421,6 +421,12 @@ function ProviderCard({
           />
         </div>
       </div>
+      {toggleEnabled.isError && (
+        <p className="mt-2 text-sm text-red-600">
+          Couldn’t {provider.enabled === 1 ? 'disable' : 'enable'} this provider —{' '}
+          {(toggleEnabled.error as Error).message}
+        </p>
+      )}
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-muted">
         <span>
           Model <span className="text-ink font-medium">{provider.model}</span>

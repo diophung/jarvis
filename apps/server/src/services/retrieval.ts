@@ -167,7 +167,10 @@ export function createRetrievalService(deps: { db: Db; llm: LlmRouterService }):
               'retrievalChunks.createdAt as createdAt',
               'embeddingRecords.vector as vector',
             ])
-            .where('embeddingRecords.workspaceId', '=', workspaceId);
+            .where('embeddingRecords.workspaceId', '=', workspaceId)
+            // Only vectors from the active embedding model are comparable;
+            // mixed-model (mixed-dims) records would corrupt similarity.
+            .where('embeddingRecords.model', '=', ec.model);
           if (opts.sourceTypes !== undefined && opts.sourceTypes.length > 0) {
             eq = eq.where('retrievalChunks.sourceType', 'in', opts.sourceTypes);
           }

@@ -250,6 +250,53 @@ describe('retrieval service (semantic leg)', () => {
     expect(results[0]?.refId).toBe('itm_a');
   });
 
+  it('excludes embedding records stored under a different model', async () => {
+    const db = await createTestDb();
+    const { workspaceId } = await seedWorkspace(db);
+    const { router, routed } = mockEmbeddingRouter();
+
+    const query = 'quarterly budget review meeting';
+    // Neither chunk shares keywords with the query: hits are semantic-only.
+    const chunkLegacy = await seedChunk(db, workspaceId, {
+      refId: 'itm_legacy',
+      text: 'zzz qqq stale provider words',
+      title: 'Legacy vectors',
+    });
+    const chunkCurrent = await seedChunk(db, workspaceId, {
+      refId: 'itm_current',
+      text: 'xxx yyy fresh provider words',
+      title: 'Current vectors',
+    });
+    const embedded = await routed.client.embed({ model: routed.model, input: [query] });
+    const queryVector = embedded.vectors[0];
+    expect(queryVector).toBeDefined();
+    // Both records carry the query's own vector (cosine 1), but only the one
+    // stored under the routed model ('mock-embedding') may be considered.
+    for (const [chunkId, model] of [
+      [chunkLegacy, 'legacy-embedding'],
+      [chunkCurrent, 'mock-embedding'],
+    ] as const) {
+      await db
+        .insertInto('embeddingRecords')
+        .values({
+          id: newId('emb'),
+          workspaceId,
+          chunkId,
+          providerConfigId: null,
+          model,
+          dims: queryVector?.length ?? 0,
+          vector: toJson(queryVector ?? []),
+          createdAt: nowIso(),
+        })
+        .execute();
+    }
+
+    const retrieval = createRetrievalService({ db, llm: router });
+    const { results, mode } = await retrieval.search(workspaceId, query);
+    expect(mode).toBe('semantic+keyword');
+    expect(results.map((r) => r.refId)).toEqual(['itm_current']);
+  });
+
   it('falls back to keyword mode when the embed call fails', async () => {
     const db = await createTestDb();
     const { workspaceId } = await seedWorkspace(db);

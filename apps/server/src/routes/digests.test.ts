@@ -172,7 +172,7 @@ describe('digest routes', () => {
 
   it('round-trips the schedule with cron validation and audit', async () => {
     const defaults = await app.inject({ method: 'GET', url: '/api/digests/schedule' });
-    expect(defaults.json().schedule).toEqual({ cron: '0 8 * * *', enabled: false });
+    expect(defaults.json().schedule).toEqual({ cron: '0 7 * * *', enabled: true });
 
     const bad = await app.inject({
       method: 'PUT',

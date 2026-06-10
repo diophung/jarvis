@@ -8,7 +8,7 @@ import type { AppContext } from '../context.js';
 import { SETTING_KEYS } from '../context.js';
 import { badRequest, notFound } from '../lib/http-errors.js';
 
-export const DEFAULT_DIGEST_SCHEDULE = { cron: '0 8 * * *', enabled: false };
+export const DEFAULT_DIGEST_SCHEDULE = { cron: '0 7 * * *', enabled: true };
 
 const ScheduleSchema = z.object({
   cron: z

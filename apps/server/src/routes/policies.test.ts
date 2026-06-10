@@ -128,6 +128,31 @@ describe('PUT /api/policies/:capability + DELETE /api/policies/:id', () => {
     expect(audits.length).toBe(3); // two PUTs + one DELETE
   });
 
+  it('rejects auto_approve for critical-risk capabilities', async () => {
+    for (const capability of ['source.delete', 'permission.change']) {
+      const res = await app.inject({
+        method: 'PUT',
+        url: `/api/policies/${encodeURIComponent(capability)}`,
+        payload: { effect: 'auto_approve' },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error.code).toBe('critical_capability');
+      expect(res.json().error.message).toContain('always ask');
+    }
+    // No policy rows were created by the rejected requests.
+    const listed = await app.inject({ method: 'GET', url: '/api/policies' });
+    expect(listed.json().items).toHaveLength(0);
+
+    // Other effects remain configurable for critical capabilities.
+    const deny = await app.inject({
+      method: 'PUT',
+      url: '/api/policies/source.delete',
+      payload: { effect: 'deny' },
+    });
+    expect(deny.statusCode).toBe(200);
+    expect(deny.json().policy.effect).toBe('deny');
+  });
+
   it('rejects unknown capabilities and invalid effects', async () => {
     const unknown = await app.inject({
       method: 'PUT',

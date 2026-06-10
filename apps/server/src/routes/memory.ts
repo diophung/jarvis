@@ -12,10 +12,15 @@ const CreateBody = z.object({
   content: z.string().min(1).max(10_000),
 });
 
+/** Accepts JSON booleans plus SQLite-style 0/1, normalized to a boolean. */
+const BoolLike = z
+  .union([z.boolean(), z.literal(0), z.literal(1)])
+  .transform((v) => v === true || v === 1);
+
 const PatchBody = z.object({
   content: z.string().min(1).max(10_000).optional(),
   kind: z.enum(MEMORY_KINDS).optional(),
-  enabled: z.boolean().optional(),
+  enabled: BoolLike.optional(),
 });
 
 const SettingsBody = z.object({ enabled: z.boolean() });

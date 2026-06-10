@@ -1,7 +1,7 @@
-import { newId, nowIso, toJson } from '@donna/core';
+import { fromJson, newId, nowIso, toJson } from '@donna/core';
 import { createDefaultRegistry } from '@donna/connectors';
 import type { Db } from '@donna/db';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActionsService, MemoryService, ProposeActionInput } from '../context.js';
 import { HttpError } from '../lib/http-errors.js';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';
@@ -282,7 +282,7 @@ describe('decideApproval', () => {
     expect((await auditEvents('approval.denied')).length).toBe(1);
   });
 
-  it('alwaysAllow creates a policy and a second propose auto-executes', async () => {
+  it('alwaysAllow creates a target-scoped policy and a second propose auto-executes', async () => {
     const accountId = await seedMockEmailAccount();
     const target = { provider: 'mock-email', accountId };
     const params = { to: 'jin@example.com', subject: 'Hi', body: 'First' };
@@ -300,7 +300,11 @@ describe('decideApproval', () => {
     expect(policies[0]?.capability).toBe('email.send');
     expect(policies[0]?.effect).toBe('auto_approve');
     expect(policies[0]?.createdBy).toBe('approval_flow');
-    expect(policies[0]?.description).toBe('Always allow — created from approval');
+    // The rule is scoped to the approved target, not workspace-wide.
+    expect(fromJson(policies[0]!.scope, {})).toEqual({ provider: 'mock-email', accountId });
+    expect(policies[0]?.description).toBe(
+      `Always allow on mock-email (account ${accountId}) — created from approval`,
+    );
     expect((await auditEvents('policy.updated')).length).toBe(1);
 
     const second = await actions.propose(
@@ -310,6 +314,117 @@ describe('decideApproval', () => {
     expect(second.approval).toBeNull();
     expect(second.action.status).toBe('executed');
     expect(second.action.result?.externalRef).toContain('mock-email-sent-');
+
+    // A different provider target is outside the rule's scope: still gated.
+    const other = await actions.propose(
+      proposal({ capability: 'email.send', actionType: 'send_email', params, target: { provider: 'mock-chat' } }),
+    );
+    expect(other.decision.effect).toBe('require_approval');
+    expect(other.action.status).toBe('awaiting_approval');
+  });
+
+  it('alwaysAllow skips inserting a duplicate of an equivalent enabled rule', async () => {
+    const accountId = await seedMockEmailAccount();
+    const target = { provider: 'mock-email', accountId };
+    const params = { to: 'jin@example.com', subject: 'Hi', body: 'x' };
+    const first = await actions.propose(
+      proposal({ capability: 'email.send', actionType: 'send_email', params, target }),
+    );
+    const second = await actions.propose(
+      proposal({ capability: 'email.send', actionType: 'send_email', params, target }),
+    );
+    await actions.decideApproval(workspaceId, first.approval!.id, userId, 'approve', { alwaysAllow: true });
+    await actions.decideApproval(workspaceId, second.approval!.id, userId, 'approve', { alwaysAllow: true });
+
+    const policies = await db
+      .selectFrom('permissionPolicies')
+      .selectAll()
+      .where('workspaceId', '=', workspaceId)
+      .execute();
+    expect(policies).toHaveLength(1);
+    expect((await auditEvents('policy.updated')).length).toBe(1);
+  });
+
+  it('alwaysAllow on a critical capability approves the action but never creates a rule', async () => {
+    const { approval } = await actions.propose(
+      proposal({ capability: 'source.delete', actionType: 'delete_item' }),
+    );
+    const decided = await actions.decideApproval(workspaceId, approval!.id, userId, 'approve', {
+      alwaysAllow: true,
+    });
+    expect(decided.status).toBe('approved');
+
+    const policies = await db
+      .selectFrom('permissionPolicies')
+      .selectAll()
+      .where('workspaceId', '=', workspaceId)
+      .execute();
+    expect(policies).toHaveLength(0);
+    expect((await auditEvents('policy.updated')).length).toBe(0);
+    const approved = await auditEvents('approval.approved');
+    expect(approved[0]?.metadata).toContain('"alwaysAllowSkipped":true');
+  });
+
+  it('decides an approval exactly once: the second decide conflicts and the connector runs once', async () => {
+    const accountId = await seedMockEmailAccount();
+    const registry = createDefaultRegistry();
+    const mockEmail = registry.get('mock-email')!;
+    const executeSpy = vi.spyOn(mockEmail, 'execute');
+    const audit = createAuditService({ db });
+    const settings = createSettingsService({ db });
+    const spiedActions = createActionsService({
+      db,
+      connectors: registry,
+      secrets: createSecretsService({ appSecret: 'test-secret' }),
+      audit,
+      memory: createMemoryService({ db, settings, audit }),
+    });
+
+    const { approval } = await spiedActions.propose(
+      proposal({
+        capability: 'email.send',
+        actionType: 'send_email',
+        params: { to: 'jin@example.com', subject: 'Once', body: 'Only once.' },
+        target: { provider: 'mock-email', accountId },
+      }),
+    );
+    const decided = await spiedActions.decideApproval(workspaceId, approval!.id, userId, 'approve');
+    expect(decided.status).toBe('approved');
+    await expect(
+      spiedActions.decideApproval(workspaceId, approval!.id, userId, 'approve'),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(executeSpy).toHaveBeenCalledTimes(1);
+
+    // Even racing decisions only let one request claim the approval.
+    const { approval: approval2 } = await spiedActions.propose(
+      proposal({
+        capability: 'email.send',
+        actionType: 'send_email',
+        params: { to: 'jin@example.com', subject: 'Race', body: 'Still once.' },
+        target: { provider: 'mock-email', accountId },
+      }),
+    );
+    const outcomes = await Promise.allSettled([
+      spiedActions.decideApproval(workspaceId, approval2!.id, userId, 'approve'),
+      spiedActions.decideApproval(workspaceId, approval2!.id, userId, 'approve'),
+    ]);
+    expect(outcomes.filter((o) => o.status === 'fulfilled')).toHaveLength(1);
+    expect(executeSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('execute can never run twice for the same action', async () => {
+    const accountId = await seedMockEmailAccount();
+    const { approval } = await actions.propose(
+      proposal({
+        capability: 'email.send',
+        actionType: 'send_email',
+        params: { to: 'jin@example.com', subject: 'Hi', body: 'x' },
+        target: { provider: 'mock-email', accountId },
+      }),
+    );
+    const decided = await actions.decideApproval(workspaceId, approval!.id, userId, 'approve');
+    await expect(actions.execute(decided.agentActionId)).rejects.toMatchObject({ statusCode: 409 });
+    expect((await auditEvents('agent.action.executed')).length).toBe(1);
   });
 
   it('refuses to decide an expired approval', async () => {

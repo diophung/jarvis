@@ -137,6 +137,30 @@ describe('llm routes', () => {
     expect(updated).not.toHaveProperty('apiKeyEncrypted');
   });
 
+  it('accepts SQLite-style 0/1 for boolean fields', async () => {
+    const provider = await createProvider({ isLocal: 1, supportsEmbeddings: 0 });
+    expect(provider.isLocal).toBe(1);
+    expect(provider.supportsEmbeddings).toBe(0);
+
+    const res = await h.app.inject({
+      method: 'PATCH',
+      url: `/api/llm/providers/${provider.id as string}`,
+      payload: { enabled: 0 },
+    });
+    expect(res.statusCode).toBe(200);
+    expect((res.json() as { provider: Record<string, any> }).provider.enabled).toBe(0);
+
+    const reEnabled = await h.app.inject({
+      method: 'PATCH',
+      url: `/api/llm/providers/${provider.id as string}`,
+      payload: { enabled: 1, supportsEmbeddings: 1 },
+    });
+    expect(reEnabled.statusCode).toBe(200);
+    const updated = (reEnabled.json() as { provider: Record<string, any> }).provider;
+    expect(updated.enabled).toBe(1);
+    expect(updated.supportsEmbeddings).toBe(1);
+  });
+
   it('audits settings.updated on provider mutations with name/kind metadata only', async () => {
     await createProvider({ apiKey: 'sk-audit-secret' });
     const rows = await h.db

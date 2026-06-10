@@ -81,6 +81,54 @@ describe('MemoryPage', () => {
     });
   });
 
+  it('toggles a single memory off with a boolean PATCH', async () => {
+    const { calls } = stubMemoryRoutes();
+    renderWithProviders(<MemoryPage />);
+    await screen.findByText('Prefers short replies');
+
+    // Switch 0 is the master toggle; switch 1 belongs to mem_1.
+    fireEvent.click(screen.getAllByRole('switch')[1]!);
+
+    await waitFor(() => {
+      const patch = calls.find(
+        (c) => c.url.includes('/api/memory/mem_1') && c.method === 'PATCH',
+      );
+      // Must be a real boolean — the server zod schema rejects 1/0.
+      expect(patch?.body).toEqual({ enabled: false });
+    });
+  });
+
+  it('shows inline feedback when a memory toggle PATCH fails', async () => {
+    stubMemoryRoutes();
+    const base = globalThis.fetch;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = (init?.method ?? 'GET').toUpperCase();
+        if (url.includes('/api/memory/mem_1') && method === 'PATCH') {
+          return {
+            ok: false,
+            status: 400,
+            statusText: 'Bad Request',
+            json: async () => ({
+              error: { code: 'bad_request', message: 'Invalid memory patch' },
+            }),
+          } as unknown as Response;
+        }
+        return base(input, init);
+      }),
+    );
+
+    renderWithProviders(<MemoryPage />);
+    await screen.findByText('Prefers short replies');
+    fireEvent.click(screen.getAllByRole('switch')[1]!);
+
+    expect(
+      await screen.findByText(/Couldn’t update memory — Invalid memory patch/),
+    ).toBeInTheDocument();
+  });
+
   it('edits a memory inline and PATCHes the new content', async () => {
     const { calls } = stubMemoryRoutes();
     renderWithProviders(<MemoryPage />);
