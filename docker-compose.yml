@@ -1,0 +1,69 @@
+# Local deployment: `docker compose up --build`
+# Web UI + API on http://localhost:3001 (SQLite + local file storage in the
+# donna-data volume; demo workspace seeded on first boot).
+#
+# Optional profiles:
+#   --profile postgres   run against Postgres instead of SQLite
+#   --profile ollama     run a local Ollama for local LLM inference
+services:
+  donna:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      DONNA_DATA_DIR: /data
+      DONNA_SECRET: ${DONNA_SECRET:-change-me-in-production}
+      DONNA_AUTH_MODE: ${DONNA_AUTH_MODE:-local}
+      DONNA_DEMO_SEED: ${DONNA_DEMO_SEED:-true}
+      DATABASE_URL: ${DATABASE_URL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      DONNA_LOCAL_LLM_BASE_URL: ${DONNA_LOCAL_LLM_BASE_URL:-}
+      DONNA_LOCAL_LLM_MODEL: ${DONNA_LOCAL_LLM_MODEL:-}
+    volumes:
+      - donna-data:/data
+    restart: unless-stopped
+
+  worker:
+    build: .
+    command: ["pnpm", "--filter", "@donna/server", "worker"]
+    environment:
+      DONNA_DATA_DIR: /data
+      DONNA_SECRET: ${DONNA_SECRET:-change-me-in-production}
+      DATABASE_URL: ${DATABASE_URL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      DONNA_LOCAL_LLM_BASE_URL: ${DONNA_LOCAL_LLM_BASE_URL:-}
+      DONNA_LOCAL_LLM_MODEL: ${DONNA_LOCAL_LLM_MODEL:-}
+    volumes:
+      - donna-data:/data
+    restart: unless-stopped
+    depends_on:
+      - donna
+
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_DB: donna
+      POSTGRES_USER: donna
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-donna}
+    volumes:
+      - donna-pg:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["ollama"]
+    volumes:
+      - donna-ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+
+volumes:
+  donna-data:
+  donna-pg:
+  donna-ollama:
