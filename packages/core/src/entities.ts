@@ -19,11 +19,14 @@ import type {
   DigestSection,
   DigestStatus,
   FeedbackKind,
+  GoogleSourceType,
   Level,
   LlmProviderKind,
   LlmTask,
   MemoryKind,
   MessageRole,
+  OauthLoginProvider,
+  OauthTokenStatus,
   PersonImportance,
   PlanningCategory,
   PolicyEffect,
@@ -39,6 +42,65 @@ export interface User {
   name: string;
   passwordHash: string | null;
   role: 'owner' | 'member';
+  /** True once the email is verified (OAuth providers with verified emails set this). */
+  emailVerified: boolean;
+  avatarUrl: string | null;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A linked OAuth login identity (Google / Facebook / Apple). One user may have several. */
+export interface AuthAccount {
+  id: string;
+  userId: string;
+  provider: OauthLoginProvider;
+  /** The provider's stable subject/user id ('sub' claim or graph id). */
+  providerAccountId: string;
+  email: string | null;
+  emailVerified: boolean;
+  displayName: string | null;
+  avatarUrl: string | null;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A server-side login session. The cookie holds an opaque token; only its hash is stored. */
+export interface SessionRecord {
+  id: string;
+  userId: string;
+  workspaceId: string;
+  /** sha256(base64url token) — the raw token never touches the database. */
+  tokenHash: string;
+  expiresAt: string;
+  lastSeenAt: string;
+  userAgent: string | null;
+  ip: string | null;
+  createdAt: string;
+}
+
+/**
+ * Per-source OAuth token grant (data-source authorization, distinct from login).
+ * Access/refresh tokens are AES-256-GCM encrypted at rest and never leave the server.
+ */
+export interface OauthToken {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  provider: 'google';
+  sourceType: GoogleSourceType;
+  /** The connected sourceAccounts row this grant backs (set after account creation). */
+  sourceAccountId: string | null;
+  providerAccountId: string | null;
+  providerEmail: string | null;
+  grantedScopes: string[];
+  accessTokenEncrypted: string | null;
+  refreshTokenEncrypted: string | null;
+  accessTokenExpiresAt: string | null;
+  status: OauthTokenStatus;
+  lastRefreshedAt: string | null;
+  lastError: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -74,6 +136,8 @@ export interface SourceAccount {
   settings: Record<string, unknown>;
   lastSyncAt: string | null;
   syncCursor: string | null;
+  /** Last connection-level error (e.g. token refresh failure), surfaced in the UI. */
+  lastError: string | null;
   createdAt: string;
   updatedAt: string;
 }

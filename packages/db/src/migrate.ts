@@ -1,5 +1,6 @@
 import { Migrator, type Kysely, type Migration, type MigrationProvider } from 'kysely';
 import * as m0001 from './migrations/0001_init.js';
+import * as m0002 from './migrations/0002_auth_oauth.js';
 
 /**
  * Static migration provider: migrations are imported directly so the runner
@@ -7,6 +8,7 @@ import * as m0001 from './migrations/0001_init.js';
  */
 const migrations: Record<string, Migration> = {
   '0001_init': m0001,
+  '0002_auth_oauth': m0002,
 };
 
 class StaticMigrationProvider implements MigrationProvider {

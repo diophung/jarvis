@@ -14,10 +14,52 @@ Conventions:
 
 ## Auth & profile
 - `GET /api/me` → `{ user: User, workspace: Workspace, authMode: 'local'|'password' }`
-  (in local mode this auto-creates + logs in the default user)
-- `POST /api/auth/login` `{ email, password }` → `{ user }` (password mode)
-- `POST /api/auth/logout` → `{ ok: true }`
+  (in local mode this auto-creates + logs in the default user; `user` never includes `passwordHash` — it carries `hasPassword: boolean` instead)
+- `GET /api/auth/methods` → `{ authMode: 'local'|'password', signupEnabled: boolean, oauthProviders: ('google'|'facebook'|'apple')[] }`
+  (public; lists only providers with configured credentials — drives the sign-in page)
+- `POST /api/auth/register` `{ email, password, name }` → `{ user }` + session cookie
+  (password mode + signup enabled only; creates the user and their own workspace;
+  duplicate emails return a generic 400 `registration_failed` that does not reveal account existence)
+- `POST /api/auth/login` `{ email, password }` → `{ user }` + session cookie
+  (failures are always 401 `invalid_credentials` "Invalid email or password"; rate-limited per email+IP)
+- `POST /api/auth/logout` → `{ ok: true }` (revokes the DB session + clears the cookie)
+- `POST /api/auth/password` `{ currentPassword?, newPassword }` → `{ ok: true }`
+  (set or change password; `currentPassword` required when one is already set; revokes other sessions)
 - `PATCH /api/me` `{ name?, email? }` → `{ user }`
+- `GET /api/auth/accounts` → `{ items: AuthAccount[] }` (linked OAuth login identities)
+- `DELETE /api/auth/accounts/:id` → `{ ok: true }`
+  (refuses with 400 `last_login_method` when it would leave no way to sign in)
+- `GET /api/auth/sessions` → `{ items: SessionSummary[] }` where SessionSummary =
+  `{ id, createdAt, lastSeenAt, userAgent, ip, current: boolean }`
+- `DELETE /api/auth/sessions/:id` → `{ ok: true }` (revoke one session)
+- `DELETE /api/auth/sessions` → `{ ok: true, revoked: number }` (revoke all except current)
+
+### OAuth login (browser navigations, not XHR)
+- `GET /api/auth/oauth/:provider/start?returnTo=/path&link=1` — 302 to the provider's
+  consent screen. `provider` ∈ google|facebook|apple. `link=1` requires a session and
+  links the identity to the current user instead of signing in.
+- `GET|POST /api/auth/oauth/:provider/callback` — validates state (+ PKCE/nonce where
+  used), then 302s to the web app: `returnTo` on success, `/signin?error=<code>` on
+  failure (codes: `oauth_denied`, `oauth_state_mismatch`, `oauth_failed`,
+  `email_unverified`, `email_in_use`, `already_linked`, `no_email`, `signup_disabled`).
+  Apple uses `response_mode=form_post`, hence POST support.
+
+## Google source authorization (browser navigations)
+- `GET /api/sources/oauth/google/:sourceType/start?returnTo=/settings` — 302 to Google
+  consent (session required). `sourceType` ∈ gmail|google-drive|google-calendar. Uses
+  incremental authorization (`include_granted_scopes=true`) with least-privilege scopes:
+  gmail → `gmail.readonly`, google-drive → `drive.metadata.readonly`,
+  google-calendar → `calendar.readonly`. Also the "Reconnect" path after `needs_auth`.
+- `GET /api/sources/oauth/google/callback` — validates state, stores encrypted tokens,
+  creates/updates the `sourceAccounts` row, kicks off an initial sync; 302 to
+  `returnTo` with `?connected=<sourceType>` on success or `?sourceError=<code>` on
+  failure (codes as above plus `wrong_account` when reauthorizing with a different
+  Google account than the original grant).
+- `GET /api/sources/accounts` (existing) gains per-account fields:
+  `authKind: 'oauth'|'env'|'local'`, `grantedScopes: string[]`, `lastError: string|null`;
+  `status` may be `needs_auth` (Reconnect required).
+- `DELETE /api/sources/accounts/:id` (existing) now also revokes OAuth grants at
+  Google (best effort) and deletes the stored tokens.
 
 ## Conversations & chat
 - `GET /api/conversations` → `{ items: Conversation[] }` (most recent first, non-archived)

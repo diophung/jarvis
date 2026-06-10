@@ -39,6 +39,7 @@ import {
   type IngestionService,
   type SecretsService,
   type SettingsService,
+  type TokensService,
 } from '../context.js';
 import { badRequest, notFound } from '../lib/http-errors.js';
 
@@ -99,8 +100,14 @@ export function createIngestionService(deps: {
   audit: AuditService;
   settings: SettingsService;
   indexing: IndexingService;
+  /**
+   * Per-source OAuth token service. Optional only so pre-v1.1 fixtures keep
+   * working — production wiring MUST pass it or OAuth-connected accounts
+   * cannot sync.
+   */
+  tokens?: TokensService;
 }): IngestionService {
-  const { db, connectors, secrets, audit, settings, indexing } = deps;
+  const { db, connectors, secrets, audit, settings, indexing, tokens } = deps;
 
   /** Load workspace people once per run into an email -> person cache. */
   async function loadPeopleByEmail(workspaceId: string): Promise<Map<string, PersonCacheEntry>> {
@@ -227,6 +234,12 @@ export function createIngestionService(deps: {
       settings: account.settings,
       secrets: secrets.connectorResolver(),
       logger: consoleConnectorLogger,
+      // OAuth-connected accounts get a server-managed token source; env-based
+      // accounts keep resolving credentials through ctx.secrets.
+      oauth:
+        tokens && tokens.isOauthAccount(account.authRef)
+          ? tokens.tokenSourceFor(accountId)
+          : undefined,
     };
 
     const runId = newId('run');

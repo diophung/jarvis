@@ -56,7 +56,7 @@ const RAIL: RailEntry[] = [
     icon: <CalendarClock />,
     render: () => <ScheduleTab />,
   },
-  { kind: 'tab', id: 'security', label: 'Security', icon: <Lock />, render: () => <SecurityTab /> },
+  { kind: 'tab', id: 'security', label: 'Account & security', icon: <Lock />, render: () => <SecurityTab /> },
   { kind: 'link', to: '/audit', label: 'Audit Log', icon: <ScrollText /> },
   {
     kind: 'tab',

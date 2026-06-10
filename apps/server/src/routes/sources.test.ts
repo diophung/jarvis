@@ -1,8 +1,9 @@
+import { newId, nowIso, toJson } from '@donna/core';
 import { createDefaultRegistry } from '@donna/connectors';
 import type { Db } from '@donna/db';
 import fastify, { type FastifyInstance } from 'fastify';
-import { afterEach, describe, expect, it } from 'vitest';
-import type { AppContext, IndexingService, Services } from '../context.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { AppContext, IndexingService, Services, TokensService } from '../context.js';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';
 import { createAuditService } from '../services/audit.js';
 import { createIngestionService } from '../services/ingestion.js';
@@ -19,11 +20,28 @@ function stubIndexing(): IndexingService {
   };
 }
 
+function stubTokens(): { tokens: TokensService; disconnected: string[] } {
+  const disconnected: string[] = [];
+  const tokens: TokensService = {
+    async getGoogleAccessTokenForUser() {
+      throw new Error('not used in these tests');
+    },
+    async refreshGoogleTokenIfNeeded() {},
+    tokenSourceFor: () => ({ getAccessToken: async () => 'stub-access-token' }),
+    isOauthAccount: (authRef) => authRef !== null && authRef.startsWith('oauth:'),
+    async disconnectSource(sourceAccountId) {
+      disconnected.push(sourceAccountId);
+    },
+  };
+  return { tokens, disconnected };
+}
+
 interface TestApp {
   app: FastifyInstance;
   db: Db;
   userId: string;
   workspaceId: string;
+  disconnected: string[];
 }
 
 let openApps: FastifyInstance[] = [];
@@ -37,13 +55,22 @@ async function buildApp(): Promise<TestApp> {
   const settings = createSettingsService({ db });
   const secrets = createSecretsService({ appSecret: 'test-secret' });
   const indexing = stubIndexing();
-  const ingestion = createIngestionService({ db, connectors, secrets, audit, settings, indexing });
+  const { tokens, disconnected } = stubTokens();
+  const ingestion = createIngestionService({
+    db,
+    connectors,
+    secrets,
+    audit,
+    settings,
+    indexing,
+    tokens,
+  });
 
   const ctx = {
     config: {} as AppContext['config'],
     db,
     connectors,
-    services: { audit, settings, secrets, indexing, ingestion } as unknown as Services,
+    services: { audit, settings, secrets, indexing, ingestion, tokens } as unknown as Services,
   } as AppContext;
 
   const app = fastify();
@@ -56,13 +83,69 @@ async function buildApp(): Promise<TestApp> {
   registerSourcesRoutes(app, ctx);
   await app.ready();
   openApps.push(app);
-  return { app, db, userId, workspaceId };
+  return { app, db, userId, workspaceId, disconnected };
 }
 
 afterEach(async () => {
   await Promise.all(openApps.map((app) => app.close()));
   openApps = [];
+  vi.unstubAllEnvs();
 });
+
+/** Insert an OAuth-connected gmail account + its token row directly. */
+async function seedOauthAccount(
+  db: Db,
+  workspaceId: string,
+  userId: string,
+): Promise<{ accountId: string; tokenRowId: string }> {
+  const now = nowIso();
+  const accountId = newId('acc');
+  const tokenRowId = newId('tok');
+  await db
+    .insertInto('sourceAccounts')
+    .values({
+      id: accountId,
+      workspaceId,
+      userId,
+      provider: 'gmail',
+      category: 'email',
+      displayName: 'Gmail (jane@gmail.com)',
+      status: 'connected',
+      authRef: `oauth:${tokenRowId}`,
+      scopes: toJson(['https://www.googleapis.com/auth/gmail.readonly']),
+      capabilities: toJson(['read', 'list']),
+      settings: toJson({}),
+      lastSyncAt: null,
+      syncCursor: null,
+      lastError: null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .execute();
+  await db
+    .insertInto('oauthTokens')
+    .values({
+      id: tokenRowId,
+      workspaceId,
+      userId,
+      provider: 'google',
+      sourceType: 'gmail',
+      sourceAccountId: accountId,
+      providerAccountId: 'g-sub-1',
+      providerEmail: 'jane@gmail.com',
+      grantedScopes: toJson(['https://www.googleapis.com/auth/gmail.readonly']),
+      accessTokenEncrypted: 'enc:access',
+      refreshTokenEncrypted: 'enc:refresh',
+      accessTokenExpiresAt: now,
+      status: 'active',
+      lastRefreshedAt: null,
+      lastError: null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .execute();
+  return { accountId, tokenRowId };
+}
 
 async function connectAccount(app: FastifyInstance, provider: string): Promise<string> {
   const res = await app.inject({
@@ -88,6 +171,33 @@ describe('sources routes', () => {
     expect(mockChat?.configured).toBe(true);
   });
 
+  it('marks the Google sources oauth-connectable and configured once client creds exist', async () => {
+    vi.stubEnv('GOOGLE_CLIENT_ID', '');
+    vi.stubEnv('GOOGLE_CLIENT_SECRET', '');
+    vi.stubEnv('GOOGLE_REFRESH_TOKEN', '');
+    const { app } = await buildApp();
+
+    const before = await app.inject({ method: 'GET', url: '/api/sources/catalog' });
+    const gmailBefore = before
+      .json()
+      .items.find((i: { provider: string }) => i.provider === 'gmail');
+    expect(gmailBefore).toMatchObject({ oauthConnectable: true, configured: false });
+    const mockEmail = before
+      .json()
+      .items.find((i: { provider: string }) => i.provider === 'mock-email');
+    expect(mockEmail?.oauthConnectable).toBe(false);
+
+    // A Google OAuth client makes all three sources connectable — no
+    // GOOGLE_REFRESH_TOKEN env needed.
+    vi.stubEnv('GOOGLE_CLIENT_ID', 'client-id');
+    vi.stubEnv('GOOGLE_CLIENT_SECRET', 'client-secret');
+    const after = await app.inject({ method: 'GET', url: '/api/sources/catalog' });
+    for (const provider of ['gmail', 'google-drive', 'google-calendar']) {
+      const item = after.json().items.find((i: { provider: string }) => i.provider === provider);
+      expect(item).toMatchObject({ oauthConnectable: true, configured: true });
+    }
+  });
+
   it('connects a mock account with descriptor defaults and audits it', async () => {
     const { app, db } = await buildApp();
     const res = await app.inject({
@@ -104,6 +214,10 @@ describe('sources routes', () => {
     expect(account.capabilities).toContain('read');
     expect(Array.isArray(account.scopes)).toBe(true);
     expect(account.settings).toEqual({});
+    // v1.1 auth fields: mock connectors are local, no oauth grant.
+    expect(account.authKind).toBe('local');
+    expect(account.grantedScopes).toEqual([]);
+    expect(account.lastError).toBeNull();
 
     const audits = await db
       .selectFrom('auditLogs')
@@ -266,5 +380,47 @@ describe('sources routes', () => {
       url: `/api/sources/accounts/${accountId}`,
     });
     expect(again.statusCode).toBe(404);
+  });
+
+  it('lists oauth-connected accounts with authKind and grantedScopes', async () => {
+    const { app, db, userId, workspaceId } = await buildApp();
+    const { accountId } = await seedOauthAccount(db, workspaceId, userId);
+
+    const res = await app.inject({ method: 'GET', url: '/api/sources/accounts' });
+    expect(res.statusCode).toBe(200);
+    const account = res
+      .json()
+      .items.find((i: { id: string }) => i.id === accountId);
+    expect(account).toMatchObject({
+      authKind: 'oauth',
+      grantedScopes: ['https://www.googleapis.com/auth/gmail.readonly'],
+      lastError: null,
+      status: 'connected',
+    });
+    // Encrypted token material never crosses the API surface.
+    expect(JSON.stringify(res.json())).not.toContain('enc:access');
+  });
+
+  it('revokes the OAuth grant and deletes the stored tokens on disconnect', async () => {
+    const { app, db, userId, workspaceId, disconnected } = await buildApp();
+    const { accountId } = await seedOauthAccount(db, workspaceId, userId);
+
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/api/sources/accounts/${accountId}`,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ ok: true });
+
+    expect(disconnected).toEqual([accountId]);
+    expect(await db.selectFrom('oauthTokens').selectAll().execute()).toHaveLength(0);
+    expect(await db.selectFrom('sourceAccounts').selectAll().execute()).toHaveLength(0);
+
+    const audits = await db
+      .selectFrom('auditLogs')
+      .selectAll()
+      .where('eventType', '=', 'connector.disconnected')
+      .execute();
+    expect(audits).toHaveLength(1);
   });
 });

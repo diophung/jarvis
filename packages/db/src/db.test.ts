@@ -16,6 +16,7 @@ describe('db', () => {
         name: 'Test User',
         passwordHash: null,
         role: 'owner',
+        emailVerified: 0,
         createdAt: now,
         updatedAt: now,
       })

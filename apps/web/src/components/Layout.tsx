@@ -8,6 +8,7 @@ import {
   History,
   Inbox,
   ListTodo,
+  LogOut,
   MessageSquare,
   Plus,
   Search,
@@ -20,7 +21,8 @@ import {
 import type { ReactNode } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api.js';
-import { useLlmStatus, useMe, usePendingApprovalsCount } from '../lib/hooks.js';
+import { useAuth } from '../lib/auth.js';
+import { useLlmStatus, usePendingApprovalsCount } from '../lib/hooks.js';
 
 function NavItem({
   to,
@@ -128,7 +130,7 @@ function DemoModeBanner() {
 
 export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const { data: me } = useMe();
+  const { user, authMode, logout } = useAuth();
   const { data: approvals } = usePendingApprovalsCount();
   const qc = useQueryClient();
 
@@ -173,12 +175,37 @@ export function Layout({ children }: { children: ReactNode }) {
           <NavItem to="/memory" icon={<ClipboardList />} label="Memory" />
           <NavItem to="/audit" icon={<ShieldCheck />} label="Audit Log" />
           <NavItem to="/settings" icon={<Settings />} label="Settings" />
-          {me && (
+          {user && (
             <div className="flex items-center gap-2 px-2.5 pt-2">
-              <div className="h-6 w-6 rounded-full bg-surface-sunken border border-surface-border flex items-center justify-center text-[11px] font-medium text-ink-muted">
-                {me.user.name.slice(0, 1).toUpperCase()}
-              </div>
-              <div className="text-[12px] text-ink-muted truncate">{me.user.name}</div>
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt=""
+                  className="h-6 w-6 rounded-full border border-surface-border object-cover"
+                />
+              ) : (
+                <div className="h-6 w-6 rounded-full bg-surface-sunken border border-surface-border flex items-center justify-center text-[11px] font-medium text-ink-muted">
+                  {user.name.slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              <div className="text-[12px] text-ink-muted truncate flex-1">{user.name}</div>
+              {authMode === 'password' ? (
+                <button
+                  title="Sign out"
+                  aria-label="Sign out"
+                  onClick={() => void logout()}
+                  className="shrink-0 rounded-md p-1 text-ink-faint hover:bg-surface-sunken hover:text-ink"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </button>
+              ) : (
+                <span
+                  className="shrink-0 text-[10px] text-ink-faint"
+                  title="Donna is in local single-user mode — you're signed in automatically."
+                >
+                  local mode
+                </span>
+              )}
             </div>
           )}
         </div>

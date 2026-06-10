@@ -1,8 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout.js';
+import { AuthProvider, RequireAuth } from './lib/auth.js';
 import { ApprovalsPage } from './pages/ApprovalsPage.js';
 import { AuditPage } from './pages/AuditPage.js';
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage.js';
+import { SignInPage } from './pages/auth/SignInPage.js';
+import { SignUpPage } from './pages/auth/SignUpPage.js';
 import { ChatPage } from './pages/ChatPage.js';
 import { DebriefPage } from './pages/DebriefPage.js';
 import { DigestsPage } from './pages/DigestsPage.js';
@@ -23,25 +27,42 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <Layout>
+        <AuthProvider>
           <Routes>
-            <Route path="/" element={<ChatPage />} />
-            <Route path="/c/:conversationId" element={<ChatPage />} />
-            <Route path="/debrief" element={<DebriefPage />} />
-            <Route path="/digests" element={<DigestsPage />} />
-            <Route path="/digests/:digestId" element={<DebriefPage />} />
-            <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/sources" element={<SourcesPage />} />
-            <Route path="/files" element={<FilesPage />} />
-            <Route path="/approvals" element={<ApprovalsPage />} />
-            <Route path="/memory" element={<MemoryPage />} />
-            <Route path="/audit" element={<AuditPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/settings/:tab" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Public auth pages render without the app shell. */}
+            <Route path="/signin" element={<SignInPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            {/* Everything else requires a session (password mode) or
+                auto-logs in (local mode). */}
+            <Route
+              path="*"
+              element={
+                <RequireAuth>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<ChatPage />} />
+                      <Route path="/c/:conversationId" element={<ChatPage />} />
+                      <Route path="/debrief" element={<DebriefPage />} />
+                      <Route path="/digests" element={<DigestsPage />} />
+                      <Route path="/digests/:digestId" element={<DebriefPage />} />
+                      <Route path="/tasks" element={<TasksPage />} />
+                      <Route path="/search" element={<SearchPage />} />
+                      <Route path="/sources" element={<SourcesPage />} />
+                      <Route path="/files" element={<FilesPage />} />
+                      <Route path="/approvals" element={<ApprovalsPage />} />
+                      <Route path="/memory" element={<MemoryPage />} />
+                      <Route path="/audit" element={<AuditPage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="/settings/:tab" element={<SettingsPage />} />
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Layout>
+                </RequireAuth>
+              }
+            />
           </Routes>
-        </Layout>
+        </AuthProvider>
       </Router>
     </QueryClientProvider>
   );

@@ -19,6 +19,15 @@ export interface ConnectorLogger {
   error(msg: string): void;
 }
 
+/**
+ * Server-injected access-token source for OAuth-connected accounts. The
+ * server owns storage, encryption, refresh, and reauth marking; connectors
+ * only ever see a short-lived access token.
+ */
+export interface OAuthTokenSource {
+  getAccessToken(): Promise<string>;
+}
+
 export interface ConnectorContext {
   accountId: string;
   workspaceId: string;
@@ -26,6 +35,8 @@ export interface ConnectorContext {
   settings: Record<string, unknown>;
   secrets: SecretResolver;
   logger: ConnectorLogger;
+  /** Present when the account was connected via OAuth; preferred over env credentials. */
+  oauth?: OAuthTokenSource;
 }
 
 export interface SyncRequest {
