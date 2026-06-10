@@ -1,0 +1,41 @@
+{
+  "name": "@donna/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "start": "tsx src/index.ts",
+    "worker": "tsx src/worker.ts",
+    "db:migrate": "tsx src/scripts/migrate.ts",
+    "seed:demo": "tsx src/scripts/seed-demo.ts",
+    "build": "tsc --noEmit",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.726.0",
+    "@donna/connectors": "workspace:*",
+    "@donna/core": "workspace:*",
+    "@donna/db": "workspace:*",
+    "@donna/llm": "workspace:*",
+    "@fastify/cookie": "^11.0.1",
+    "@fastify/cors": "^10.0.2",
+    "@fastify/multipart": "^9.0.2",
+    "@fastify/static": "^8.0.4",
+    "bcryptjs": "^2.4.3",
+    "croner": "^8.1.2",
+    "fastify": "^5.2.1",
+    "mammoth": "^1.9.0",
+    "pdf-parse": "^1.1.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.5",
+    "@types/pdf-parse": "^1.1.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.5"
+  }
+}

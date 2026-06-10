@@ -1,0 +1,30 @@
+{
+  "name": "donna",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Donna — a digital executive assistant that surfaces what matters most across email, chat, calendar, cloud storage, and files.",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @donna/server --filter @donna/web dev",
+    "dev:server": "pnpm --filter @donna/server dev",
+    "dev:web": "pnpm --filter @donna/web dev",
+    "worker": "pnpm --filter @donna/server worker",
+    "build": "pnpm -r build",
+    "test": "pnpm -r --no-bail test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "db:migrate": "pnpm --filter @donna/server db:migrate",
+    "seed:demo": "pnpm --filter @donna/server seed:demo"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.0"
+  }
+}
