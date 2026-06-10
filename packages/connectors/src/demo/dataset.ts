@@ -236,7 +236,6 @@ export const DEMO_CHANNELS = [
 export function createDemoDataset(now: Date): DemoDataset {
   const nowMs = now.getTime();
   const ago = (ms: number): string => new Date(nowMs - ms).toISOString();
-  const ahead = (ms: number): string => new Date(nowMs + ms).toISOString();
   /** Local wall-clock time at `dayOffset` days from now (e.g. today 14:00). */
   const at = (dayOffset: number, hour: number, minute = 0): string => {
     const d = new Date(now);

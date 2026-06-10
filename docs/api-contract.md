@@ -103,7 +103,7 @@ Conventions:
   NEVER returned; instead `hasStoredKey: boolean` and `apiKeyMasked: string | null`.
 - `POST /api/llm/providers` `{ name, kind, baseUrl?, model, apiKey?, apiKeyEnv?, temperature?, maxTokens?, timeoutMs?, isLocal?, supportsEmbeddings?, embeddingModel? }` → `{ provider }`
   (`apiKey` plaintext is encrypted server-side and discarded)
-- `PATCH /api/llm/providers/:id` (same fields, all optional; `apiKey: null` clears stored key) → `{ provider }`
+- `PATCH /api/llm/providers/:id` (same fields plus `enabled: boolean`, all optional; `apiKey: null` clears stored key) → `{ provider }`
 - `DELETE /api/llm/providers/:id` → `{ ok: true }`
 - `POST /api/llm/providers/:id/health` → `{ ok, latencyMs, message, models? }`
 - `GET /api/llm/providers/:id/models` → `{ models: string[] }`

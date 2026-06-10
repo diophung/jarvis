@@ -21,7 +21,7 @@ function makeAdapter(overrides: Partial<LlmProviderAdapter> = {}): LlmProviderAd
   return {
     kind: 'openai_compatible',
     chat: vi.fn().mockResolvedValue(okResult),
-    // eslint-disable-next-line require-yield
+     
     chatStream: async function* (): AsyncGenerator<StreamEvent, void, void> {
       yield { type: 'delta', text: 'fi' };
       yield { type: 'delta', text: 'ne' };
