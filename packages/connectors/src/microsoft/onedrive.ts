@@ -21,6 +21,7 @@ import type {
   SyncRequest,
 } from '../types.js';
 import { GRAPH_BASE_URL, MicrosoftAuth, MS_REQUIRED_ENV, missingMsEnv } from './ms-auth.js';
+import { httpErrorDetail } from '../util/parse.js';
 
 const DEFAULT_LIMIT = 50;
 
@@ -61,7 +62,7 @@ export class OneDriveConnector implements Connector {
       const res = await fetch(`${GRAPH_BASE_URL}/me/drive?$select=id,driveType`, {
         headers: { authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return { ok: false, message: `OneDrive check failed: HTTP ${res.status}` };
+      if (!res.ok) return { ok: false, message: `OneDrive check failed: ${await httpErrorDetail(res)}` };
       return { ok: true, message: 'OneDrive reachable' };
     } catch (err) {
       return {
@@ -82,7 +83,7 @@ export class OneDriveConnector implements Connector {
         : `${GRAPH_BASE_URL}/me/drive/root/delta?$top=${limit}`;
 
     const res = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
-    if (!res.ok) throw new Error(`OneDrive delta failed: HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`OneDrive delta failed: ${await httpErrorDetail(res)}`);
     const json = (await res.json()) as {
       value?: GraphDriveItem[];
       '@odata.nextLink'?: string;

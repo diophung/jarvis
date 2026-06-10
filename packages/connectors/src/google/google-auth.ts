@@ -10,6 +10,7 @@
  * VALUES never appear in errors or logs — only env var NAMES.
  */
 import type { ConnectorContext } from '../types.js';
+import { httpErrorDetail } from '../util/parse.js';
 
 export const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
@@ -62,7 +63,7 @@ export class GoogleAuth {
       }).toString(),
     });
     if (!res.ok) {
-      throw new Error(`Google token exchange failed: HTTP ${res.status}`);
+      throw new Error(`Google token exchange failed: ${await httpErrorDetail(res)}`);
     }
     const json = (await res.json()) as { access_token?: string; expires_in?: number };
     if (!json.access_token) {

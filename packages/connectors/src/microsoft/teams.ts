@@ -22,6 +22,7 @@ import type {
 } from '../types.js';
 import { GRAPH_BASE_URL, MicrosoftAuth, MS_REQUIRED_ENV, missingMsEnv } from './ms-auth.js';
 import { parseJsonCursor, stripHtml } from '../util/parse.js';
+import { httpErrorDetail } from '../util/parse.js';
 
 const DEFAULT_LIMIT = 50;
 const MAX_CHATS = 20;
@@ -69,7 +70,7 @@ export class TeamsConnector implements Connector {
       const res = await fetch(`${GRAPH_BASE_URL}/me/chats?$top=1`, {
         headers: { authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return { ok: false, message: `Teams check failed: HTTP ${res.status}` };
+      if (!res.ok) return { ok: false, message: `Teams check failed: ${await httpErrorDetail(res)}` };
       return { ok: true, message: 'Teams chats reachable' };
     } catch (err) {
       return {
@@ -88,7 +89,7 @@ export class TeamsConnector implements Connector {
     const chatsRes = await fetch(`${GRAPH_BASE_URL}/me/chats?$top=${MAX_CHATS}`, {
       headers: { authorization: `Bearer ${token}` },
     });
-    if (!chatsRes.ok) throw new Error(`Teams chat list failed: HTTP ${chatsRes.status}`);
+    if (!chatsRes.ok) throw new Error(`Teams chat list failed: ${await httpErrorDetail(chatsRes)}`);
     const chats = (await chatsRes.json()) as { value?: GraphChat[] };
 
     const items: RawSourceItem[] = [];

@@ -20,6 +20,7 @@ import type {
 } from '../types.js';
 import { GoogleAuth, GOOGLE_REQUIRED_ENV, missingGoogleEnv } from './google-auth.js';
 import { parseJsonCursor } from '../util/parse.js';
+import { httpErrorDetail } from '../util/parse.js';
 
 export const GOOGLE_DRIVE_BASE_URL = 'https://www.googleapis.com/drive/v3';
 
@@ -69,7 +70,7 @@ export class GoogleDriveConnector implements Connector {
       const res = await fetch(`${GOOGLE_DRIVE_BASE_URL}/about?fields=user(emailAddress)`, {
         headers: { authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return { ok: false, message: `Google Drive check failed: HTTP ${res.status}` };
+      if (!res.ok) return { ok: false, message: `Google Drive check failed: ${await httpErrorDetail(res)}` };
       const about = (await res.json()) as { user?: { emailAddress?: string } };
       return {
         ok: true,
@@ -107,7 +108,7 @@ export class GoogleDriveConnector implements Connector {
     const res = await fetch(`${GOOGLE_DRIVE_BASE_URL}/files?${params.toString()}`, {
       headers: { authorization: `Bearer ${token}` },
     });
-    if (!res.ok) throw new Error(`Google Drive list failed: HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`Google Drive list failed: ${await httpErrorDetail(res)}`);
     const json = (await res.json()) as { files?: GoogleDriveFile[]; nextPageToken?: string };
 
     const items: RawSourceItem[] = [];

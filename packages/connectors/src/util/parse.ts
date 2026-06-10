@@ -57,3 +57,32 @@ export function parseJsonCursor<T extends Record<string, unknown>>(
     return null;
   }
 }
+
+/**
+ * Build a useful error detail from a failed HTTP response: status plus the
+ * provider's error message (Google/Microsoft `error.message`, Slack `error`),
+ * truncated. Never throws; tolerates empty/non-JSON bodies.
+ */
+export async function httpErrorDetail(res: {
+  status: number;
+  text?: () => Promise<string>;
+}): Promise<string> {
+  let detail = '';
+  try {
+    const body = res.text ? await res.text() : '';
+    if (body) {
+      try {
+        const parsed = JSON.parse(body) as any;
+        detail =
+          parsed?.error?.message ??
+          (typeof parsed?.error === 'string' ? parsed.error : '') ??
+          parsed?.message ??
+          '';
+      } catch {
+        detail = body;
+      }
+    }
+  } catch {}
+  detail = String(detail).replace(/\s+/g, ' ').trim().slice(0, 220);
+  return detail ? `HTTP ${res.status} — ${detail}` : `HTTP ${res.status}`;
+}

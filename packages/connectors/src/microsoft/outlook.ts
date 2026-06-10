@@ -27,6 +27,7 @@ import type {
 } from '../types.js';
 import { GRAPH_BASE_URL, MicrosoftAuth, MS_REQUIRED_ENV, missingMsEnv } from './ms-auth.js';
 import { parseJsonCursor } from '../util/parse.js';
+import { httpErrorDetail } from '../util/parse.js';
 
 const DEFAULT_LIMIT = 50;
 const MESSAGE_SELECT =
@@ -83,7 +84,7 @@ export class OutlookConnector implements Connector {
       const res = await fetch(`${GRAPH_BASE_URL}/me?$select=userPrincipalName`, {
         headers: { authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return { ok: false, message: `Outlook check failed: HTTP ${res.status}` };
+      if (!res.ok) return { ok: false, message: `Outlook check failed: ${await httpErrorDetail(res)}` };
       const me = (await res.json()) as { userPrincipalName?: string };
       return { ok: true, message: `Outlook reachable as ${me.userPrincipalName ?? 'unknown'}` };
     } catch (err) {
@@ -118,7 +119,7 @@ export class OutlookConnector implements Connector {
     }
 
     const res = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
-    if (!res.ok) throw new Error(`Outlook list failed: HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`Outlook list failed: ${await httpErrorDetail(res)}`);
     const json = (await res.json()) as {
       value?: GraphMessage[];
       '@odata.nextLink'?: string;
@@ -174,7 +175,7 @@ export class OutlookConnector implements Connector {
       });
       // Graph returns 202 Accepted with an empty body on success.
       if (res.status !== 202 && !res.ok) {
-        return { ok: false, detail: `Outlook send failed: HTTP ${res.status}` };
+        return { ok: false, detail: `Outlook send failed: ${await httpErrorDetail(res)}` };
       }
       return { ok: true, externalRef: 'graph-sendmail-accepted', detail: `Email sent to ${to}` };
     } catch (err) {

@@ -27,6 +27,7 @@ import type {
 } from '../types.js';
 import { GoogleAuth, GOOGLE_REQUIRED_ENV, missingGoogleEnv } from './google-auth.js';
 import { parseJsonCursor } from '../util/parse.js';
+import { httpErrorDetail } from '../util/parse.js';
 
 export const GOOGLE_CALENDAR_BASE_URL = 'https://www.googleapis.com/calendar/v3';
 
@@ -85,7 +86,7 @@ export class GoogleCalendarConnector implements Connector {
         headers: { authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
-        return { ok: false, message: `Google Calendar check failed: HTTP ${res.status}` };
+        return { ok: false, message: `Google Calendar check failed: ${await httpErrorDetail(res)}` };
       }
       const cal = (await res.json()) as { summary?: string };
       return { ok: true, message: `Google Calendar reachable (${cal.summary ?? 'primary'})` };
@@ -138,7 +139,7 @@ export class GoogleCalendarConnector implements Connector {
       `${GOOGLE_CALENDAR_BASE_URL}/calendars/primary/events?${params.toString()}`,
       { headers: { authorization: `Bearer ${token}` } },
     );
-    if (!res.ok) throw new Error(`Google Calendar list failed: HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`Google Calendar list failed: ${await httpErrorDetail(res)}`);
     const json = (await res.json()) as {
       items?: GoogleCalendarEvent[];
       nextPageToken?: string;
@@ -191,7 +192,7 @@ export class GoogleCalendarConnector implements Connector {
         }),
       });
       if (!res.ok) {
-        return { ok: false, detail: `Google Calendar event creation failed: HTTP ${res.status}` };
+        return { ok: false, detail: `Google Calendar event creation failed: ${await httpErrorDetail(res)}` };
       }
       const created = (await res.json()) as { id?: string };
       return { ok: true, externalRef: created.id, detail: `Event "${title}" created` };

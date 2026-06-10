@@ -9,6 +9,7 @@
  * Secret VALUES never appear in errors or logs — only env var NAMES.
  */
 import type { ConnectorContext } from '../types.js';
+import { httpErrorDetail } from '../util/parse.js';
 
 export const GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0';
 
@@ -63,7 +64,7 @@ export class MicrosoftAuth {
       }).toString(),
     });
     if (!res.ok) {
-      throw new Error(`Microsoft token exchange failed: HTTP ${res.status}`);
+      throw new Error(`Microsoft token exchange failed: ${await httpErrorDetail(res)}`);
     }
     const json = (await res.json()) as { access_token?: string; expires_in?: number };
     if (!json.access_token) {

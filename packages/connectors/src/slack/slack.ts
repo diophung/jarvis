@@ -30,6 +30,7 @@ import type {
   SyncRequest,
 } from '../types.js';
 import { parseJsonCursor } from '../util/parse.js';
+import { httpErrorDetail } from '../util/parse.js';
 
 export const SLACK_BASE_URL = 'https://slack.com/api';
 export const SLACK_REQUIRED_ENV = ['SLACK_BOT_TOKEN'] as const;
@@ -151,7 +152,7 @@ export class SlackConnector implements Connector {
         },
         body: JSON.stringify({ channel, text }),
       });
-      if (!res.ok) return { ok: false, detail: `Slack post failed: HTTP ${res.status}` };
+      if (!res.ok) return { ok: false, detail: `Slack post failed: ${await httpErrorDetail(res)}` };
       const json = (await res.json()) as { ok: boolean; error?: string; ts?: string; channel?: string };
       if (!json.ok) return { ok: false, detail: `Slack post failed: ${json.error ?? 'unknown'}` };
       return {
@@ -175,7 +176,7 @@ export class SlackConnector implements Connector {
     const res = await fetch(`${SLACK_BASE_URL}/${method}${query ? `?${query}` : ''}`, {
       headers: { authorization: `Bearer ${token}` },
     });
-    if (!res.ok) throw new Error(`Slack ${method} failed: HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`Slack ${method} failed: ${await httpErrorDetail(res)}`);
     return (await res.json()) as T;
   }
 

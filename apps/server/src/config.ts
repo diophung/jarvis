@@ -1,4 +1,28 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { parseEnv } from 'node:util';
 import { z } from 'zod';
+
+/**
+ * Load .env files into process.env (real environment variables always win).
+ * Checked locations: cwd (apps/server when run via pnpm --filter) and the
+ * repo root two levels up.
+ */
+function loadDotEnv(): void {
+  for (const candidate of [resolve('.env'), resolve('../../.env')]) {
+    if (!existsSync(candidate)) continue;
+    try {
+      const parsed = parseEnv(readFileSync(candidate, 'utf8'));
+      for (const [key, value] of Object.entries(parsed)) {
+        if (process.env[key] === undefined && typeof value === 'string') {
+          process.env[key] = value;
+        }
+      }
+    } catch {
+      // Malformed .env files are ignored; explicit env still works.
+    }
+  }
+}
 
 /**
  * Environment-driven configuration. Every value has a safe local default so
@@ -57,6 +81,7 @@ export interface AppConfig {
 }
 
 export function loadConfig(overrides: Partial<Record<string, string>> = {}): AppConfig {
+  loadDotEnv();
   const merged = { ...process.env, ...overrides };
   const parsed = EnvSchema.safeParse(merged);
   if (!parsed.success) {

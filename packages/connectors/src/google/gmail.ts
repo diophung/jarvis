@@ -29,6 +29,7 @@ import type {
 } from '../types.js';
 import { GoogleAuth, GOOGLE_REQUIRED_ENV, missingGoogleEnv } from './google-auth.js';
 import { parseEmailAddress, parseEmailAddressList, parseJsonCursor } from '../util/parse.js';
+import { httpErrorDetail } from '../util/parse.js';
 
 export const GMAIL_BASE_URL = 'https://gmail.googleapis.com/gmail/v1';
 
@@ -87,7 +88,7 @@ export class GmailConnector implements Connector {
       const res = await fetch(`${GMAIL_BASE_URL}/users/me/profile`, {
         headers: { authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return { ok: false, message: `Gmail profile check failed: HTTP ${res.status}` };
+      if (!res.ok) return { ok: false, message: `Gmail profile check failed: ${await httpErrorDetail(res)}` };
       const profile = (await res.json()) as { emailAddress?: string };
       return { ok: true, message: `Gmail reachable as ${profile.emailAddress ?? 'unknown'}` };
     } catch (err) {
@@ -118,7 +119,7 @@ export class GmailConnector implements Connector {
     const listRes = await fetch(`${GMAIL_BASE_URL}/users/me/messages?${params.toString()}`, {
       headers: { authorization: `Bearer ${token}` },
     });
-    if (!listRes.ok) throw new Error(`Gmail list failed: HTTP ${listRes.status}`);
+    if (!listRes.ok) throw new Error(`Gmail list failed: ${await httpErrorDetail(listRes)}`);
     const list = (await listRes.json()) as {
       messages?: Array<{ id?: string }>;
       nextPageToken?: string;
@@ -177,7 +178,7 @@ export class GmailConnector implements Connector {
         headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
         body: JSON.stringify({ raw }),
       });
-      if (!res.ok) return { ok: false, detail: `Gmail send failed: HTTP ${res.status}` };
+      if (!res.ok) return { ok: false, detail: `Gmail send failed: ${await httpErrorDetail(res)}` };
       const sent = (await res.json()) as { id?: string };
       return { ok: true, externalRef: sent.id, detail: `Email sent to ${to}` };
     } catch (err) {
@@ -196,7 +197,7 @@ export class GmailConnector implements Connector {
     );
     if (!res.ok) {
       if (res.status === 404) return null;
-      throw new Error(`Gmail message fetch failed: HTTP ${res.status}`);
+      throw new Error(`Gmail message fetch failed: ${await httpErrorDetail(res)}`);
     }
     return (await res.json()) as GmailMessage;
   }
