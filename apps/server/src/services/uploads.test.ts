@@ -9,6 +9,7 @@ import { loadConfig, type AppConfig } from '../config.js';
 import type { LlmRouterService, UploadsService } from '../context.js';
 import { createAuditService } from './audit.js';
 import { createIndexingService } from './indexing.js';
+import { createSqlScanVectorStore } from './vector-store.js';
 import { createStorageService } from './storage.js';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';
 import { createUploadsService, stripHtml } from './uploads.js';
@@ -40,7 +41,7 @@ beforeEach(async () => {
   userId = seeded.userId;
   const audit = createAuditService({ db });
   const storage = createStorageService({ config });
-  const indexing = createIndexingService({ db, llm: nullEmbeddingRouter });
+  const indexing = createIndexingService({ db, llm: nullEmbeddingRouter, vectors: createSqlScanVectorStore({ db }) });
   uploads = createUploadsService({ db, storage, indexing, audit });
 });
 

@@ -266,6 +266,23 @@ async function loadUpcomingCalendar(
   );
 }
 
+/**
+ * Graceful degradation: each context source falls back independently. A
+ * failing memory/retrieval/digest lookup must never turn into a 500 — Donna
+ * answers from whatever context IS available (the failure is logged, never
+ * shown as a crash).
+ */
+async function withFallback<T>(label: string, fallback: T, load: () => Promise<T>): Promise<T> {
+  try {
+    return await load();
+  } catch (err) {
+    console.warn(
+      `[assistant] ${label} unavailable, continuing degraded: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return fallback;
+  }
+}
+
 async function assembleContext(
   deps: AssistantServiceDeps,
   workspaceId: string,
@@ -276,24 +293,32 @@ async function assembleContext(
   const now = Date.now();
   const [memories, responseStyle, retrieved, tasks, calendar, digestRow, personalized] =
     await Promise.all([
-      memory.relevant(workspaceId, query, 5),
-      settings.get<string>(workspaceId, SETTING_KEYS.responseStyle, 'concise'),
-      retrieval.search(workspaceId, query, { limit: 8 }),
-      loadTopTasks(db, workspaceId),
-      loadUpcomingCalendar(
-        db,
-        workspaceId,
-        new Date(now).toISOString(),
-        new Date(now + CALENDAR_HORIZON_MS).toISOString(),
+      withFallback('memory', [], () => memory.relevant(workspaceId, query, 5)),
+      withFallback('settings', 'concise', () =>
+        settings.get<string>(workspaceId, SETTING_KEYS.responseStyle, 'concise'),
       ),
-      db
-        .selectFrom('digests')
-        .select(['id', 'summaryMarkdown'])
-        .where('workspaceId', '=', workspaceId)
-        .where('status', '=', 'ready')
-        .orderBy('createdAt', 'desc')
-        .limit(1)
-        .executeTakeFirst(),
+      withFallback('retrieval', { results: [], mode: 'keyword' as const }, () =>
+        retrieval.search(workspaceId, query, { limit: 8 }),
+      ),
+      withFallback('tasks', [], () => loadTopTasks(db, workspaceId)),
+      withFallback('calendar', [], () =>
+        loadUpcomingCalendar(
+          db,
+          workspaceId,
+          new Date(now).toISOString(),
+          new Date(now + CALENDAR_HORIZON_MS).toISOString(),
+        ),
+      ),
+      withFallback('digest', undefined, () =>
+        db
+          .selectFrom('digests')
+          .select(['id', 'summaryMarkdown'])
+          .where('workspaceId', '=', workspaceId)
+          .where('status', '=', 'ready')
+          .orderBy('createdAt', 'desc')
+          .limit(1)
+          .executeTakeFirst(),
+      ),
       personalization !== undefined
         ? personalization
             .forTask(workspaceId, userId, { task: 'chat_reply', channel: 'chat' })

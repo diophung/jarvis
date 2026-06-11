@@ -207,6 +207,10 @@ export const AUDIT_EVENT_TYPES = [
   'learning.preference.updated',
   'learning.preference.deleted',
   'learning.preference.corrected',
+  'privacy.export',
+  'privacy.deletion.requested',
+  'privacy.deletion.completed',
+  'privacy.deletion.failed',
 ] as const;
 export type AuditEventType = (typeof AUDIT_EVENT_TYPES)[number];
 

@@ -45,10 +45,12 @@ import type { Db, LearnedPreferencesTable, LearningSignalsTable, SourceItemsTabl
 import {
   SETTING_KEYS,
   type AuditService,
+  type CacheService,
   type LearningService,
   type SettingsService,
 } from '../context.js';
 import { badRequest, notFound } from '../lib/http-errors.js';
+import { cacheKey } from './cache.js';
 
 const DAY_MS = 86_400_000;
 /** Extraction looks back this far for thread context on the first run. */
@@ -59,6 +61,8 @@ const MAX_ITEMS_PER_RUN = 2000;
 const MAX_SIGNALS_PER_RUN = 1000;
 /** Pending signals older than this are pruned (they never settled into a preference). */
 const PENDING_SIGNAL_TTL_DAYS = 180;
+/** Backpressure cap: skip extraction while this many signals await inference. */
+const MAX_PENDING_SIGNALS = 5_000;
 
 const FREEMAIL_DOMAINS = new Set([
   'gmail.com',
@@ -166,12 +170,25 @@ function signalFingerprint(s: {
   return `${s.kind}|${s.key}|${s.value}|${s.source.sourceType}|${s.source.refId ?? ''}`;
 }
 
+/** Active-preference lists are the personalization hot read; cache briefly. */
+const PREFS_CACHE_TTL_SECONDS = 60;
+
 export function createLearningService(deps: {
   db: Db;
   settings: SettingsService;
   audit: AuditService;
+  cache?: CacheService;
 }): LearningService {
-  const { db, settings, audit } = deps;
+  const { db, settings, audit, cache } = deps;
+
+  function prefsCacheKey(workspaceId: string, userId: string): string {
+    return cacheKey(workspaceId, 'lprefs', userId);
+  }
+
+  /** Every preference mutation invalidates the per-user hot list. */
+  async function invalidatePrefs(workspaceId: string, userId: string): Promise<void> {
+    await cache?.del(prefsCacheKey(workspaceId, userId));
+  }
 
   async function getRow(workspaceId: string, id: string): Promise<LearnedPreferencesTable> {
     const row = await db
@@ -290,6 +307,22 @@ export function createLearningService(deps: {
 
     async extractFromSources(workspaceId) {
       if (!(await service.isEnabled(workspaceId))) return { signals: 0 };
+      // Backpressure: when inference cannot keep up (pending backlog beyond
+      // the cap), stop producing new signals instead of growing the table
+      // unboundedly. Extraction is idempotent, so skipped windows are
+      // recovered on a later run once the backlog drains.
+      const pending = await db
+        .selectFrom('learningSignals')
+        .select((eb) => eb.fn.countAll<number>().as('n'))
+        .where('workspaceId', '=', workspaceId)
+        .where('processed', '=', 0)
+        .executeTakeFirst();
+      if (Number(pending?.n ?? 0) >= MAX_PENDING_SIGNALS) {
+        console.warn(
+          `[learning] backpressure: ${Number(pending?.n ?? 0)} pending signals in ${workspaceId}; skipping extraction`,
+        );
+        return { signals: 0 };
+      }
       const now = nowIso();
       const windowStart = new Date(Date.parse(now) - EXTRACTION_WINDOW_DAYS * DAY_MS).toISOString();
       const ctx = await buildExtractionContext(workspaceId, now);
@@ -406,6 +439,9 @@ export function createLearningService(deps: {
             .where('id', 'in', result.consumedSignalIds)
             .execute();
         }
+        if (result.created.length > 0 || result.updated.length > 0) {
+          await invalidatePrefs(workspaceId, userId);
+        }
       }
       return { created, updated };
     },
@@ -461,6 +497,7 @@ export function createLearningService(deps: {
           .set({ confidence: next, status: retire ? 'retired' : row.status, updatedAt: now })
           .where('id', '=', row.id)
           .execute();
+        await invalidatePrefs(workspaceId, row.userId);
         decayed += 1;
         if (retire) retired += 1;
       }
@@ -478,15 +515,23 @@ export function createLearningService(deps: {
     },
 
     async list(workspaceId, userId, opts = {}) {
-      let q = db
-        .selectFrom('learnedPreferences')
-        .selectAll()
-        .where('workspaceId', '=', workspaceId)
-        .where('userId', '=', userId)
-        .orderBy('confidence', 'desc');
-      if (!opts.includeInactive) q = q.where('status', '=', 'active');
-      if (opts.category !== undefined) q = q.where('category', '=', opts.category);
-      const rows = await q.execute();
+      const load = async (): Promise<LearnedPreferencesTable[]> => {
+        let q = db
+          .selectFrom('learnedPreferences')
+          .selectAll()
+          .where('workspaceId', '=', workspaceId)
+          .where('userId', '=', userId)
+          .orderBy('confidence', 'desc');
+        if (!opts.includeInactive) q = q.where('status', '=', 'active');
+        if (opts.category !== undefined) q = q.where('category', '=', opts.category);
+        return q.execute();
+      };
+      // Only the hot personalization shape (active, unfiltered) is cached —
+      // the cache is disposable and short-lived (see services/cache.ts).
+      const cacheable = cache !== undefined && !opts.includeInactive && opts.category === undefined;
+      const rows = cacheable
+        ? await cache.withCache(prefsCacheKey(workspaceId, userId), PREFS_CACHE_TTL_SECONDS, load)
+        : await load();
       return rows.map(parsePreferenceRow);
     },
 
@@ -622,6 +667,7 @@ export function createLearningService(deps: {
       } else {
         id = await insertPreference(workspaceId, userId, draft, now);
       }
+      await invalidatePrefs(workspaceId, userId);
       await audit.log({
         workspaceId,
         userId,
@@ -694,6 +740,7 @@ export function createLearningService(deps: {
       if (correction.note !== undefined) patch.userNote = correction.note;
 
       await db.updateTable('learnedPreferences').set(patch).where('id', '=', row.id).execute();
+      await invalidatePrefs(workspaceId, row.userId);
       await audit.log({
         workspaceId,
         userId,
@@ -711,6 +758,7 @@ export function createLearningService(deps: {
     async remove(workspaceId, id) {
       const row = await getRow(workspaceId, id);
       await db.deleteFrom('learnedPreferences').where('id', '=', row.id).execute();
+      await invalidatePrefs(workspaceId, row.userId);
       // Forget the evidence trail too: signals that fed this preference.
       await db
         .deleteFrom('learningSignals')
@@ -744,6 +792,7 @@ export function createLearningService(deps: {
       if (absorbedIds.length > 0) {
         await db.deleteFrom('learnedPreferences').where('id', 'in', absorbedIds).execute();
       }
+      if (merged.length > 0 || absorbedIds.length > 0) await invalidatePrefs(workspaceId, userId);
       return { merged: absorbedIds.length };
     },
 
@@ -797,6 +846,7 @@ export function createLearningService(deps: {
         }),
       })
       .execute();
+    await invalidatePrefs(workspaceId, userId);
     await audit.log({
       workspaceId,
       userId,

@@ -36,7 +36,7 @@ export function registerMemoryRoutes(app: FastifyInstance, ctx: AppContext): voi
     return { items, enabled };
   });
 
-  app.post('/api/memory', async (request) => {
+  app.post('/api/memory', { config: { idempotent: true } }, async (request) => {
     const body = CreateBody.safeParse(request.body);
     if (!body.success) throw badRequest('kind and content are required');
     const entry = await memory.create(request.workspaceId, request.userId, {

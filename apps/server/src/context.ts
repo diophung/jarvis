@@ -36,7 +36,8 @@ import type {
   UploadedFile,
 } from '@donna/core';
 import type { ConnectorRegistry, SecretResolver } from '@donna/connectors';
-import type { Db } from '@donna/db';
+import type { Db, DbMetrics } from '@donna/db';
+import type { DataDeletionRequestsTable } from '@donna/db';
 import type { LlmClient, LlmHealth } from '@donna/llm';
 import type { AppConfig } from './config.js';
 
@@ -292,6 +293,105 @@ export interface FeedbackService {
   ): Promise<void>;
 }
 
+// ---------- Cache (hot reads; disposable, never the source of truth) ----------
+export interface CacheStats {
+  backend: 'memory' | 'redis';
+  hits: number;
+  misses: number;
+  errors: number;
+  breakerState?: string;
+}
+
+export interface CacheService {
+  /** undefined on miss OR on any backend failure (cache fails open). */
+  get<T>(key: string): Promise<T | undefined>;
+  set(key: string, value: unknown, ttlSeconds: number): Promise<void>;
+  del(...keys: string[]): Promise<void>;
+  /** Read-through helper: get, else load + set. Loader errors propagate; cache errors do not. */
+  withCache<T>(key: string, ttlSeconds: number, loader: () => Promise<T>): Promise<T>;
+  stats(): CacheStats;
+  close(): Promise<void>;
+}
+
+// ---------- Idempotency (replay protection for unsafe writes) ----------
+export type IdempotencyBegin =
+  | { kind: 'replay'; responseStatus: number; responseBody: string | null }
+  | { kind: 'key_reuse_conflict' } // same key, different request body
+  | { kind: 'in_flight_conflict' } // concurrent duplicate still executing
+  | {
+      kind: 'proceed';
+      /** Persist the response so retries replay it. */
+      complete(responseStatus: number, responseBody: unknown): Promise<void>;
+      /** Release the key after a handler failure so the client may retry. */
+      abandon(): Promise<void>;
+    };
+
+export interface IdempotencyService {
+  begin(
+    workspaceId: string,
+    userId: string,
+    endpoint: string,
+    key: string,
+    requestHash: string,
+    opts?: { ttlHours?: number },
+  ): Promise<IdempotencyBegin>;
+  /** Worker GC: delete expired records, returns count. */
+  cleanupExpired(): Promise<number>;
+}
+
+// ---------- Vector store (semantic memory retrieval backend) ----------
+export interface VectorUpsertRecord {
+  chunkId: string;
+  providerConfigId: string | null;
+  model: string;
+  vector: number[];
+}
+
+export interface VectorSearchHit {
+  chunkId: string;
+  cosine: number;
+  sourceType: string;
+  refId: string;
+  text: string;
+  /** JSON metadata as stored on the chunk. */
+  metadata: string;
+  createdAt: string;
+}
+
+export interface VectorStore {
+  kind: 'sql_scan' | 'pgvector';
+  upsert(workspaceId: string, records: VectorUpsertRecord[]): Promise<void>;
+  search(
+    workspaceId: string,
+    model: string,
+    queryVector: number[],
+    opts?: { limit?: number; minCosine?: number; sourceTypes?: string[] },
+  ): Promise<VectorSearchHit[]>;
+  removeByChunkIds(chunkIds: string[]): Promise<void>;
+}
+
+// ---------- Privacy (export + deletion) ----------
+export interface DeletionRequestStatus extends Omit<DataDeletionRequestsTable, 'tablesPurged'> {
+  tablesPurged: Record<string, number>;
+}
+
+export interface PrivacyService {
+  /** Full account data export (per-table rows, capped, with truncation flags). Audited. */
+  exportAccountData(
+    workspaceId: string,
+    userId: string,
+  ): Promise<{
+    exportedAt: string;
+    user: unknown;
+    tables: Record<string, { rows: unknown[]; truncated: boolean }>;
+  }>;
+  /** Create a pending deletion job (409 when one is already in flight). Audited. */
+  requestDeletion(workspaceId: string, userId: string): Promise<DeletionRequestStatus>;
+  getDeletionStatus(workspaceId: string): Promise<DeletionRequestStatus | null>;
+  /** Worker: claim + execute pending deletion jobs. */
+  processPending(): Promise<{ processed: number }>;
+}
+
 // ---------- Self-learning ----------
 export interface UserCorrection {
   action: 'confirm' | 'mark_wrong' | 'pin' | 'unpin' | 'edit' | 'delete';
@@ -461,6 +561,10 @@ export interface Services {
   settings: SettingsService;
   secrets: SecretsService;
   tokens: TokensService;
+  cache: CacheService;
+  idempotency: IdempotencyService;
+  vectors: VectorStore;
+  privacy: PrivacyService;
   llm: LlmRouterService;
   ingestion: IngestionService;
   indexing: IndexingService;
@@ -482,6 +586,8 @@ export interface AppContext {
   db: Db;
   connectors: ConnectorRegistry;
   services: Services;
+  /** Query latency/error/slow-query observability fed by createDb's log hook. */
+  dbMetrics?: DbMetrics;
 }
 
 declare module 'fastify' {

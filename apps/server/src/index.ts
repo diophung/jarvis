@@ -1,6 +1,6 @@
 /** Donna API server entrypoint. */
 import { createDefaultRegistry } from '@donna/connectors';
-import { createDb, migrateToLatest } from '@donna/db';
+import { createDb, createDbMetrics, migrateToLatest } from '@donna/db';
 import { buildApp } from './app.js';
 import { bootstrap } from './bootstrap.js';
 import { loadConfig } from './config.js';
@@ -9,12 +9,28 @@ import { buildServices } from './services/index.js';
 import { createWorkerLoop } from './worker-loop.js';
 
 const config = loadConfig();
-const db = createDb({ databaseUrl: config.env.DATABASE_URL, sqlitePath: config.sqlitePath });
+const dbMetrics = createDbMetrics({
+  slowQueryMs: config.env.DONNA_DB_SLOW_QUERY_MS,
+  onSlowQuery: (e) =>
+    console.warn(`[db] slow query ${e.durationMs}ms (${e.operation}): ${e.sql}`),
+});
+const db = createDb({
+  databaseUrl: config.env.DATABASE_URL,
+  sqlitePath: config.sqlitePath,
+  metrics: dbMetrics,
+  pool: {
+    size: config.env.DONNA_DB_POOL_SIZE,
+    connectTimeoutMs: config.env.DONNA_DB_CONNECT_TIMEOUT_MS,
+    idleTimeoutMs: config.env.DONNA_DB_IDLE_TIMEOUT_MS,
+    statementTimeoutMs: config.env.DONNA_DB_STATEMENT_TIMEOUT_MS,
+  },
+  applicationName: 'donna-api',
+});
 await migrateToLatest(db);
 
 const connectors = createDefaultRegistry();
-const services = buildServices({ db, config, connectors });
-const ctx: AppContext = { config, db, connectors, services };
+const services = await buildServices({ db, config, connectors });
+const ctx: AppContext = { config, db, connectors, services, dbMetrics };
 
 const boot = await bootstrap(db, config, services);
 const app = await buildApp(ctx);
@@ -47,6 +63,7 @@ worker?.start();
 const close = async () => {
   worker?.stop();
   await app.close();
+  await services.cache.close();
   await db.destroy();
   process.exit(0);
 };

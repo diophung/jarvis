@@ -119,7 +119,7 @@ export function registerTaskRoutes(app: FastifyInstance, ctx: AppContext): void 
     return { task: parseTaskCandidateRow(row) };
   });
 
-  app.post('/api/feedback', async (request) => {
+  app.post('/api/feedback', { config: { idempotent: true } }, async (request) => {
     const body = FeedbackSchema.safeParse(request.body ?? {});
     if (!body.success) {
       throw badRequest(

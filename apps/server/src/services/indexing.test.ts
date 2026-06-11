@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { LlmRouterService, RoutedLlm } from '../context.js';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';
 import { createIndexingService } from './indexing.js';
+import { createSqlScanVectorStore } from './vector-store.js';
 
 const TEXT = [
   'Quarterly planning kicks off next week with the budget review.',
@@ -50,7 +51,7 @@ describe('indexing service', () => {
   it('chunks text into retrieval_chunks with metadata (no embedding provider)', async () => {
     const db = await createTestDb();
     const { workspaceId } = await seedWorkspace(db);
-    const indexing = createIndexingService({ db, llm: nullEmbeddingRouter() });
+    const indexing = createIndexingService({ db, llm: nullEmbeddingRouter(), vectors: createSqlScanVectorStore({ db }) });
 
     const result = await indexing.indexText(workspaceId, 'uploaded_file', 'upl_1', TEXT, {
       title: 'plan.txt',
@@ -75,7 +76,7 @@ describe('indexing service', () => {
   it('replaces existing chunks on re-index', async () => {
     const db = await createTestDb();
     const { workspaceId } = await seedWorkspace(db);
-    const indexing = createIndexingService({ db, llm: nullEmbeddingRouter() });
+    const indexing = createIndexingService({ db, llm: nullEmbeddingRouter(), vectors: createSqlScanVectorStore({ db }) });
 
     await indexing.indexText(workspaceId, 'source_item', 'itm_1', 'first version text', {});
     const before = await db
@@ -100,7 +101,7 @@ describe('indexing service', () => {
   it('skips empty text (0 chunks) and clears any previous index', async () => {
     const db = await createTestDb();
     const { workspaceId } = await seedWorkspace(db);
-    const indexing = createIndexingService({ db, llm: nullEmbeddingRouter() });
+    const indexing = createIndexingService({ db, llm: nullEmbeddingRouter(), vectors: createSqlScanVectorStore({ db }) });
 
     await indexing.indexText(workspaceId, 'memory', 'mem_1', 'remember this fact', {});
     const result = await indexing.indexText(workspaceId, 'memory', 'mem_1', '   \n  ', {});
@@ -116,7 +117,7 @@ describe('indexing service', () => {
   it('embeds all chunks when an embedding provider is configured', async () => {
     const db = await createTestDb();
     const { workspaceId } = await seedWorkspace(db);
-    const indexing = createIndexingService({ db, llm: mockEmbeddingRouter() });
+    const indexing = createIndexingService({ db, llm: mockEmbeddingRouter(), vectors: createSqlScanVectorStore({ db }) });
 
     const result = await indexing.indexText(workspaceId, 'uploaded_file', 'upl_2', TEXT, {
       title: 'plan.txt',
@@ -143,7 +144,7 @@ describe('indexing service', () => {
   it('keeps chunks and reports embedded:false when embedding fails', async () => {
     const db = await createTestDb();
     const { workspaceId } = await seedWorkspace(db);
-    const indexing = createIndexingService({ db, llm: failingEmbeddingRouter() });
+    const indexing = createIndexingService({ db, llm: failingEmbeddingRouter(), vectors: createSqlScanVectorStore({ db }) });
 
     const result = await indexing.indexText(workspaceId, 'digest', 'dig_1', TEXT, {});
     expect(result.chunks).toBeGreaterThan(0);
@@ -162,7 +163,7 @@ describe('indexing service', () => {
   it('removeIndex deletes chunks and their embeddings', async () => {
     const db = await createTestDb();
     const { workspaceId } = await seedWorkspace(db);
-    const indexing = createIndexingService({ db, llm: mockEmbeddingRouter() });
+    const indexing = createIndexingService({ db, llm: mockEmbeddingRouter(), vectors: createSqlScanVectorStore({ db }) });
 
     await indexing.indexText(workspaceId, 'uploaded_file', 'upl_3', TEXT, {});
     await indexing.removeIndex('uploaded_file', 'upl_3');
