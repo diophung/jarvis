@@ -23,7 +23,7 @@ The spec defines ten layers. Each maps to a concrete package or directory:
 | 2 | Ingestion & normalization | `packages/core/src/ingestion` (pure normalize/chunk) + `apps/server/src/services/ingestion.ts` (sync pipeline) |
 | 3 | LLM provider | `packages/llm` — fetch-based adapters (anthropic, gemini, openai/openai_compatible, mock), `LlmClient`, structured output |
 | 4 | Retrieval | `apps/server/src/services/indexing.ts` + `retrieval.ts` over `retrieval_chunks` / `embedding_records` |
-| 5 | Memory & preferences | `apps/server/src/services/memory.ts`, `feedback.ts` + `memory_entries` / `user_preferences` tables |
+| 5 | Memory & preferences | `apps/server/src/services/memory.ts`, `feedback.ts` + `memory_entries` / `user_preferences` tables; self-learning: `packages/core/src/learning` (pure) + `services/learning.ts`, `personalization.ts` + `learning_signals` / `learned_preferences` tables — see [self-learning.md](./self-learning.md) |
 | 6 | Priority intelligence | `packages/core/src/scoring` (pure engine) + `apps/server/src/services/scoring.ts` |
 | 7 | Assistant orchestration | `apps/server/src/services/assistant.ts`, `digest.ts` + `packages/core/src/digest` (pure planner) |
 | 8 | Permission & approval | `packages/core/src/capabilities.ts` + `policy/engine.ts` (pure) + `apps/server/src/services/actions.ts` |
@@ -151,11 +151,12 @@ goes through `propose`:
 
 ## Normalized data model
 
-Two migrations define all 31 tables in a portable SQL subset that runs
+Three migrations define all 33 tables in a portable SQL subset that runs
 identically on SQLite and Postgres: `packages/db/src/migrations/0001_init.ts`
-(the original 28) and `0002_auth_oauth.ts` (v1.1: `auth_accounts`,
+(the original 28), `0002_auth_oauth.ts` (v1.1: `auth_accounts`,
 `sessions`, `oauth_tokens`, plus new columns on `users` and
-`source_accounts`).
+`source_accounts`), and `0003_self_learning.ts` (v1.2: `learning_signals`,
+`learned_preferences`).
 
 **Portability conventions** (enforced throughout):
 
@@ -168,7 +169,7 @@ identically on SQLite and Postgres: `packages/db/src/migrations/0001_init.ts`
   `fromJson()` / serialized with `toJson()` from `@donna/core`
 - columns are snake_case in SQL, camelCase in code (Kysely `CamelCasePlugin`)
 
-The 31 tables, grouped:
+The 33 tables, grouped:
 
 | Group | Tables | Notes |
 |-------|--------|-------|
@@ -178,6 +179,7 @@ The 31 tables, grouped:
 | People & projects | `people`, `organizations`, `projects` | priority context: person `importance` (`vip`…`ignore`), project keywords and due dates feed scoring |
 | Prioritization & digests | `task_candidates`, `digests`, `digest_items`, `item_feedback` | scores, levels, planning category, and `signals` (JSON `ScoreSignal[]`) explain every ranking |
 | Memory & preferences | `memory_entries`, `user_preferences` | durable personalization; memory entries carry kind, origin, confidence, enabled flag, provenance |
+| Self-learning | `learning_signals`, `learned_preferences` | privacy-guarded learning observations and the evidence-backed, decaying preference model ([self-learning.md](./self-learning.md)) |
 | Permissions & actions | `permission_policies`, `approval_requests`, `agent_actions` | the policy/approval state machine described above |
 | Conversations | `conversations`, `messages` | messages store citations and suggested actions as JSON |
 | LLM | `llm_provider_configs`, `llm_task_routes`, `llm_call_logs` | provider configs hold `api_key_env` (env var *name*) or `api_key_encrypted` (AES-256-GCM, key derived from `DONNA_SECRET`); call logs record counts/latency only — never message content |
@@ -192,7 +194,8 @@ The 31 tables, grouped:
 ```ts
 export interface Services {
   audit; settings; secrets; tokens; llm; ingestion; indexing; retrieval;
-  scoring; digest; actions; memory; feedback; assistant; storage; uploads;
+  scoring; digest; actions; memory; feedback; learning; personalization;
+  assistant; storage; uploads;
 }
 
 export interface AppContext {
@@ -315,6 +318,10 @@ failure never blocks the others:
    days from creation) become `expired`, audited as `approval.expired`.
 4. **Session cleanup** — expired `sessions` rows are garbage-collected
    (`sessions.deleteExpired`).
+5. **Self-learning** — per workspace, at most hourly, `learning.learnNow`
+   extracts learning signals from recent items/approvals and infers
+   preferences; once a day `learning.decayConfidence` decays and retires
+   unreinforced preferences (see [self-learning.md](./self-learning.md)).
 
 The loop runs in-process with the API by default; set
 `DONNA_INLINE_WORKER=false` and run `pnpm --filter @donna/server worker` to
