@@ -131,6 +131,19 @@ Conventions:
 - `GET /api/memory/export` → `{ items: MemoryEntry[] }` (download-friendly)
 - `PUT /api/memory/settings` `{ enabled: boolean }` → `{ enabled }`
 
+## Self-learning (learned preferences)
+See [self-learning.md](./self-learning.md) for the full subsystem reference.
+- `GET /api/learning` (`?category=`) → `{ preferences: LearnedPreference[], enabled: boolean, actionableConfidence: number }` (all statuses; UI marks tentative/rejected/retired)
+- `POST /api/learning/preferences` `{ statement, category?, scope? }` → `{ preference }` (explicit origin; 400 `sensitive_attribute` when the statement touches a blocked sensitive topic)
+- `GET /api/learning/preferences/:id/explain` → `{ preference, recentSignals: LearningSignal[] }` ("why Donna thinks this")
+- `POST /api/learning/preferences/:id/correct` `{ action: 'confirm'|'mark_wrong'|'pin'|'unpin'|'edit'|'delete', statement?, note? }` → `{ preference | null }`
+- `DELETE /api/learning/preferences/:id` → `{ ok: true }` (also deletes the evidence signals)
+- `GET /api/learning/search?q=` → `{ preferences }`
+- `GET /api/learning/contradictions` → `{ contradictions: ContradictionReportEntry[] }`
+- `POST /api/learning/run` → `{ signals, created, updated }` (manual extract + infer pass; 400 when learning is disabled)
+- `POST /api/learning/draft-feedback` `{ original, edited, audience?, channel?, refId? }` → `{ signals }` (style learning from a user's edit of an AI draft)
+- `PUT /api/learning/settings` `{ enabled: boolean }` → `{ enabled }`
+
 ## Preferences
 - `GET /api/preferences` → `{ items: UserPreference[] }`
 - `PUT /api/preferences/:key` `{ value: unknown }` → `{ preference }` (kind 'explicit', origin 'user')

@@ -494,6 +494,49 @@ export interface ItemFeedbackTable {
   createdAt: string;
 }
 
+export interface LearningSignalsTable {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  kind: string;
+  key: string;
+  value: string;
+  strength: number;
+  scope: string; // json LearningScope
+  detail: string | null;
+  source: string; // json SignalSource
+  observedAt: string;
+  processed: number; // 0|1
+  createdAt: string;
+}
+
+export interface LearnedPreferencesTable {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  category: string;
+  key: string;
+  value: string;
+  statement: string;
+  scope: string; // json LearningScope
+  scopeKey: string; // canonical scope serialization (uniqueness)
+  origin: string; // 'explicit' | 'feedback' | 'inferred'
+  status: string; // 'active' | 'rejected' | 'retired'
+  confidence: number;
+  evidenceCount: number;
+  evidenceWeight: number;
+  contradictionCount: number;
+  pinned: number; // 0|1
+  decayHalfLifeDays: number;
+  lastReinforcedAt: string;
+  explanation: string;
+  sources: string; // json SignalSource[]
+  contradictions: string; // json SignalSource[]
+  userNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppSettingsTable {
   id: string;
   workspaceId: string;
@@ -534,4 +577,6 @@ export interface DB {
   agentActions: AgentActionsTable;
   itemFeedback: ItemFeedbackTable;
   appSettings: AppSettingsTable;
+  learningSignals: LearningSignalsTable;
+  learnedPreferences: LearnedPreferencesTable;
 }

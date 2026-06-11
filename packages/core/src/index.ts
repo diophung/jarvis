@@ -13,3 +13,11 @@ export * from './ingestion/chunk.js';
 export * from './scoring/engine.js';
 export * from './policy/engine.js';
 export * from './digest/planner.js';
+// Self-learning subsystem (signals -> preferences -> personalization):
+export * from './learning/types.js';
+export * from './learning/privacy.js';
+export * from './learning/style.js';
+export * from './learning/confidence.js';
+export * from './learning/extract.js';
+export * from './learning/infer.js';
+export * from './learning/personalize.js';

@@ -9,15 +9,26 @@ import type {
   AuditLog,
   Citation,
   ConnectorRun,
+  ContradictionReportEntry,
   Digest,
   DigestItem,
+  DraftEditInput,
+  ExplicitStatementInput,
   FeedbackKind,
+  FeedbackObservation,
+  LearnedPreference,
+  LearningScope,
+  LearningSignal,
+  LearningSignalInput,
   LlmProviderKind,
   LlmTask,
   MemoryEntry,
   MemoryKind,
   Message,
+  PersonalizationRequest,
+  PersonalizationResult,
   PolicyDecision,
+  PreferenceCategory,
   RiskLevel,
   ScoringContext,
   SourceCategory,
@@ -65,6 +76,10 @@ export const SETTING_KEYS = {
   memoryEnabled: 'memory.enabled', // boolean (default true)
   syncIntervalMinutes: 'sync.intervalMinutes', // number (default 15)
   responseStyle: 'assistant.responseStyle', // 'concise' | 'detailed'
+  learningEnabled: 'learning.enabled', // boolean (default true)
+  learningLastExtractedAt: 'learning.lastExtractedAt', // ISO string watermark
+  learningLastRunAt: 'learning.lastRunAt', // ISO string (worker cadence)
+  learningLastDecayAt: 'learning.lastDecayAt', // ISO string (daily decay)
 } as const;
 
 // ---------- Secrets ----------
@@ -277,6 +292,103 @@ export interface FeedbackService {
   ): Promise<void>;
 }
 
+// ---------- Self-learning ----------
+export interface UserCorrection {
+  action: 'confirm' | 'mark_wrong' | 'pin' | 'unpin' | 'edit' | 'delete';
+  /** Replacement statement for 'edit'. */
+  statement?: string;
+  /** Optional user note recorded on the preference. */
+  note?: string;
+}
+
+export interface LearningService {
+  isEnabled(workspaceId: string): Promise<boolean>;
+  /** Privacy-guarded signal intake (sensitive content is dropped, never stored). Returns count stored. */
+  recordSignals(
+    workspaceId: string,
+    userId: string,
+    signals: LearningSignalInput[],
+  ): Promise<number>;
+  /** Extract signals from source items + approval decisions since the watermark. */
+  extractFromSources(workspaceId: string): Promise<{ signals: number }>;
+  /** Aggregate pending signals into learned preferences. */
+  runInference(workspaceId: string): Promise<{ created: number; updated: number }>;
+  /** extract + infer + merge in one audited pass (worker / manual trigger). */
+  learnNow(workspaceId: string): Promise<{ signals: number; created: number; updated: number }>;
+  /** Apply confidence decay; retire unreinforced preferences below threshold. */
+  decayConfidence(workspaceId: string): Promise<{ decayed: number; retired: number }>;
+  list(
+    workspaceId: string,
+    userId: string,
+    opts?: { includeInactive?: boolean; category?: PreferenceCategory },
+  ): Promise<LearnedPreference[]>;
+  get(workspaceId: string, id: string): Promise<LearnedPreference | null>;
+  /** "Why Donna thinks this": preference + the recent signals behind it. */
+  explain(
+    workspaceId: string,
+    id: string,
+  ): Promise<{ preference: LearnedPreference; recentSignals: LearningSignal[] }>;
+  /** Actionable preferences matching a context, most specific scope last. */
+  getPreferencesByContext(
+    workspaceId: string,
+    userId: string,
+    context: LearningScope,
+  ): Promise<LearnedPreference[]>;
+  /** Keyword search over statements/keys (searchMemory). */
+  search(workspaceId: string, userId: string, query: string): Promise<LearnedPreference[]>;
+  /** User-stated preference, stored at explicit origin/confidence. */
+  createExplicit(
+    workspaceId: string,
+    userId: string,
+    input: { statement: string; category?: PreferenceCategory; scope?: LearningScope },
+  ): Promise<LearnedPreference>;
+  /** Confirm / pin / edit / mark wrong / delete — explicit feedback always wins. */
+  applyUserCorrection(
+    workspaceId: string,
+    userId: string,
+    preferenceId: string,
+    correction: UserCorrection,
+  ): Promise<LearnedPreference | null>;
+  remove(workspaceId: string, id: string): Promise<void>;
+  /** Merge same-key/value preferences whose scopes nest (mergeSimilarMemories). */
+  mergeSimilar(workspaceId: string, userId: string): Promise<{ merged: number }>;
+  detectContradictions(
+    workspaceId: string,
+    userId: string,
+  ): Promise<ContradictionReportEntry[]>;
+  /** Synchronous hook: learn from explicit item feedback. */
+  learnFromFeedback(
+    workspaceId: string,
+    userId: string,
+    observation: FeedbackObservation,
+  ): Promise<void>;
+  /** Synchronous hook: learn style from a user's edit of an AI draft. */
+  learnFromDraftEdit(
+    workspaceId: string,
+    userId: string,
+    input: DraftEditInput,
+  ): Promise<number>;
+  /** Synchronous hook: parse explicit preference commands out of user text. */
+  learnFromText(
+    workspaceId: string,
+    userId: string,
+    input: ExplicitStatementInput,
+  ): Promise<number>;
+}
+
+export interface PersonalizationService {
+  /**
+   * Personalization config + the applied preferences with reasons for a
+   * task. Live calendar density feeds the cognitive-load `userBusy` hint
+   * unless the caller sets it.
+   */
+  forTask(
+    workspaceId: string,
+    userId: string,
+    req: PersonalizationRequest,
+  ): Promise<PersonalizationResult>;
+}
+
 // ---------- Assistant ----------
 export type AssistantStreamEvent =
   | { type: 'delta'; text: string }
@@ -358,6 +470,8 @@ export interface Services {
   actions: ActionsService;
   memory: MemoryService;
   feedback: FeedbackService;
+  learning: LearningService;
+  personalization: PersonalizationService;
   assistant: AssistantService;
   storage: StorageService;
   uploads: UploadsService;

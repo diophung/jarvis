@@ -10,8 +10,10 @@ import { createDigestService } from './digest.js';
 import { createFeedbackService } from './feedback.js';
 import { createIndexingService } from './indexing.js';
 import { createIngestionService } from './ingestion.js';
+import { createLearningService } from './learning.js';
 import { createLlmRouterService } from './llm-router.js';
 import { createMemoryService } from './memory.js';
+import { createPersonalizationService } from './personalization.js';
 import { createRetrievalService } from './retrieval.js';
 import { createScoringService } from './scoring.js';
 import { createSecretsService } from './secrets.js';
@@ -38,11 +40,23 @@ export function buildServices(deps: {
   const ingestion = createIngestionService({ db, connectors, secrets, audit, settings, indexing, tokens });
   const uploads = createUploadsService({ db, storage, indexing, audit });
   const scoring = createScoringService({ db, llm, audit });
-  const digest = createDigestService({ db, llm, scoring, audit, settings });
-  const feedback = createFeedbackService({ db, audit });
+  const learning = createLearningService({ db, settings, audit });
+  const personalization = createPersonalizationService({ db, learning });
+  const digest = createDigestService({ db, llm, scoring, audit, settings, personalization });
+  const feedback = createFeedbackService({ db, audit, learning });
   const memory = createMemoryService({ db, settings, audit });
   const actions = createActionsService({ db, connectors, secrets, audit, memory, tokens });
-  const assistant = createAssistantService({ db, llm, retrieval, memory, actions, settings, audit });
+  const assistant = createAssistantService({
+    db,
+    llm,
+    retrieval,
+    memory,
+    actions,
+    settings,
+    audit,
+    learning,
+    personalization,
+  });
 
   return {
     tokens,
@@ -58,6 +72,8 @@ export function buildServices(deps: {
     actions,
     memory,
     feedback,
+    learning,
+    personalization,
     assistant,
     storage,
     uploads,

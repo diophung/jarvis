@@ -16,6 +16,7 @@ import {
   PLANNING_CATEGORIES,
   PLANNING_CATEGORY_LABELS,
   toJson,
+  type AppliedPreference,
   type Citation,
   type MemoryEntry,
   type Message,
@@ -32,8 +33,10 @@ import {
   type AssistantService,
   type AssistantStreamEvent,
   type AuditService,
+  type LearningService,
   type LlmRouterService,
   type MemoryService,
+  type PersonalizationService,
   type ProposeActionInput,
   type RetrievalService,
   type SearchResult,
@@ -49,6 +52,9 @@ export interface AssistantServiceDeps {
   actions: ActionsService;
   settings: SettingsService;
   audit: AuditService;
+  /** Optional self-learning hooks (explicit-statement capture + personalization). */
+  learning?: LearningService;
+  personalization?: PersonalizationService;
 }
 
 const DEMO_FOOTER =
@@ -104,6 +110,8 @@ interface AssembledContext {
   tasks: TaskRow[];
   calendar: CalendarRow[];
   digestSummary: string | null;
+  /** Learned preferences applied to this reply, with reasons (explainable personalization). */
+  appliedPreferences: AppliedPreference[];
 }
 
 type DemoIntent =
@@ -261,30 +269,37 @@ async function loadUpcomingCalendar(
 async function assembleContext(
   deps: AssistantServiceDeps,
   workspaceId: string,
+  userId: string,
   query: string,
 ): Promise<AssembledContext> {
-  const { db, memory, retrieval, settings } = deps;
+  const { db, memory, retrieval, settings, personalization } = deps;
   const now = Date.now();
-  const [memories, responseStyle, retrieved, tasks, calendar, digestRow] = await Promise.all([
-    memory.relevant(workspaceId, query, 5),
-    settings.get<string>(workspaceId, SETTING_KEYS.responseStyle, 'concise'),
-    retrieval.search(workspaceId, query, { limit: 8 }),
-    loadTopTasks(db, workspaceId),
-    loadUpcomingCalendar(
-      db,
-      workspaceId,
-      new Date(now).toISOString(),
-      new Date(now + CALENDAR_HORIZON_MS).toISOString(),
-    ),
-    db
-      .selectFrom('digests')
-      .select(['id', 'summaryMarkdown'])
-      .where('workspaceId', '=', workspaceId)
-      .where('status', '=', 'ready')
-      .orderBy('createdAt', 'desc')
-      .limit(1)
-      .executeTakeFirst(),
-  ]);
+  const [memories, responseStyle, retrieved, tasks, calendar, digestRow, personalized] =
+    await Promise.all([
+      memory.relevant(workspaceId, query, 5),
+      settings.get<string>(workspaceId, SETTING_KEYS.responseStyle, 'concise'),
+      retrieval.search(workspaceId, query, { limit: 8 }),
+      loadTopTasks(db, workspaceId),
+      loadUpcomingCalendar(
+        db,
+        workspaceId,
+        new Date(now).toISOString(),
+        new Date(now + CALENDAR_HORIZON_MS).toISOString(),
+      ),
+      db
+        .selectFrom('digests')
+        .select(['id', 'summaryMarkdown'])
+        .where('workspaceId', '=', workspaceId)
+        .where('status', '=', 'ready')
+        .orderBy('createdAt', 'desc')
+        .limit(1)
+        .executeTakeFirst(),
+      personalization !== undefined
+        ? personalization
+            .forTask(workspaceId, userId, { task: 'chat_reply', channel: 'chat' })
+            .catch(() => null)
+        : Promise.resolve(null),
+    ]);
   return {
     memories,
     responseStyle,
@@ -292,6 +307,7 @@ async function assembleContext(
     tasks,
     calendar,
     digestSummary: digestRow?.summaryMarkdown ?? null,
+    appliedPreferences: personalized?.applied ?? [],
   };
 }
 
@@ -566,6 +582,15 @@ function buildContextBlock(ctx: AssembledContext): string {
   lines.push('', 'Memories about the user:');
   if (ctx.memories.length === 0) lines.push('(none)');
   for (const m of ctx.memories) lines.push(`- ${m.content}`);
+  if (ctx.appliedPreferences.length > 0) {
+    lines.push(
+      '',
+      'Learned preferences (apply these to your reply; the user can inspect and correct them):',
+    );
+    for (const p of ctx.appliedPreferences) {
+      lines.push(`- ${p.statement} (${p.reason})`);
+    }
+  }
   lines.push('', 'Latest digest summary:');
   lines.push(ctx.digestSummary !== null ? truncate(ctx.digestSummary, 1500) : '(none)');
   return lines.join('\n');
@@ -1000,7 +1025,7 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
       const firstUserContent = recent.find((m) => m.role === 'user')?.content ?? query;
 
       try {
-        const context = await assembleContext(deps, workspaceId, query);
+        const context = await assembleContext(deps, workspaceId, userId, query);
         const routed = await llm.clientForTask(workspaceId, 'chat', { conversationId }, userId);
         const user = await db
           .selectFrom('users')
@@ -1020,6 +1045,20 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
             provenance: { conversationId },
           });
           memoryNoted = true;
+        }
+        // Self-learning: structured explicit commands ("keep replies short",
+        // "x@y is high priority") become explicit preferences immediately.
+        if (deps.learning !== undefined) {
+          try {
+            await deps.learning.learnFromText(workspaceId, userId, {
+              text: query,
+              refId: conversationId,
+              sourceType: 'chat_message',
+              observedAt: nowIso(),
+            });
+          } catch (err) {
+            console.error('[assistant] learning capture failed', err);
+          }
         }
 
         // h. Agentic intents go through the policy-gated actions service.

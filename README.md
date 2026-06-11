@@ -253,6 +253,10 @@ Donna separates what you *told* her from what she *guessed*:
 
 The Memory page shows everything, grouped by kind (preferences, facts, people, projects, behaviors, instructions). You can edit or delete any single entry, toggle individual entries off, export everything as JSON, or disable memory entirely with one switch — Donna stops reading *and* writing memories while it's off.
 
+## Self-learning
+
+On top of the memory notebook, Donna continuously **learns how you work** — from repeated behavior (who you answer fast, how you write to whom, what you approve), from your feedback, from your edits to AI drafts, and from explicit commands ("keep summaries short"). Learned preferences are tendencies with confidence scores, evidence trails, and per-context scope (terse with the team can coexist with warm to clients); they decay when not reinforced, and they personalize chat, drafting, and the daily debrief — always with a visible "why". The **Learned Preferences** page shows everything with its evidence; you can confirm, pin, edit, mark wrong, or delete any of it, and sensitive attributes (health, politics, religion, and similar) are never learned at all. Grounded in mainstream behavioral science — see [docs/self-learning.md](./docs/self-learning.md) and [docs/self_learning_psychology_foundation.md](./docs/self_learning_psychology_foundation.md).
+
 ## Daily debrief pipeline
 
 Deterministic rules first, LLM polish second:

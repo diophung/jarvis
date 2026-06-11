@@ -37,4 +37,6 @@ export const IdPrefix = {
   agentAction: 'act',
   itemFeedback: 'fbk',
   appSetting: 'set',
+  learningSignal: 'sig',
+  learnedPreference: 'lpr',
 } as const;

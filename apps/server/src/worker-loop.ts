@@ -1,5 +1,5 @@
 /**
- * Background worker loop. Each tick runs three independent sub-jobs (each in
+ * Background worker loop. Each tick runs independent sub-jobs (each in
  * its own try/catch so one failure never blocks the others):
  *
  *  1. Scheduled digests: per workspace, when the digest.schedule setting is
@@ -9,6 +9,9 @@
  *  2. Connector syncs: ingestion.syncDueAccounts (interval-based, scheduled).
  *  3. Approval expiry: pending approval_requests past expiresAt become
  *     'expired' (audited as 'approval.expired').
+ *  4. Session cleanup: expired sessions rows are garbage-collected.
+ *  5. Self-learning: hourly signal extraction + preference inference per
+ *     workspace, plus daily confidence decay (learning.* settings keys).
  */
 import { nowIso } from '@donna/core';
 import { Cron } from 'croner';
@@ -17,8 +20,11 @@ import { SETTING_KEYS } from './context.js';
 import { DEFAULT_DIGEST_SCHEDULE } from './routes/digests.js';
 import { createSessionsService } from './services/sessions.js';
 
+const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
 const DEFAULT_TICK_MS = 60_000;
+/** Learning runs (extract + infer) at most once per hour per workspace. */
+const LEARNING_INTERVAL_MS = HOUR_MS;
 
 export interface WorkerLoop {
   start(): void;
@@ -34,7 +40,7 @@ interface DigestSchedule {
 export function createWorkerLoop(ctx: AppContext, opts: { tickMs?: number } = {}): WorkerLoop {
   const tickMs = opts.tickMs ?? DEFAULT_TICK_MS;
   const { db } = ctx;
-  const { settings, digest, ingestion, audit } = ctx.services;
+  const { settings, digest, ingestion, audit, learning } = ctx.services;
   const sessions = createSessionsService(db);
   let timer: ReturnType<typeof setInterval> | null = null;
   /** Reentrancy latch: a slow tick (e.g. real-LLM digest >60s) must not overlap the next. */
@@ -101,6 +107,44 @@ export function createWorkerLoop(ctx: AppContext, opts: { tickMs?: number } = {}
     }
   }
 
+  /**
+   * Self-learning maintenance: hourly extract+infer, daily confidence decay.
+   * Decay implements "memories fade unless reinforced" — see
+   * docs/self_learning_psychology_foundation.md (habit formation).
+   */
+  async function runLearning(): Promise<void> {
+    const workspaces = await db.selectFrom('workspaces').select(['id']).execute();
+    const nowMs = Date.now();
+    for (const ws of workspaces) {
+      try {
+        if (!(await learning.isEnabled(ws.id))) continue;
+        const lastRunAt = await settings.get<string | null>(
+          ws.id,
+          SETTING_KEYS.learningLastRunAt,
+          null,
+        );
+        const lastRunMs = lastRunAt !== null ? Date.parse(lastRunAt) : Number.NaN;
+        if (Number.isNaN(lastRunMs) || nowMs - lastRunMs >= LEARNING_INTERVAL_MS) {
+          await learning.learnNow(ws.id);
+          await settings.set(ws.id, SETTING_KEYS.learningLastRunAt, nowIso());
+        }
+
+        const lastDecayAt = await settings.get<string | null>(
+          ws.id,
+          SETTING_KEYS.learningLastDecayAt,
+          null,
+        );
+        const lastDecayMs = lastDecayAt !== null ? Date.parse(lastDecayAt) : Number.NaN;
+        if (Number.isNaN(lastDecayMs) || nowMs - lastDecayMs >= DAY_MS) {
+          await learning.decayConfidence(ws.id);
+          await settings.set(ws.id, SETTING_KEYS.learningLastDecayAt, nowIso());
+        }
+      } catch (err) {
+        console.error(`[worker] learning job failed for workspace ${ws.id}`, err);
+      }
+    }
+  }
+
   async function tick(): Promise<void> {
     if (running) return;
     running = true;
@@ -124,6 +168,11 @@ export function createWorkerLoop(ctx: AppContext, opts: { tickMs?: number } = {}
         await sessions.deleteExpired();
       } catch (err) {
         console.error('[worker] session cleanup failed', err);
+      }
+      try {
+        await runLearning();
+      } catch (err) {
+        console.error('[worker] learning job failed', err);
       }
     } finally {
       running = false;
