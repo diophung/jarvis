@@ -2,7 +2,7 @@ import type { CapabilityDef } from '@donna/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LlmProviderPublic } from './settings/shared.js';
 import { SettingsPage } from './SettingsPage.js';
@@ -178,6 +178,12 @@ function stubFetch() {
   );
 }
 
+/** Exposes the router location so tests can assert query params get cleared. */
+function LocationProbe() {
+  const location = useLocation();
+  return <div data-testid="location">{location.pathname + location.search}</div>;
+}
+
 function renderAt(path: string) {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -190,6 +196,7 @@ function renderAt(path: string) {
           <Route path="/settings/:tab" element={<SettingsPage />} />
           <Route path="*" element={<div data-testid="elsewhere" />} />
         </Routes>
+        <LocationProbe />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -366,11 +373,28 @@ describe('SettingsPage', () => {
     expect(screen.queryByRole('link', { name: 'Link Google' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Link Facebook' })).toHaveAttribute(
       'href',
-      expect.stringContaining('/api/auth/oauth/facebook/start?link=1&returnTo='),
+      expect.stringContaining(
+        `/api/auth/oauth/facebook/start?link=1&returnTo=${encodeURIComponent('/settings/security')}`,
+      ),
     );
     expect(screen.getByRole('link', { name: 'Link Apple' })).toBeInTheDocument();
     // Email verification badge reflects the unverified fixture user.
     expect(screen.getByText('Unverified')).toBeInTheDocument();
+  });
+
+  it('shows friendly copy for ?linkError=already_linked and strips the param', async () => {
+    renderAt('/settings/security?linkError=already_linked');
+    expect(
+      await screen.findByText('That account is already linked to a different user.'),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('location')).toHaveTextContent(/^\/settings\/security$/);
+    });
+  });
+
+  it('shows generic copy for unrecognized linkError codes', async () => {
+    renderAt('/settings/security?linkError=oauth_failed');
+    expect(await screen.findByText('Linking failed — try again.')).toBeInTheDocument();
   });
 
   it('unlinks a linked account via DELETE /api/auth/accounts/:id', async () => {

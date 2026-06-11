@@ -218,6 +218,21 @@ describe('SourcesPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('gates oauth-connectable entries whose env is not configured (no dead Connect button)', async () => {
+    stubFetch({
+      catalog: [demoConnector, { ...gmailConnector, configured: false, oauthConnectable: true }],
+    });
+    renderPage();
+    expect(await screen.findByText('Gmail')).toBeInTheDocument();
+    // No Connect-with-Google link: starting the flow without server-side
+    // credentials would dead-end on a raw JSON error.
+    expect(screen.queryByRole('link', { name: 'Connect with Google' })).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Requires env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Connect' })).toBeDisabled();
+  });
+
   it('shows scope chips, last error, and a Reconnect link for needs_auth accounts', async () => {
     stubFetch({ accounts: [gmailAccount] });
     renderPage();

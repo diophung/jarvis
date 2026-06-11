@@ -489,8 +489,9 @@ async function touchUserLogin(
  *
  * 'link': attach the identity to ctx.userId (already-linked-elsewhere fails).
  * 'login': existing authAccount wins; otherwise link by VERIFIED email match,
- * or provision a new user when signup is allowed. An unverified provider
- * email never links to an existing account (account-takeover protection).
+ * or provision a new user when signup is allowed AND the provider email is
+ * verified. An unverified provider email never links to an existing account
+ * (account-takeover protection) and never provisions a new one.
  */
 export async function resolveOauthLogin(
   db: Db,
@@ -570,9 +571,14 @@ export async function resolveOauthLogin(
     };
   }
 
-  if (!ctx.signupEnabled && ctx.authMode !== 'local') {
+  // Local mode is single-user and reports signupEnabled=false by construction:
+  // an unknown OAuth identity must never provision a second user there either.
+  if (!ctx.signupEnabled) {
     return { status: 'error', code: 'signup_disabled' };
   }
+  // Provisioning a brand-new user requires a VERIFIED provider email — never
+  // create an account around an address the provider has not confirmed.
+  if (!profile.emailVerified) return { status: 'error', code: 'email_unverified' };
   let provisioned: Awaited<ReturnType<typeof provisionUser>>;
   try {
     provisioned = await provisionUser(db, {

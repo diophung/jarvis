@@ -82,37 +82,44 @@ export function validatePassword(password: string, email: string): string | null
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_FAILURES = 5;
+/** Per-IP cap across ALL emails: an attacker rotating emails would otherwise
+ * never trip the per-`${email}|${ip}` limit. */
+const RATE_LIMIT_MAX_FAILURES_PER_IP = 20;
+
+type FailureMap = Map<string, { count: number; windowStartMs: number }>;
 
 /**
- * In-memory failed-login tracker keyed `${email}|${ip}`. NOTE: per-process
- * only — in a multi-instance deployment each instance counts independently,
- * so attackers get N*5 attempts. Acceptable for self-hosted v1.1; move to a
- * shared store (DB/Redis) if Donna ever runs horizontally scaled.
+ * In-memory failed-login trackers: one keyed `${email}|${ip}`, one keyed by
+ * ip alone. NOTE: per-process only — in a multi-instance deployment each
+ * instance counts independently, so attackers get N*limit attempts.
+ * Acceptable for self-hosted v1.1; move to a shared store (DB/Redis) if
+ * Donna ever runs horizontally scaled.
  */
-const loginFailures = new Map<string, { count: number; windowStartMs: number }>();
+const loginFailures: FailureMap = new Map();
+const ipLoginFailures: FailureMap = new Map();
 
-function pruneLoginFailures(nowMs: number): void {
-  if (loginFailures.size < 1000) return;
-  for (const [key, entry] of loginFailures) {
-    if (nowMs - entry.windowStartMs > RATE_LIMIT_WINDOW_MS) loginFailures.delete(key);
+function pruneLoginFailures(map: FailureMap, nowMs: number): void {
+  if (map.size < 1000) return;
+  for (const [key, entry] of map) {
+    if (nowMs - entry.windowStartMs > RATE_LIMIT_WINDOW_MS) map.delete(key);
   }
 }
 
-function isRateLimited(key: string, nowMs: number): boolean {
-  const entry = loginFailures.get(key);
+function isRateLimited(map: FailureMap, key: string, nowMs: number, max: number): boolean {
+  const entry = map.get(key);
   if (!entry) return false;
   if (nowMs - entry.windowStartMs > RATE_LIMIT_WINDOW_MS) {
-    loginFailures.delete(key);
+    map.delete(key);
     return false;
   }
-  return entry.count >= RATE_LIMIT_MAX_FAILURES;
+  return entry.count >= max;
 }
 
-function recordLoginFailure(key: string, nowMs: number): void {
-  pruneLoginFailures(nowMs);
-  const entry = loginFailures.get(key);
+function recordLoginFailure(map: FailureMap, key: string, nowMs: number): void {
+  pruneLoginFailures(map, nowMs);
+  const entry = map.get(key);
   if (!entry || nowMs - entry.windowStartMs > RATE_LIMIT_WINDOW_MS) {
-    loginFailures.set(key, { count: 1, windowStartMs: nowMs });
+    map.set(key, { count: 1, windowStartMs: nowMs });
   } else {
     entry.count += 1;
   }
@@ -121,9 +128,34 @@ function recordLoginFailure(key: string, nowMs: number): void {
 /** Test hook: clear the per-process failed-login counters. */
 export function resetLoginRateLimiter(): void {
   loginFailures.clear();
+  ipLoginFailures.clear();
+}
+
+// ---------- CSRF origin checking ----------
+
+const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+/** OAuth provider callbacks are exempt from the Origin check: Apple's
+ * form_post callback is a legitimate cross-site POST. */
+const CSRF_EXEMPT_RE = /^\/api\/auth\/oauth\/[^/]+\/callback$/;
+
+/** Normalized origin of a URL/origin string, or null when unparseable. */
+function originOf(value: string): string | null {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
 }
 
 // ---------- helpers ----------
+
+/**
+ * Local-mode auto-login: one memoized session per owner so cookieless
+ * clients (curl, scripts) don't mint a new sessions row on every request.
+ * Re-validated against the DB before reuse; the token is never logged.
+ */
+const localAutoSessions = new Map<string, { token: string; expiresAtMs: number }>();
 
 /** Look up (and memoize) the owner user + workspace for local auto-login. */
 function makeOwnerResolver(db: Db) {
@@ -194,10 +226,35 @@ export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
   app.decorateRequest('workspaceId', '');
   app.decorateRequest('sessionId', '');
 
+  // Origins allowed to make state-changing requests (CSRF defense).
+  const allowedOrigins = new Set(
+    [config.publicUrl, config.env.DONNA_WEB_ORIGIN]
+      .map(originOf)
+      .filter((o): o is string => o !== null),
+  );
+
   app.addHook('onRequest', async (request, reply) => {
     const url = request.url.split('?')[0] ?? request.url;
     // Only API routes need auth; static assets are public.
     if (!url.startsWith('/api/')) return;
+
+    // CSRF: browsers attach the attacker page's Origin to cross-site form
+    // posts and fetches, so refuse state-changing requests from unknown
+    // origins. Requests without an Origin header (curl, server-to-server)
+    // pass. The OAuth callbacks are exempt (Apple's cross-site form_post).
+    const origin = request.headers.origin;
+    if (
+      typeof origin === 'string' &&
+      STATE_CHANGING_METHODS.has(request.method) &&
+      !CSRF_EXEMPT_RE.test(url) &&
+      !allowedOrigins.has(originOf(origin) ?? origin)
+    ) {
+      reply
+        .code(403)
+        .send({ error: { code: 'cross_origin_denied', message: 'Cross-origin request denied' } });
+      return;
+    }
+
     if (PUBLIC_PATHS.has(url) || url.startsWith(PUBLIC_PREFIX)) return;
 
     const raw = request.cookies[SESSION_COOKIE];
@@ -217,11 +274,30 @@ export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
     if (config.env.DONNA_AUTH_MODE === 'local') {
       const owner = await resolveOwner();
       if (owner) {
+        // Reuse the memoized auto-login session while it is still valid so
+        // repeated cookieless requests don't grow the sessions table.
+        const cached = localAutoSessions.get(owner.userId);
+        if (cached && cached.expiresAtMs > Date.now()) {
+          const session = await sessions.validate(cached.token);
+          if (session && session.userId === owner.userId) {
+            cached.expiresAtMs = Date.parse(session.expiresAt);
+            request.userId = session.userId;
+            request.workspaceId = session.workspaceId;
+            request.sessionId = session.id;
+            setSessionCookie(reply, config, cached.token);
+            return;
+          }
+          localAutoSessions.delete(owner.userId); // revoked/expired: mint anew
+        }
         const { token, session } = await sessions.create(
           owner.userId,
           owner.workspaceId,
           requestMeta(request),
         );
+        localAutoSessions.set(owner.userId, {
+          token,
+          expiresAtMs: Date.parse(session.expiresAt),
+        });
         request.userId = owner.userId;
         request.workspaceId = owner.workspaceId;
         request.sessionId = session.id;
@@ -283,8 +359,12 @@ export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
     const email = body.data.email.toLowerCase();
 
     const nowMs = Date.now();
-    const rateKey = `${email}|${request.ip ?? 'unknown'}`;
-    if (isRateLimited(rateKey, nowMs)) {
+    const ip = request.ip ?? 'unknown';
+    const rateKey = `${email}|${ip}`;
+    if (
+      isRateLimited(loginFailures, rateKey, nowMs, RATE_LIMIT_MAX_FAILURES) ||
+      isRateLimited(ipLoginFailures, ip, nowMs, RATE_LIMIT_MAX_FAILURES_PER_IP)
+    ) {
       throw new HttpError(429, 'Too many login attempts. Try again later.', 'too_many_attempts');
     }
 
@@ -299,19 +379,26 @@ export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
       : undefined;
 
     if (!user || !user.passwordHash || !compared || !ws) {
-      recordLoginFailure(rateKey, nowMs);
-      // Audit to the matched user's workspace, else the owner workspace —
-      // the email goes in metadata only, never in the summary.
-      const auditWorkspaceId = ws?.id ?? (await resolveOwner())?.workspaceId;
-      if (auditWorkspaceId) {
-        await audit.log({
-          workspaceId: auditWorkspaceId,
-          userId: user?.id ?? null,
-          eventType: 'auth.login_failed',
-          actor: 'system',
-          summary: 'Failed login attempt',
-          metadata: { reason: 'bad_credentials', email },
-        });
+      recordLoginFailure(loginFailures, rateKey, nowMs);
+      recordLoginFailure(ipLoginFailures, ip, nowMs);
+      // Audit only failures whose email matches an existing user. Unknown
+      // emails are unauthenticated attacker-controlled input: auditing them
+      // would let anyone grow the audit log without bound and inject
+      // arbitrary strings (fake emails) into the owner's audit trail.
+      if (user) {
+        // Audit to the matched user's workspace, else the owner workspace —
+        // the email goes in metadata only, never in the summary.
+        const auditWorkspaceId = ws?.id ?? (await resolveOwner())?.workspaceId;
+        if (auditWorkspaceId) {
+          await audit.log({
+            workspaceId: auditWorkspaceId,
+            userId: user.id,
+            eventType: 'auth.login_failed',
+            actor: 'system',
+            summary: 'Failed login attempt',
+            metadata: { reason: 'bad_credentials', email },
+          });
+        }
       }
       throw invalidCredentials();
     }

@@ -19,10 +19,15 @@ a new connector, [api-contract.md](./api-contract.md) for the Sources API.
   resolve credentials at call time through a `SecretResolver` (environment
   variables). Error messages and health checks name the missing env *vars*,
   never their values.
-- Connecting a source is `POST /api/sources/accounts { provider }`. The
-  catalog (`GET /api/sources/catalog`) reports `configured: true` when all of
-  a connector's `requiredEnv` vars are set (mock connectors are always
-  configured). Accounts whose env is missing are created with status
+- Connecting a source is `POST /api/sources/accounts { provider }` — except
+  the three Google sources, which since v1.1 connect through a per-source
+  OAuth consent flow (**Connect with Google** on the Sources page; see
+  [auth.md](./auth.md#5-configuring-gmail--drive--calendar-authorization)).
+  The catalog (`GET /api/sources/catalog`) reports `configured: true` when
+  all of a connector's `requiredEnv` vars are set, or — for the Google trio —
+  when a Google OAuth client (`GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`) is
+  configured (`oauthConnectable: true`). Mock connectors are always
+  configured. Accounts whose env is missing are created with status
   `needs_auth`.
 - **Incremental sync**: each connector returns an opaque cursor with every
   page; Donna persists it per account and passes it back on the next run.
@@ -50,9 +55,9 @@ same caveat in its header comment.
 | `mock-chat` | chat | Demo Chat | — | `post_message` (simulated) |
 | `mock-calendar` | calendar | Demo Calendar | — | `create_event`, `update_event` (simulated) |
 | `mock-storage` | storage | Demo Drive | — | — (read-only) |
-| `gmail` | email | Gmail | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` | `send_email` |
-| `google-calendar` | calendar | Google Calendar | same Google trio | `create_event` |
-| `google-drive` | storage | Google Drive | same Google trio | — (read-only) |
+| `gmail` | email | Gmail | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` (OAuth connect) *or* the trio incl. `GOOGLE_REFRESH_TOKEN` (env path) | `send_email` (env path only) |
+| `google-calendar` | calendar | Google Calendar | same Google options | `create_event` (env path only) |
+| `google-drive` | storage | Google Drive | same Google options | — (read-only) |
 | `outlook` | email | Microsoft Outlook | `MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `MS_TENANT_ID`, `MS_REFRESH_TOKEN` | `send_email` |
 | `teams` | chat | Microsoft Teams | same Microsoft quad | — (read-only) |
 | `onedrive` | storage | OneDrive | same Microsoft quad | — (read-only) |
@@ -100,8 +105,21 @@ account setting `demoNow` (ISO string or epoch ms).
 
 ## Google: Gmail, Google Calendar, Google Drive
 
-All three share one OAuth refresh-token flow (`google/google-auth.ts`) and the
-same env vars:
+Two ways to authorize, sharing one Google OAuth client
+(`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`):
+
+**Primary path — OAuth connect (v1.1).** With the client configured, each
+Google source shows a **Connect with Google** button in Settings → Connected
+Sources. Donna runs a per-source consent flow (PKCE, state-bound to your
+session), stores the tokens AES-256-GCM-encrypted in `oauth_tokens`,
+refreshes access tokens automatically (single-flight, with `needs_reauth` +
+a Reconnect button when Google rejects the grant), and revokes + deletes the
+tokens on Disconnect. No `GOOGLE_REFRESH_TOKEN` env needed. Console setup,
+redirect URIs, and troubleshooting:
+[auth.md](./auth.md#5-configuring-gmail--drive--calendar-authorization).
+
+**Advanced/headless path — env refresh token.** The pre-v1.1 flow remains for
+deployments that prefer env-only secrets (or need write scopes, see below):
 
 ```
 GOOGLE_CLIENT_ID=
@@ -109,32 +127,31 @@ GOOGLE_CLIENT_SECRET=
 GOOGLE_REFRESH_TOKEN=
 ```
 
-Access tokens are exchanged at call time against
-`https://oauth2.googleapis.com/token` and cached in memory until ~30 s before
-expiry.
+Run the authorization-code flow once yourself for the scopes you want with
+`access_type=offline&prompt=consent` (e.g. via Google's OAuth 2.0 Playground
+configured to use your own client, or a small script), exchange the code, and
+keep the `refresh_token` → `GOOGLE_REFRESH_TOKEN`. Access tokens are then
+exchanged at call time (`google/google-auth.ts`) and cached in memory until
+~30 s before expiry. OAuth-connected accounts skip this entirely: the server
+injects a managed token source (`ConnectorContext.oauth`) and the env vars
+are ignored for those accounts.
 
-**Getting credentials** (one-time, summarized):
+**Scopes per source and path** (full URIs:
+`https://www.googleapis.com/auth/<scope>`):
 
-1. In Google Cloud Console, create a project and enable the APIs you need
-   (Gmail API, Google Calendar API, Google Drive API).
-2. Create an OAuth client (type "Web application") → this yields
-   `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
-3. Run the authorization-code flow once for the scopes below with
-   `access_type=offline&prompt=consent` (e.g. via Google's OAuth 2.0
-   Playground configured to use your own client, or a small script). Exchange
-   the code for tokens and keep the `refresh_token` → `GOOGLE_REFRESH_TOKEN`.
+| Connector | OAuth connect button requests | Env-path descriptor scopes |
+|---|---|---|
+| `gmail` | `gmail.readonly` (+ `openid email`) | `gmail.readonly`, `gmail.send` |
+| `google-calendar` | `calendar.readonly` (+ `openid email`) | `calendar.events` |
+| `google-drive` | `drive.metadata.readonly` (+ `openid email`) | `drive.metadata.readonly` |
 
-Scopes requested (least privilege, from each descriptor):
-
-| Connector | Scopes |
-|---|---|
-| `gmail` | `gmail.readonly`, `gmail.send` |
-| `google-calendar` | `calendar.events` |
-| `google-drive` | `drive.metadata.readonly` |
-
-(Full URIs: `https://www.googleapis.com/auth/<scope>`.) If you only want
-read-only behavior, omit `gmail.send` — sending will then fail at execute
-time, but sync is unaffected.
+The OAuth path is strictly read-only by design — `send_email` /
+`create_event` on an OAuth-connected account fail at Google with insufficient
+permissions. For writes, use the env path and include the write scopes when
+minting the refresh token (omit `gmail.send` for read-only env setups —
+sending then fails at execute time, but sync is unaffected). Each OAuth grant
+is per source and incremental (`include_granted_scopes=true`): connecting
+Calendar grants nothing for Gmail or Drive.
 
 **Sync semantics:**
 
@@ -279,4 +296,7 @@ approved a request. Capabilities map to connector action types as follows
 
 All of these are `require_approval` by default (see `CAPABILITY_CATALOG` in
 `packages/core/src/capabilities.ts`); a connector receiving an action type it
-does not support returns a failure result rather than throwing.
+does not support returns a failure result rather than throwing. Note that
+`gmail` / `google-calendar` accounts connected via the OAuth buttons hold
+read-only scopes, so Google rejects their write actions — writes need the
+env-token path with write scopes granted.

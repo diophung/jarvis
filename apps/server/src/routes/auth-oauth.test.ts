@@ -511,6 +511,16 @@ describe('OAuth callback — google login', () => {
     expect(res.headers.location).toBe('http://web.test/signin?error=signup_disabled');
     expect(await harness.db.selectFrom('users').select('id').execute()).toHaveLength(0);
   });
+
+  it('local mode: an unknown OAuth identity never provisions a new user', async () => {
+    // DONNA_ALLOW_SIGNUP defaults to true — local mode must still refuse.
+    const harness = await buildApp({ DONNA_AUTH_MODE: 'local' });
+    const { res } = await googleLogin(harness, { sub: 'google-sub-6' });
+    expect(res.headers.location).toBe('http://web.test/signin?error=signup_disabled');
+    expect(await harness.db.selectFrom('users').select('id').execute()).toHaveLength(0);
+    expect(await harness.db.selectFrom('workspaces').select('id').execute()).toHaveLength(0);
+    expect(res.cookies.find((c) => c.name === SESSION_COOKIE)).toBeUndefined();
+  });
 });
 
 describe('OAuth callback — apple form_post', () => {
@@ -652,7 +662,7 @@ describe('OAuth callback — link intent', () => {
     expect(await auditEvents(harness.db, 'auth.login')).toHaveLength(0);
   });
 
-  it('fails with already_linked when another user owns the identity', async () => {
+  it('fails with already_linked back on /settings (not the /signin dead end)', async () => {
     const harness = await buildApp();
     await googleLogin(harness, { sub: 'google-sub-8', email: 'first@example.com' });
     fetchCalls = [];
@@ -663,8 +673,26 @@ describe('OAuth callback — link intent', () => {
       startQuery: '?link=1',
       extraCookies: { [SESSION_COOKIE]: sessionCookie },
     });
-    expect(res.headers.location).toBe('http://web.test/signin?error=already_linked');
+    // The user still has a live session: link failures return to the page
+    // they linked from with ?linkError=, never to /signin.
+    expect(res.headers.location).toBe('http://web.test/settings?linkError=already_linked');
     expect(await harness.db.selectFrom('authAccounts').select('id').execute()).toHaveLength(1);
+  });
+
+  it('link failures honor the validated returnTo from the start leg', async () => {
+    const harness = await buildApp();
+    await googleLogin(harness, { sub: 'google-sub-9', email: 'first@example.com' });
+    fetchCalls = [];
+    const { sessionCookie } = await linkSetup(harness);
+    const { res } = await googleLogin(harness, {
+      sub: 'google-sub-9',
+      email: 'first@example.com',
+      startQuery: `?link=1&returnTo=${encodeURIComponent('/settings/security')}`,
+      extraCookies: { [SESSION_COOKIE]: sessionCookie },
+    });
+    expect(res.headers.location).toBe(
+      'http://web.test/settings/security?linkError=already_linked',
+    );
   });
 
   it('fails when the session cookie is missing on the callback leg', async () => {

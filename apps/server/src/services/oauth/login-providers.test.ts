@@ -557,12 +557,13 @@ describe('resolveOauthLogin (login intent)', () => {
     expect(await db.selectFrom('users').select('id').execute()).toHaveLength(1);
   });
 
-  it('provisions a new unverified user when no local account matches', async () => {
+  it('refuses to provision a NEW user from an unverified email (no rows written)', async () => {
     const db = await createTestDb();
     const outcome = await resolveOauthLogin(db, profileOf({ emailVerified: false }), loginCtx);
-    expect(outcome).toMatchObject({ status: 'ok', createdUser: true });
-    const user = await db.selectFrom('users').selectAll().executeTakeFirstOrThrow();
-    expect(user.emailVerified).toBe(0);
+    expect(outcome).toEqual({ status: 'error', code: 'email_unverified' });
+    expect(await db.selectFrom('users').select('id').execute()).toHaveLength(0);
+    expect(await db.selectFrom('workspaces').select('id').execute()).toHaveLength(0);
+    expect(await db.selectFrom('authAccounts').select('id').execute()).toHaveLength(0);
   });
 
   it('errors with no_email when the provider returns no email', async () => {
@@ -572,18 +573,22 @@ describe('resolveOauthLogin (login intent)', () => {
     expect(await db.selectFrom('users').select('id').execute()).toHaveLength(0);
   });
 
-  it('refuses signup when registration is disabled (but local mode still allows)', async () => {
+  it('refuses signup when registration is disabled — including local mode', async () => {
     const db = await createTestDb();
     const disabled = { ...loginCtx, signupEnabled: false };
     expect(await resolveOauthLogin(db, profileOf(), disabled)).toEqual({
       status: 'error',
       code: 'signup_disabled',
     });
+    // Local mode is single-user (signupEnabled is false by construction): an
+    // unknown OAuth identity must never provision a second user there either.
     const local = { ...disabled, authMode: 'local' as const };
-    expect(await resolveOauthLogin(db, profileOf(), local)).toMatchObject({
-      status: 'ok',
-      createdUser: true,
+    expect(await resolveOauthLogin(db, profileOf(), local)).toEqual({
+      status: 'error',
+      code: 'signup_disabled',
     });
+    expect(await db.selectFrom('users').select('id').execute()).toHaveLength(0);
+    expect(await db.selectFrom('workspaces').select('id').execute()).toHaveLength(0);
   });
 });
 

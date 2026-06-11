@@ -33,6 +33,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
       redact: ['req.headers.authorization', 'req.headers.cookie'],
     },
     bodyLimit: 4 * 1024 * 1024,
+    trustProxy: ctx.config.env.DONNA_TRUST_PROXY,
   });
 
   await app.register(cookie, { secret: ctx.config.env.DONNA_SECRET });

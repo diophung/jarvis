@@ -9,7 +9,8 @@ import type { AuthAccount, OauthLoginProvider, User } from '@donna/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, EyeOff, FolderLock, KeySquare, MailCheck } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Badge, Button, Card, Input, LoadingPane } from '../../components/ui.js';
 import { api, ApiError } from '../../lib/api.js';
 import { apiUrl } from '../../lib/auth.js';
@@ -40,9 +41,19 @@ const PROVIDER_LABELS: Record<OauthLoginProvider, string> = {
   apple: 'Apple',
 };
 
-/** OAuth link-start is a 302 to the provider — a real link, not a fetch. */
+/** OAuth link-start is a 302 to the provider — a real link, not a fetch.
+ * returnTo lands back on this tab so link results (?linkError=) are visible. */
 function linkStartUrl(provider: OauthLoginProvider): string {
-  return apiUrl(`/api/auth/oauth/${provider}/start?link=1&returnTo=${encodeURIComponent('/settings')}`);
+  return apiUrl(
+    `/api/auth/oauth/${provider}/start?link=1&returnTo=${encodeURIComponent('/settings/security')}`,
+  );
+}
+
+/** Friendly copy for the `?linkError=<code>` the OAuth link callback redirects back with. */
+function linkErrorMessage(code: string): string {
+  return code === 'already_linked'
+    ? 'That account is already linked to a different user.'
+    : 'Linking failed — try again.';
 }
 
 /** Anchor styled like the secondary Button (browser navigation, not fetch). */
@@ -222,6 +233,19 @@ function LinkedAccountsSection() {
   });
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
 
+  // Surface ?linkError=<code> from a failed link callback, then strip the
+  // param (history.replaceState) so a refresh doesn't replay the message.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [linkError, setLinkError] = useState<string | null>(null);
+  useEffect(() => {
+    const code = searchParams.get('linkError');
+    if (!code) return;
+    setLinkError(code);
+    const next = new URLSearchParams(searchParams);
+    next.delete('linkError');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
   const unlink = useMutation({
     mutationFn: (id: string) => api.del<{ ok: true }>(`/api/auth/accounts/${id}`),
     onSuccess: () => {
@@ -285,6 +309,7 @@ function LinkedAccountsSection() {
         </ul>
       )}
       {unlinkError && <p className="text-sm text-red-600 mt-2">{unlinkError}</p>}
+      {linkError && <p className="text-sm text-red-600 mt-2">{linkErrorMessage(linkError)}</p>}
       {linkable.length > 0 && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {linkable.map((p) => (

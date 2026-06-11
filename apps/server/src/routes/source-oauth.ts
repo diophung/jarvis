@@ -167,6 +167,21 @@ export function registerSourceOauthRoutes(app: FastifyInstance, deps: SourceOaut
     if (!clientId || !clientSecret) {
       throw badRequest('Google OAuth is not configured', 'not_configured');
     }
+    // Production indicator (Secure cookies = HTTPS) + a token encryption key
+    // derived from the publicly-known dev-default DONNA_SECRET: refuse to
+    // store new grants. Dev/localhost flows (DONNA_COOKIE_SECURE=false) keep
+    // working.
+    if (
+      config.env.DONNA_COOKIE_SECURE &&
+      !config.env.DONNA_TOKEN_ENCRYPTION_KEY &&
+      !config.isProdSecret
+    ) {
+      throw badRequest(
+        'OAuth tokens would be encrypted with the development-default key. ' +
+          'Set DONNA_TOKEN_ENCRYPTION_KEY (or a strong DONNA_SECRET) and restart.',
+        'weak_token_key',
+      );
+    }
 
     const query = (request.query ?? {}) as { returnTo?: string };
     const returnTo = query.returnTo === undefined ? '/settings' : validateReturnTo(query.returnTo);

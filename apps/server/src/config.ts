@@ -54,6 +54,12 @@ const EnvSchema = z.object({
     .string()
     .default('false')
     .transform((v) => v !== 'false' && v !== '0'),
+  /** Trust X-Forwarded-* headers — set true behind a reverse proxy so
+   * request.ip (and thus login rate limiting) sees real client IPs. */
+  DONNA_TRUST_PROXY: z
+    .string()
+    .default('false')
+    .transform((v) => v !== 'false' && v !== '0'),
   /** Run the background worker in-process (docker-compose sets this to false on the API service). */
   DONNA_INLINE_WORKER: z
     .string()

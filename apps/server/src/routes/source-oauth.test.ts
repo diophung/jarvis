@@ -219,6 +219,32 @@ describe('source oauth start', () => {
     expect(res.statusCode).toBe(400);
     expect(res.json().error.code).toBe('not_configured');
   });
+
+  it('refuses with weak_token_key when prod indicators meet the dev-default key', async () => {
+    // Secure cookies (HTTPS deployment) + no DONNA_TOKEN_ENCRYPTION_KEY + the
+    // dev-default DONNA_SECRET: tokens would be encrypted with a public key.
+    const { app } = await buildApp(testConfig({ DONNA_COOKIE_SECURE: true }));
+    const res = await app.inject({ method: 'GET', url: '/api/sources/oauth/google/gmail/start' });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe('weak_token_key');
+  });
+
+  it('starts normally in production once DONNA_TOKEN_ENCRYPTION_KEY is set', async () => {
+    const { app } = await buildApp(
+      testConfig({ DONNA_COOKIE_SECURE: true, DONNA_TOKEN_ENCRYPTION_KEY: KEY }),
+    );
+    const res = await app.inject({ method: 'GET', url: '/api/sources/oauth/google/gmail/start' });
+    expect(res.statusCode).toBe(302);
+  });
+
+  it('starts normally in production with a strong (non-default) DONNA_SECRET', async () => {
+    const { app } = await buildApp({
+      ...testConfig({ DONNA_COOKIE_SECURE: true }),
+      isProdSecret: true,
+    });
+    const res = await app.inject({ method: 'GET', url: '/api/sources/oauth/google/gmail/start' });
+    expect(res.statusCode).toBe(302);
+  });
 });
 
 describe('source oauth callback', () => {

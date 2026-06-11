@@ -53,7 +53,7 @@ function ConnectorCard({
   onConnect: () => void;
 }) {
   const oauthSource =
-    connector.oauthConnectable && isGoogleSourceType(connector.provider)
+    connector.oauthConnectable && connector.configured && isGoogleSourceType(connector.provider)
       ? connector.provider
       : null;
   const gated = !connector.local && !connector.configured && !oauthSource;

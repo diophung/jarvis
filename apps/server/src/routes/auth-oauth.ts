@@ -54,6 +54,10 @@ export function registerAuthOauthRoutes(app: FastifyInstance, deps: AuthOauthDep
 
   // Apple posts its form_post callback as application/x-www-form-urlencoded;
   // the app only registers json + multipart parsers, so add one when missing.
+  // NOTE: the parser is app-wide (fastify makes route-scoping parsers
+  // awkward), which makes every POST route reachable from a plain HTML form.
+  // CSRF from such cross-site form posts is blocked by the Origin check in
+  // auth.ts; only the OAuth callbacks are exempt there.
   if (!app.hasContentTypeParser('application/x-www-form-urlencoded')) {
     app.addContentTypeParser(
       'application/x-www-form-urlencoded',
@@ -141,7 +145,9 @@ export function registerAuthOauthRoutes(app: FastifyInstance, deps: AuthOauthDep
     }
 
     const resolveCtx = {
-      signupEnabled: config.env.DONNA_ALLOW_SIGNUP,
+      // Local mode is single-user: self-service signup is never enabled there
+      // (same derivation as /api/auth/methods in auth.ts).
+      signupEnabled: config.env.DONNA_AUTH_MODE === 'password' && config.env.DONNA_ALLOW_SIGNUP,
       authMode: config.env.DONNA_AUTH_MODE,
     };
 
@@ -155,7 +161,13 @@ export function registerAuthOauthRoutes(app: FastifyInstance, deps: AuthOauthDep
         intent: 'link',
         userId: session.userId,
       });
-      if (outcome.status === 'error') return failRedirect(reply, outcome.code);
+      if (outcome.status === 'error') {
+        // The user is already signed in — bounce back to where they linked
+        // from with the error, not to /signin (a dead end for live sessions).
+        const returnTo = validateReturnTo(state.returnTo ?? '/settings');
+        const sep = returnTo.includes('?') ? '&' : '?';
+        return reply.redirect(webRedirect(config, `${returnTo}${sep}linkError=${outcome.code}`));
+      }
       if (outcome.linkedAccount) {
         await audit.log({
           workspaceId: session.workspaceId,

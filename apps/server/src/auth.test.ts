@@ -114,6 +114,74 @@ describe('config flags', () => {
     expect(flipped.env.DONNA_COOKIE_SECURE).toBe(true);
     expect(flipped.env.DONNA_INLINE_WORKER).toBe(false);
   });
+
+  it('parses DONNA_TRUST_PROXY (default false)', () => {
+    expect(loadConfig({ DONNA_TRUST_PROXY: undefined }).env.DONNA_TRUST_PROXY).toBe(false);
+    expect(loadConfig({ DONNA_TRUST_PROXY: 'true' }).env.DONNA_TRUST_PROXY).toBe(true);
+    expect(loadConfig({ DONNA_TRUST_PROXY: '0' }).env.DONNA_TRUST_PROXY).toBe(false);
+  });
+});
+
+describe('CSRF origin checking', () => {
+  it('403s a state-changing request with a foreign Origin and performs no work', async () => {
+    const app = await buildApp({ DONNA_AUTH_MODE: 'local' });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/auth/password',
+      headers: { origin: 'https://evil.example' },
+      payload: { newPassword: 'a-brand-new-passphrase' },
+    });
+    expect(res.statusCode).toBe(403);
+    expect((res.json() as { error: { code: string } }).error.code).toBe('cross_origin_denied');
+    // The drive-by request must not have set a password.
+    const row = await db
+      .selectFrom('users')
+      .select(['passwordHash'])
+      .where('id', '=', userId)
+      .executeTakeFirstOrThrow();
+    expect(row.passwordHash).toBeNull();
+  });
+
+  it('allows the web origin, the API public origin, and requests with no Origin', async () => {
+    const app = await buildApp({ DONNA_AUTH_MODE: 'local' });
+    // DONNA_WEB_ORIGIN default is http://localhost:5173.
+    const webOrigin = await app.inject({
+      method: 'POST',
+      url: '/api/auth/password',
+      headers: { origin: 'http://localhost:5173' },
+      payload: { newPassword: 'a-brand-new-passphrase' },
+    });
+    expect(webOrigin.statusCode).toBe(200);
+    // publicUrl defaults to http://localhost:<DONNA_PORT> (3001).
+    const apiOrigin = await app.inject({
+      method: 'POST',
+      url: '/api/auth/logout',
+      headers: { origin: 'http://localhost:3001' },
+    });
+    expect(apiOrigin.statusCode).toBe(200);
+    // No Origin header (curl, server-to-server) passes.
+    const noOrigin = await app.inject({ method: 'POST', url: '/api/auth/logout' });
+    expect(noOrigin.statusCode).toBe(200);
+  });
+
+  it('does not block GETs or the OAuth callback paths (Apple form_post is cross-site)', async () => {
+    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const get = await app.inject({
+      method: 'GET',
+      url: '/api/auth/methods',
+      headers: { origin: 'https://evil.example' },
+    });
+    expect(get.statusCode).toBe(200);
+    // Callback route is not registered in this harness: exempt -> 404 from
+    // the router (in the real app it 302s), NOT 403 from the origin check.
+    const callback = await app.inject({
+      method: 'POST',
+      url: '/api/auth/oauth/apple/callback',
+      headers: { origin: 'https://appleid.apple.com' },
+      payload: {},
+    });
+    expect(callback.statusCode).toBe(404);
+  });
 });
 
 describe('session cookie Secure attribute', () => {
@@ -273,9 +341,10 @@ describe('POST /api/auth/login', () => {
       expect(error.message).toBe('Invalid email or password');
     }
 
-    // Failures are audited with the email in metadata, never in the summary.
+    // Failures for KNOWN emails are audited with the email in metadata,
+    // never in the summary; the unknown email writes no row at all.
     const failures = await auditRows('auth.login_failed');
-    expect(failures).toHaveLength(3);
+    expect(failures).toHaveLength(2);
     for (const rowFail of failures) {
       expect(String(rowFail.summary)).not.toContain('@');
       const meta = JSON.parse(String(rowFail.metadata)) as { reason: string; email: string };
@@ -311,6 +380,46 @@ describe('POST /api/auth/login', () => {
       payload: { email: 'other@example.com', password: 'whatever-pass' },
     });
     expect(other.statusCode).toBe(401);
+  });
+
+  it('blocks an IP after 20 failures even when the attacker rotates emails', { timeout: 30_000 }, async () => {
+    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    for (let i = 0; i < 20; i++) {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/auth/login',
+        payload: { email: `rotate-${i}@example.com`, password: 'whatever-pass' },
+      });
+      // Each email is used once, so the per-email limit never trips.
+      expect(res.statusCode).toBe(401);
+    }
+    const blocked = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email: 'rotate-fresh@example.com', password: 'whatever-pass' },
+    });
+    expect(blocked.statusCode).toBe(429);
+    expect((blocked.json() as { error: { code: string } }).error.code).toBe('too_many_attempts');
+  });
+
+  it('audits failed logins only for emails that match an existing user', async () => {
+    await setPassword();
+    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const unknown = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email: 'ghost@example.com', password: 'whatever-pass' },
+    });
+    expect(unknown.statusCode).toBe(401);
+    expect(await auditRows('auth.login_failed')).toHaveLength(0);
+
+    const known = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: { email: userEmail, password: 'wrong-password-x' },
+    });
+    expect(known.statusCode).toBe(401);
+    expect(await auditRows('auth.login_failed')).toHaveLength(1);
   });
 
   it('clears the failure counter on success', async () => {
@@ -738,6 +847,25 @@ describe('auth middleware', () => {
     const { user } = second.json() as { user: Record<string, unknown> };
     expect(user.hasPassword).toBe(false);
     expect(user).not.toHaveProperty('passwordHash');
+  });
+
+  it('cookieless local-mode requests reuse one memoized session row', async () => {
+    const app = await buildApp({ DONNA_AUTH_MODE: 'local' });
+    const first = await app.inject({ method: 'GET', url: '/api/me' });
+    expect(first.statusCode).toBe(200);
+    const second = await app.inject({ method: 'GET', url: '/api/me' });
+    expect(second.statusCode).toBe(200);
+    // Two cookieless requests must not grow the sessions table.
+    expect(await db.selectFrom('sessions').selectAll().execute()).toHaveLength(1);
+    // Both hand out the same (still valid) token.
+    expect(sessionCookie(second)).toBe(sessionCookie(first));
+
+    // If the memoized session is revoked, a fresh one is minted.
+    await db.deleteFrom('sessions').execute();
+    const third = await app.inject({ method: 'GET', url: '/api/me' });
+    expect(third.statusCode).toBe(200);
+    expect(await db.selectFrom('sessions').selectAll().execute()).toHaveLength(1);
+    expect(sessionCookie(third)).not.toBe(sessionCookie(first));
   });
 
   it('the session cookie is signed: a tampered value is rejected (401 in password mode)', async () => {
