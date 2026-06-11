@@ -7,7 +7,7 @@
 import { fromJson, newId, nowIso, toJson } from '@donna/core';
 import type { FeedbackKind, PersonRef } from '@donna/core';
 import type { Db } from '@donna/db';
-import type { AuditService, FeedbackService } from '../context.js';
+import type { AuditService, FeedbackService, LearningService } from '../context.js';
 import { extractTitleKeywords, FEEDBACK_PREF_KEYS } from './scoring.js';
 
 const DAY_MS = 86_400_000;
@@ -20,8 +20,13 @@ interface FeedbackInput {
   note?: string;
 }
 
-export function createFeedbackService(deps: { db: Db; audit: AuditService }): FeedbackService {
-  const { db, audit } = deps;
+export function createFeedbackService(deps: {
+  db: Db;
+  audit: AuditService;
+  /** Optional: explicit feedback also feeds the self-learning subsystem. */
+  learning?: LearningService;
+}): FeedbackService {
+  const { db, audit, learning } = deps;
 
   async function getDerivedArray(
     workspaceId: string,
@@ -195,6 +200,28 @@ export function createFeedbackService(deps: { db: Db; audit: AuditService }): Fe
               );
             }
           }
+        }
+      }
+
+      // Self-learning hook: explicit feedback is high-weight evidence
+      // (revealed + stated preference, see learning service). Best-effort —
+      // a learning failure must never break feedback recording.
+      if (learning !== undefined) {
+        try {
+          const item = await resolveSourceItem(workspaceId, input);
+          const sender = item ? fromJson<PersonRef | null>(item.sender, null) : null;
+          const observation: Parameters<LearningService['learnFromFeedback']>[2] = {
+            kind: input.kind,
+            feedbackId,
+            observedAt: now,
+          };
+          if (sender?.email !== undefined && sender.email !== '') {
+            observation.senderEmail = sender.email;
+          }
+          if (item?.title !== undefined) observation.itemTitle = item.title;
+          await learning.learnFromFeedback(workspaceId, userId, observation);
+        } catch (err) {
+          console.error('[feedback] learning hook failed', err);
         }
       }
 

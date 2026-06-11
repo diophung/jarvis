@@ -16,6 +16,7 @@ import { registerAuditRoutes } from './routes/audit.js';
 import { registerConversationsRoutes } from './routes/conversations.js';
 import { registerDigestRoutes } from './routes/digests.js';
 import { registerHealthRoutes } from './routes/health.js';
+import { registerLearningRoutes } from './routes/learning.js';
 import { registerLlmRoutes } from './routes/llm.js';
 import { registerMemoryRoutes } from './routes/memory.js';
 import { registerPeopleProjectRoutes } from './routes/people-projects.js';
@@ -77,6 +78,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   registerApprovalRoutes(app, ctx);
   registerPolicyRoutes(app, ctx);
   registerMemoryRoutes(app, ctx);
+  registerLearningRoutes(app, ctx);
   registerPreferenceRoutes(app, ctx);
   registerLlmRoutes(app, ctx);
   registerAuditRoutes(app, ctx);

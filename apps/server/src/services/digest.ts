@@ -14,6 +14,7 @@ import type {
   DigestSection,
   DigestStatus,
   Level,
+  PersonalizationResult,
   PlanningCategory,
   ScoreSignal,
   SourceCategory,
@@ -25,6 +26,7 @@ import type {
   DigestService,
   DigestWithItems,
   LlmRouterService,
+  PersonalizationService,
   ScoringService,
   SettingsService,
 } from '../context.js';
@@ -57,24 +59,43 @@ function toDigestItem(row: DigestItemsTable): DigestItem {
   };
 }
 
-function buildNarrativeMessages(plan: DigestPlan, now: string): LlmMessage[] {
+function buildNarrativeMessages(
+  plan: DigestPlan,
+  now: string,
+  personalized?: PersonalizationResult | null,
+): LlmMessage[] {
   const items = plan.items.map((item) => ({
     title: item.title,
     section: item.section,
     explanation: item.explanation,
     action: item.recommendedAction,
   }));
-  const system = [
+  const systemLines = [
     'You are Donna, a calm, experienced chief of staff writing a daily debrief for a busy professional.',
     'Tone: composed, direct, practical. No hype, no emojis, no filler, no invented facts.',
     `Respond with two markdown parts separated by a line containing exactly ${PLAN_MARKER}.`,
     'Part 1 (SUMMARY): a short executive summary — a one-line greeting, 2-4 sentences on what matters most today and why, then up to four bullet highlights.',
     'Part 2 (PLAN): a practical day plan under the heading "## Suggested plan", grouped into Morning / Midday / Afternoon where that helps, each entry as a bullet with a concrete next step.',
     'Base everything strictly on the provided items and stats. Mention only items that were provided.',
-  ].join('\n');
+  ];
+  // Self-learning personalization: learned style/priority preferences shape
+  // the narrative. Each instruction is backed by an inspectable preference.
+  if (personalized !== undefined && personalized !== null && personalized.applied.length > 0) {
+    const { config } = personalized;
+    systemLines.push(
+      `Personalization (learned from this user; they can inspect and correct it):`,
+      `- Verbosity: ${config.verbosity}. Structure: ${config.structure}. Tone: ${config.tone}. Directness: ${config.directness}.`,
+    );
+    if (config.riskFirst) {
+      systemLines.push('- Lead with risks, blockers, and potential losses before opportunities.');
+    }
+    if (config.emphasize.length > 0) {
+      systemLines.push(`- Give extra attention to: ${config.emphasize.join(', ')}.`);
+    }
+  }
   const user = JSON.stringify({ date: now, stats: plan.stats, items });
   return [
-    { role: 'system', content: system },
+    { role: 'system', content: systemLines.join('\n') },
     { role: 'user', content: user },
   ];
 }
@@ -95,8 +116,10 @@ export function createDigestService(deps: {
   scoring: ScoringService;
   audit: AuditService;
   settings: SettingsService;
+  /** Optional: learned-preference personalization of the narrative. */
+  personalization?: PersonalizationService;
 }): DigestService {
-  const { db, llm, scoring, audit } = deps;
+  const { db, llm, scoring, audit, personalization } = deps;
 
   async function get(workspaceId: string, digestId: string): Promise<DigestWithItems | null> {
     const row = await db
@@ -252,10 +275,16 @@ export function createDigestService(deps: {
     try {
       const routed = await llm.clientForTask(workspaceId, 'digest', { digestId }, userId);
       if (!routed.isMock) {
+        const personalized =
+          personalization !== undefined
+            ? await personalization
+                .forTask(workspaceId, userId, { task: 'digest' })
+                .catch(() => null)
+            : null;
         const result = await routed.client.chat(
           {
             model: routed.model,
-            messages: buildNarrativeMessages(plan, now),
+            messages: buildNarrativeMessages(plan, now, personalized),
             temperature: routed.params.temperature,
             maxTokens: routed.params.maxTokens,
           },

@@ -26,7 +26,7 @@ export type SensitiveCategory = (typeof SENSITIVE_CATEGORIES)[number];
 
 const PATTERNS: Record<SensitiveCategory, RegExp> = {
   health:
-    /\b(diagnos\w*|cancer|chemotherapy|depress\w*|anxiety|adhd|autis\w*|bipolar|therap(y|ist)|medication|prescription|pregnan\w*|fertilit\w*|miscarriage|disabilit\w*|chronic (pain|illness)|mental health|psychiatr\w*|hiv|aids\b|diabet\w*)\b/i,
+    /\b(diagnos\w*|cancer|oncolog\w*|cardiolog\w*|chemotherapy|radiation therapy|depress\w*|anxiety|adhd|autis\w*|bipolar|therap(y|ist)|medication|prescription|pregnan\w*|fertilit\w*|miscarriage|disabilit\w*|chronic (pain|illness)|mental health|psychiatr\w*|hiv|aids\b|diabet\w*|hospital|clinic\b|surgery|surgical|vaccin\w*|symptom\w*|illness)\b/i,
   political:
     /\b(democrat\w*|republican\w*|conservative party|labour party|liberal party|political(ly)?|election vote|voted? for|ballot|left[- ]wing|right[- ]wing|maga\b|socialis\w*|libertarian)\b/i,
   religious:
