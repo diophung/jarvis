@@ -127,12 +127,8 @@ export function SignInPage() {
         </Button>
       </form>
 
-      {providers.length > 0 && (
-        <>
-          <Divider label="or" />
-          <OauthButtons providers={providers} intent="signin" returnTo={returnTo} />
-        </>
-      )}
+      <Divider label="or" />
+      <OauthButtons providers={providers} intent="signin" returnTo={returnTo} />
 
       <div className="mt-5 space-y-1 text-center text-sm text-ink-muted">
         {methods?.signupEnabled && (

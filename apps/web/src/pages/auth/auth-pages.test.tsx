@@ -147,7 +147,7 @@ describe('safeReturnTo', () => {
 });
 
 describe('SignInPage', () => {
-  it('renders only the configured provider buttons with API start hrefs', async () => {
+  it('always shows all three providers; only configured ones are live links', async () => {
     stubFetch([signedOut, methodsRoute(methods({ oauthProviders: ['google'] }))]);
     renderAt('/signin');
 
@@ -156,17 +156,25 @@ describe('SignInPage', () => {
       'href',
       '/api/auth/oauth/google/start?returnTo=%2F',
     );
+    // Unconfigured providers render as disabled buttons, not links.
+    const facebook = screen.getByRole('button', { name: /continue with facebook/i });
+    expect(facebook).toBeDisabled();
+    expect(facebook).toHaveAttribute('title', expect.stringContaining("isn't configured"));
+    expect(screen.getByRole('button', { name: /continue with apple/i })).toBeDisabled();
     expect(screen.queryByRole('link', { name: /facebook/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /apple/i })).not.toBeInTheDocument();
   });
 
-  it('hides the divider and provider buttons when no providers are configured', async () => {
+  it('shows all providers disabled when none are configured', async () => {
     stubFetch([signedOut, methodsRoute(methods({ oauthProviders: [] }))]);
     renderAt('/signin');
 
     expect(await screen.findByLabelText('Email')).toBeInTheDocument();
-    expect(screen.queryByText('or')).not.toBeInTheDocument();
+    expect(screen.getByText('or')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /continue with/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /continue with google/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /continue with facebook/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /continue with apple/i })).toBeDisabled();
   });
 
   it('shows the generic message on a failed login and keeps the cause private', async () => {

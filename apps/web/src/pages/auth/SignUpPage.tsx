@@ -135,12 +135,8 @@ export function SignUpPage() {
         </Button>
       </form>
 
-      {providers.length > 0 && (
-        <>
-          <Divider label="or" />
-          <OauthButtons providers={providers} intent="signup" returnTo="/" />
-        </>
-      )}
+      <Divider label="or" />
+      <OauthButtons providers={providers} intent="signup" returnTo="/" />
 
       <p className="mt-5 text-center text-sm text-ink-muted">
         Already have an account?{' '}

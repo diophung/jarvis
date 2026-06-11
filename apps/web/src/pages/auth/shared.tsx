@@ -82,32 +82,57 @@ function ProviderGlyph({ provider }: { provider: OauthLoginProvider }) {
   );
 }
 
+/** All login providers Donna supports, in display order. */
+const ALL_PROVIDERS: OauthLoginProvider[] = ['google', 'facebook', 'apple'];
+
 /**
- * OAuth provider buttons. Plain anchors (not XHR) — the start route 302s to
- * the provider's consent screen, so the browser must navigate.
+ * OAuth provider buttons. Always shows Google, Facebook, and Apple; providers
+ * without server credentials render disabled with an explanation, configured
+ * ones are plain anchors (not XHR) — the start route 302s to the provider's
+ * consent screen, so the browser must navigate.
  */
 export function OauthButtons({
   providers,
   intent,
   returnTo,
 }: {
+  /** Providers the server reports as configured (GET /api/auth/methods). */
   providers: OauthLoginProvider[];
   intent: 'signin' | 'signup';
   returnTo: string;
 }) {
   const verb = intent === 'signup' ? 'Sign up with' : 'Continue with';
+  const base =
+    'flex w-full items-center justify-center gap-2 rounded-lg border border-surface-border bg-surface-raised px-3.5 py-2 text-sm font-medium';
   return (
     <div className="space-y-2">
-      {providers.map((p) => (
-        <a
-          key={p}
-          href={apiUrl(`/api/auth/oauth/${p}/start?returnTo=${encodeURIComponent(returnTo)}`)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-surface-border bg-surface-raised px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-sunken transition-colors"
-        >
-          <ProviderGlyph provider={p} />
-          {verb} {PROVIDER_LABELS[p]}
-        </a>
-      ))}
+      {ALL_PROVIDERS.map((p) => {
+        const label = `${verb} ${PROVIDER_LABELS[p]}`;
+        if (!providers.includes(p)) {
+          return (
+            <button
+              key={p}
+              type="button"
+              disabled
+              title={`${PROVIDER_LABELS[p]} sign-in isn't configured on this server yet — see docs/auth.md for setup.`}
+              className={`${base} text-ink-faint opacity-60 cursor-not-allowed`}
+            >
+              <ProviderGlyph provider={p} />
+              {label}
+            </button>
+          );
+        }
+        return (
+          <a
+            key={p}
+            href={apiUrl(`/api/auth/oauth/${p}/start?returnTo=${encodeURIComponent(returnTo)}`)}
+            className={`${base} text-ink hover:bg-surface-sunken transition-colors`}
+          >
+            <ProviderGlyph provider={p} />
+            {label}
+          </a>
+        );
+      })}
     </div>
   );
 }
