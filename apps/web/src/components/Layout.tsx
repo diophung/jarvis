@@ -18,10 +18,10 @@ import {
   Sun,
   Trash2,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api.js';
-import { useAuth } from '../lib/auth.js';
+import { useAuth, type AuthUser } from '../lib/auth.js';
 import { useLlmStatus, usePendingApprovalsCount } from '../lib/hooks.js';
 
 function NavItem({
@@ -128,6 +128,94 @@ function DemoModeBanner() {
   );
 }
 
+/**
+ * Sidebar account block: clicking the user name opens a menu with account
+ * settings and Sign out. In local mode (auto-login) signing out is
+ * meaningless — the next request would log straight back in — so the menu
+ * explains that instead of offering a dead button.
+ */
+function AccountMenu({
+  user,
+  authMode,
+  onLogout,
+}: {
+  user: AuthUser;
+  authMode: 'local' | 'password' | null;
+  onLogout: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      {open && (
+        <>
+          {/* click-outside backdrop */}
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div
+            role="menu"
+            className="absolute bottom-full left-0 right-0 z-20 mb-1 rounded-lg border border-surface-border bg-surface-raised shadow-lg overflow-hidden"
+          >
+            <div className="px-3 py-2 border-b border-surface-border">
+              <div className="text-[13px] font-medium truncate">{user.name}</div>
+              <div className="text-[11px] text-ink-faint truncate">{user.email}</div>
+            </div>
+            <Link
+              to="/settings"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 text-[13px] hover:bg-surface-sunken"
+            >
+              <Settings className="h-3.5 w-3.5 text-ink-faint" /> Account settings
+            </Link>
+            {authMode === 'password' ? (
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onLogout();
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-surface-sunken"
+              >
+                <LogOut className="h-3.5 w-3.5 text-ink-faint" /> Sign out
+              </button>
+            ) : (
+              <div
+                className="px-3 py-2 text-[11px] text-ink-faint border-t border-surface-border"
+                title="Set DONNA_AUTH_MODE=password to enable the sign-in screen and logout."
+              >
+                Local single-user mode — you're signed in automatically, so there's nothing to
+                sign out of.
+              </div>
+            )}
+          </div>
+        </>
+      )}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Account menu"
+        className="w-full flex items-center gap-2 px-2.5 pt-2 pb-1 rounded-lg hover:bg-surface-sunken transition-colors"
+      >
+        {user.avatarUrl ? (
+          <img
+            src={user.avatarUrl}
+            alt=""
+            className="h-6 w-6 rounded-full border border-surface-border object-cover"
+          />
+        ) : (
+          <div className="h-6 w-6 rounded-full bg-surface-sunken border border-surface-border flex items-center justify-center text-[11px] font-medium text-ink-muted">
+            {user.name.slice(0, 1).toUpperCase()}
+          </div>
+        )}
+        <span className="text-[12px] text-ink-muted truncate flex-1 text-left">{user.name}</span>
+        {authMode === 'local' && (
+          <span className="shrink-0 text-[10px] text-ink-faint">local mode</span>
+        )}
+      </button>
+    </div>
+  );
+}
+
 export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { user, authMode, logout } = useAuth();
@@ -175,39 +263,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <NavItem to="/memory" icon={<ClipboardList />} label="Memory" />
           <NavItem to="/audit" icon={<ShieldCheck />} label="Audit Log" />
           <NavItem to="/settings" icon={<Settings />} label="Settings" />
-          {user && (
-            <div className="flex items-center gap-2 px-2.5 pt-2">
-              {user.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt=""
-                  className="h-6 w-6 rounded-full border border-surface-border object-cover"
-                />
-              ) : (
-                <div className="h-6 w-6 rounded-full bg-surface-sunken border border-surface-border flex items-center justify-center text-[11px] font-medium text-ink-muted">
-                  {user.name.slice(0, 1).toUpperCase()}
-                </div>
-              )}
-              <div className="text-[12px] text-ink-muted truncate flex-1">{user.name}</div>
-              {authMode === 'password' ? (
-                <button
-                  title="Sign out"
-                  aria-label="Sign out"
-                  onClick={() => void logout()}
-                  className="shrink-0 rounded-md p-1 text-ink-faint hover:bg-surface-sunken hover:text-ink"
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                </button>
-              ) : (
-                <span
-                  className="shrink-0 text-[10px] text-ink-faint"
-                  title="Donna is in local single-user mode — you're signed in automatically."
-                >
-                  local mode
-                </span>
-              )}
-            </div>
-          )}
+          {user && <AccountMenu user={user} authMode={authMode} onLogout={() => void logout()} />}
         </div>
       </aside>
 

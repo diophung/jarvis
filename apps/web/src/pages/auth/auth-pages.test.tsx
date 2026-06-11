@@ -418,7 +418,9 @@ describe('logout (sidebar user block)', () => {
     ]);
     renderShell();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
+    // Sign out lives inside the account menu opened from the user-name block.
+    await userEvent.click(await screen.findByRole('button', { name: 'Account menu' }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: /Sign out/ }));
 
     await waitFor(() => {
       expect(calls.find((c) => c.method === 'POST' && c.url === '/api/auth/logout')).toBeTruthy();
@@ -427,7 +429,7 @@ describe('logout (sidebar user block)', () => {
     expect(screen.queryByTestId('shell-content')).not.toBeInTheDocument();
   });
 
-  it('hides the sign-out control in local mode and shows the local-mode hint', async () => {
+  it('account menu in local mode explains auto-login instead of offering Sign out', async () => {
     stubFetch([
       { url: '/api/me', reply: () => ({ data: meBody('local') }) },
       methodsRoute(methods({ authMode: 'local', signupEnabled: false, oauthProviders: [] })),
@@ -435,6 +437,10 @@ describe('logout (sidebar user block)', () => {
     renderShell();
 
     expect(await screen.findByText('local mode')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    expect(await screen.findByText(/signed in automatically/)).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /Sign out/ })).not.toBeInTheDocument();
+    // Settings stays reachable from the menu in both modes.
+    expect(screen.getByRole('menuitem', { name: /Account settings/ })).toBeInTheDocument();
   });
 });
