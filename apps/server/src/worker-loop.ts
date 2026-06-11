@@ -15,6 +15,7 @@ import { Cron } from 'croner';
 import type { AppContext } from './context.js';
 import { SETTING_KEYS } from './context.js';
 import { DEFAULT_DIGEST_SCHEDULE } from './routes/digests.js';
+import { createSessionsService } from './services/sessions.js';
 
 const DAY_MS = 86_400_000;
 const DEFAULT_TICK_MS = 60_000;
@@ -34,6 +35,7 @@ export function createWorkerLoop(ctx: AppContext, opts: { tickMs?: number } = {}
   const tickMs = opts.tickMs ?? DEFAULT_TICK_MS;
   const { db } = ctx;
   const { settings, digest, ingestion, audit } = ctx.services;
+  const sessions = createSessionsService(db);
   let timer: ReturnType<typeof setInterval> | null = null;
   /** Reentrancy latch: a slow tick (e.g. real-LLM digest >60s) must not overlap the next. */
   let running = false;
@@ -117,6 +119,11 @@ export function createWorkerLoop(ctx: AppContext, opts: { tickMs?: number } = {}
         await expireApprovals();
       } catch (err) {
         console.error('[worker] approval expiry failed', err);
+      }
+      try {
+        await sessions.deleteExpired();
+      } catch (err) {
+        console.error('[worker] session cleanup failed', err);
       }
     } finally {
       running = false;

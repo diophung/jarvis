@@ -12,6 +12,55 @@ export interface UsersTable {
   name: string;
   passwordHash: string | null;
   role: string;
+  emailVerified: number; // 0|1
+  avatarUrl: string | null;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthAccountsTable {
+  id: string;
+  userId: string;
+  provider: string; // 'google' | 'facebook' | 'apple'
+  providerAccountId: string;
+  email: string | null;
+  emailVerified: number; // 0|1
+  displayName: string | null;
+  avatarUrl: string | null;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SessionsTable {
+  id: string;
+  userId: string;
+  workspaceId: string;
+  tokenHash: string; // sha256 of the raw cookie token; raw token is never stored
+  expiresAt: string;
+  lastSeenAt: string;
+  userAgent: string | null;
+  ip: string | null;
+  createdAt: string;
+}
+
+export interface OauthTokensTable {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  provider: string; // 'google'
+  sourceType: string; // 'gmail' | 'google-drive' | 'google-calendar'
+  sourceAccountId: string | null;
+  providerAccountId: string | null;
+  providerEmail: string | null;
+  grantedScopes: string; // json string[]
+  accessTokenEncrypted: string | null; // AES-256-GCM envelope, never plaintext
+  refreshTokenEncrypted: string | null;
+  accessTokenExpiresAt: string | null;
+  status: string; // 'active' | 'needs_reauth' | 'revoked'
+  lastRefreshedAt: string | null;
+  lastError: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,6 +87,7 @@ export interface SourceAccountsTable {
   settings: string; // json object
   lastSyncAt: string | null;
   syncCursor: string | null;
+  lastError: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -455,6 +505,9 @@ export interface AppSettingsTable {
 export interface DB {
   users: UsersTable;
   workspaces: WorkspacesTable;
+  authAccounts: AuthAccountsTable;
+  sessions: SessionsTable;
+  oauthTokens: OauthTokensTable;
   sourceAccounts: SourceAccountsTable;
   sourceItems: SourceItemsTable;
   sourceAttachments: SourceAttachmentsTable;

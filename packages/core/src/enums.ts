@@ -192,5 +192,29 @@ export const AUDIT_EVENT_TYPES = [
   'settings.updated',
   'auth.login',
   'auth.logout',
+  'auth.register',
+  'auth.login_failed',
+  'auth.password_changed',
+  'auth.oauth_linked',
+  'auth.oauth_unlinked',
+  'auth.session_revoked',
+  'source.oauth_connected',
+  'source.oauth_disconnected',
+  'source.token_refresh_failed',
 ] as const;
 export type AuditEventType = (typeof AUDIT_EVENT_TYPES)[number];
+
+/** OAuth providers usable for LOGIN (authentication, not data access). */
+export const OAUTH_LOGIN_PROVIDERS = ['google', 'facebook', 'apple'] as const;
+export type OauthLoginProvider = (typeof OAUTH_LOGIN_PROVIDERS)[number];
+
+/**
+ * Google data sources connectable via per-source OAuth authorization.
+ * Values double as the connector provider ids so a granted token maps 1:1
+ * onto a sourceAccounts row.
+ */
+export const GOOGLE_SOURCE_TYPES = ['gmail', 'google-drive', 'google-calendar'] as const;
+export type GoogleSourceType = (typeof GOOGLE_SOURCE_TYPES)[number];
+
+export const OAUTH_TOKEN_STATUSES = ['active', 'needs_reauth', 'revoked'] as const;
+export type OauthTokenStatus = (typeof OAUTH_TOKEN_STATUSES)[number];

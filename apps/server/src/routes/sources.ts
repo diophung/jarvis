@@ -1,7 +1,16 @@
 /**
  * Sources & sync routes (see docs/api-contract.md "Sources & sync").
  */
-import { newId, nowIso, toJson, SOURCE_CATEGORIES } from '@donna/core';
+import {
+  fromJson,
+  newId,
+  nowIso,
+  toJson,
+  GOOGLE_SOURCE_TYPES,
+  SOURCE_CATEGORIES,
+  type SourceAccount,
+} from '@donna/core';
+import type { SourceAccountsTable } from '@donna/db';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { AppContext } from '../context.js';
@@ -11,6 +20,12 @@ import {
   mapSourceAccountRow,
   mapSourceItemRow,
 } from '../services/ingestion.js';
+
+/** Per-account auth fields added in v1.1 (docs/api-contract.md). */
+export interface SourceAccountView extends SourceAccount {
+  authKind: 'oauth' | 'env' | 'local';
+  grantedScopes: string[];
+}
 
 const ConnectBodySchema = z.object({
   provider: z.string().min(1),
@@ -32,14 +47,50 @@ const ItemsQuerySchema = z.object({
 export function registerSourcesRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { db, connectors, services } = ctx;
 
+  /** Decorate an account row with authKind / grantedScopes for the API. */
+  function toAccountView(row: SourceAccountsTable, grantedScopes?: string[]): SourceAccountView {
+    const account = mapSourceAccountRow(row);
+    const isOauth = services.tokens.isOauthAccount(row.authRef);
+    const descriptor = connectors.get(row.provider)?.descriptor;
+    const authKind: SourceAccountView['authKind'] = isOauth
+      ? 'oauth'
+      : descriptor && !descriptor.local
+        ? 'env'
+        : 'local';
+    return { ...account, authKind, grantedScopes: isOauth ? (grantedScopes ?? []) : [] };
+  }
+
+  /** grantedScopes per oauth-backed account in the workspace. */
+  async function scopesByAccountId(workspaceId: string): Promise<Map<string, string[]>> {
+    const rows = await db
+      .selectFrom('oauthTokens')
+      .select(['sourceAccountId', 'grantedScopes'])
+      .where('workspaceId', '=', workspaceId)
+      .execute();
+    const map = new Map<string, string[]>();
+    for (const row of rows) {
+      if (row.sourceAccountId) map.set(row.sourceAccountId, fromJson<string[]>(row.grantedScopes, []));
+    }
+    return map;
+  }
+
   // -- Catalog ---------------------------------------------------------------
 
   app.get('/api/sources/catalog', async () => {
+    // The Google sources are connectable through per-source OAuth whenever a
+    // Google OAuth client is configured — no GOOGLE_REFRESH_TOKEN env needed.
+    const googleOauthConfigured =
+      !!services.secrets.env('GOOGLE_CLIENT_ID') && !!services.secrets.env('GOOGLE_CLIENT_SECRET');
     const items = connectors.list().map((connector) => {
       const descriptor = connector.descriptor;
+      const oauthConnectable = (GOOGLE_SOURCE_TYPES as readonly string[]).includes(
+        descriptor.provider,
+      );
       const configured =
-        descriptor.local || descriptor.requiredEnv.every((env) => !!services.secrets.env(env));
-      return { ...descriptor, configured };
+        descriptor.local ||
+        descriptor.requiredEnv.every((env) => !!services.secrets.env(env)) ||
+        (oauthConnectable && googleOauthConfigured);
+      return { ...descriptor, configured, oauthConnectable };
     });
     return { items };
   });
@@ -53,7 +104,8 @@ export function registerSourcesRoutes(app: FastifyInstance, ctx: AppContext): vo
       .where('workspaceId', '=', request.workspaceId)
       .orderBy('createdAt', 'asc')
       .execute();
-    return { items: rows.map(mapSourceAccountRow) };
+    const scopes = await scopesByAccountId(request.workspaceId);
+    return { items: rows.map((row) => toAccountView(row, scopes.get(row.id))) };
   });
 
   app.post('/api/sources/accounts', async (request) => {
@@ -107,18 +159,29 @@ export function registerSourcesRoutes(app: FastifyInstance, ctx: AppContext): vo
       .selectAll()
       .where('id', '=', id)
       .executeTakeFirstOrThrow();
-    return { account: mapSourceAccountRow(row) };
+    return { account: toAccountView(row) };
   });
 
   app.delete('/api/sources/accounts/:id', async (request) => {
     const { id } = request.params as { id: string };
     const account = await db
       .selectFrom('sourceAccounts')
-      .select(['id', 'provider', 'displayName'])
+      .select(['id', 'provider', 'displayName', 'authRef'])
       .where('id', '=', id)
       .where('workspaceId', '=', request.workspaceId)
       .executeTakeFirst();
     if (!account) throw notFound('Source account not found');
+
+    if (services.tokens.isOauthAccount(account.authRef)) {
+      // Best-effort revocation at Google; disconnect proceeds regardless.
+      try {
+        await services.tokens.disconnectSource(account.id);
+      } catch {
+        // Revocation/refresh-state failures must never block disconnect.
+      }
+      // Disconnect removes the stored tokens entirely.
+      await db.deleteFrom('oauthTokens').where('sourceAccountId', '=', account.id).execute();
+    }
 
     await db.deleteFrom('sourceAccounts').where('id', '=', id).execute();
 

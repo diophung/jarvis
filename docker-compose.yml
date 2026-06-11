@@ -17,6 +17,26 @@ services:
       DONNA_SECRET: ${DONNA_SECRET:-change-me-in-production}
       DONNA_AUTH_MODE: ${DONNA_AUTH_MODE:-local}
       DONNA_DEMO_SEED: ${DONNA_DEMO_SEED:-true}
+      # Auth / OAuth (docs/deployment.md + docs/auth.md). Defaults mirror the
+      # server's own (apps/server/src/config.ts) so an empty shell var never
+      # changes behavior.
+      DONNA_PUBLIC_URL: ${DONNA_PUBLIC_URL:-http://localhost:3001}
+      DONNA_COOKIE_SECURE: ${DONNA_COOKIE_SECURE:-false}
+      DONNA_TRUST_PROXY: ${DONNA_TRUST_PROXY:-false}
+      DONNA_ALLOW_SIGNUP: ${DONNA_ALLOW_SIGNUP:-true}
+      DONNA_TOKEN_ENCRYPTION_KEY: ${DONNA_TOKEN_ENCRYPTION_KEY:-${DONNA_SECRET:-change-me-in-production}}
+      DONNA_OWNER_EMAIL: ${DONNA_OWNER_EMAIL:-you@example.com}
+      DONNA_OWNER_NAME: ${DONNA_OWNER_NAME:-Donna User}
+      DONNA_OWNER_PASSWORD: ${DONNA_OWNER_PASSWORD:-}
+      DONNA_WEB_ORIGIN: ${DONNA_WEB_ORIGIN:-http://localhost:5173}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-}
+      APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      APPLE_KEY_ID: ${APPLE_KEY_ID:-}
+      APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
       DATABASE_URL: ${DATABASE_URL:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -33,6 +53,11 @@ services:
     environment:
       DONNA_DATA_DIR: /data
       DONNA_SECRET: ${DONNA_SECRET:-change-me-in-production}
+      # The worker refreshes Google source tokens during scheduled syncs, so
+      # it needs the token key + Google client credentials too.
+      DONNA_TOKEN_ENCRYPTION_KEY: ${DONNA_TOKEN_ENCRYPTION_KEY:-${DONNA_SECRET:-change-me-in-production}}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       DATABASE_URL: ${DATABASE_URL:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}

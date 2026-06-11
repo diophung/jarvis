@@ -1,8 +1,15 @@
 import type { ConnectorCapability, SourceAccount, SourceCategory } from '@donna/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plug } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { Badge, Button, Card, LoadingPane } from '../../components/ui.js';
 import { api } from '../../lib/api.js';
+import {
+  GOOGLE_SOURCE_ACCESS,
+  googleSourceStartUrl,
+  isGoogleSourceType,
+  oauthPrimaryLinkClass,
+} from './google-oauth.js';
 
 /**
  * Shape of `GET /api/sources/catalog` entries: the connector descriptor from
@@ -19,6 +26,8 @@ export interface CatalogConnector {
   requiredEnv: string[];
   local: boolean;
   configured: boolean;
+  /** True for Google sources connectable via per-source OAuth (gmail / drive / calendar). */
+  oauthConnectable?: boolean;
 }
 
 export const SOURCE_CATEGORY_LABELS: Record<SourceCategory, string> = {
@@ -34,13 +43,20 @@ const CATEGORY_ORDER: SourceCategory[] = ['email', 'chat', 'calendar', 'storage'
 function ConnectorCard({
   connector,
   connecting,
+  returnTo,
   onConnect,
 }: {
   connector: CatalogConnector;
   connecting: boolean;
+  /** In-app path the OAuth callback should land on (current page). */
+  returnTo: string;
   onConnect: () => void;
 }) {
-  const gated = !connector.local && !connector.configured;
+  const oauthSource =
+    connector.oauthConnectable && connector.configured && isGoogleSourceType(connector.provider)
+      ? connector.provider
+      : null;
+  const gated = !connector.local && !connector.configured && !oauthSource;
   return (
     <Card className="p-4 flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -61,7 +77,14 @@ function ConnectorCard({
           : 'No external scopes needed'}
       </p>
       <div className="mt-auto pt-1 space-y-1.5">
-        {connector.local ? (
+        {oauthSource ? (
+          <>
+            <a href={googleSourceStartUrl(oauthSource, returnTo)} className={oauthPrimaryLinkClass}>
+              Connect with Google
+            </a>
+            <p className="text-[11px] text-ink-muted">{GOOGLE_SOURCE_ACCESS[oauthSource]}</p>
+          </>
+        ) : connector.local ? (
           <Button variant="primary" size="sm" loading={connecting} onClick={onConnect}>
             Connect demo source
           </Button>
@@ -83,6 +106,7 @@ function ConnectorCard({
 /** "Add a source" — the connector catalog, grouped by category. */
 export function CatalogSection() {
   const qc = useQueryClient();
+  const location = useLocation();
   const catalog = useQuery({
     queryKey: ['source-catalog'],
     queryFn: () => api.get<{ items: CatalogConnector[] }>('/api/sources/catalog'),
@@ -136,6 +160,7 @@ export function CatalogSection() {
                     key={c.provider}
                     connector={c}
                     connecting={connect.isPending && connect.variables === c.provider}
+                    returnTo={location.pathname}
                     onConnect={() => connect.mutate(c.provider)}
                   />
                 ))}

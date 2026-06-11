@@ -37,6 +37,11 @@ export class GoogleAuth {
   constructor(private readonly nowMs: () => number = () => Date.now()) {}
 
   async getAccessToken(ctx: ConnectorContext): Promise<string> {
+    // OAuth-connected accounts: the server-injected token source owns
+    // storage, refresh, and reauth marking. The env-driven refresh-token
+    // flow below stays as the backward-compatible path.
+    if (ctx.oauth) return ctx.oauth.getAccessToken();
+
     const missing = missingGoogleEnv(ctx);
     if (missing.length > 0) {
       throw new Error(`not configured: missing env ${missing.join(', ')}`);

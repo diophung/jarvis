@@ -325,11 +325,30 @@ export interface UploadsService {
   remove(workspaceId: string, id: string): Promise<void>;
 }
 
+/**
+ * Per-source Google OAuth grants: encrypted token storage, refresh,
+ * revocation. The connector layer consumes tokens only through
+ * tokenSourceFor(); raw tokens never cross the API surface.
+ */
+export interface TokensService {
+  /** Valid access token for a user's source grant; refreshes when expired. */
+  getGoogleAccessTokenForUser(userId: string, sourceType: string): Promise<string>;
+  /** Proactive refresh when the cached access token is near expiry. */
+  refreshGoogleTokenIfNeeded(userId: string, sourceType: string): Promise<void>;
+  /** OAuthTokenSource for a connected account (ConnectorContext.oauth). */
+  tokenSourceFor(sourceAccountId: string): { getAccessToken(): Promise<string> };
+  /** True when the account's credentials come from a stored OAuth grant. */
+  isOauthAccount(authRef: string | null): boolean;
+  /** Revoke at the provider (best effort), wipe stored tokens, mark revoked. */
+  disconnectSource(sourceAccountId: string): Promise<void>;
+}
+
 // ---------- Container ----------
 export interface Services {
   audit: AuditService;
   settings: SettingsService;
   secrets: SecretsService;
+  tokens: TokensService;
   llm: LlmRouterService;
   ingestion: IngestionService;
   indexing: IndexingService;
@@ -355,5 +374,7 @@ declare module 'fastify' {
   interface FastifyRequest {
     userId: string;
     workspaceId: string;
+    /** Id of the DB session backing this request ('' for unauthenticated). */
+    sessionId: string;
   }
 }

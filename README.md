@@ -75,7 +75,7 @@ DATABASE_URL=postgres://donna:donna@postgres:5432/donna \
 docker compose --profile ollama up --build
 ```
 
-Note: the compose file passes `DATABASE_URL` through from your environment — starting the `postgres` profile does not rewire Donna automatically. When the API and the dedicated worker both run, set `DONNA_INLINE_WORKER=false` on the `donna` service so the scheduler runs only in the worker.
+Note: the compose file passes `DATABASE_URL` through from your environment — starting the `postgres` profile does not rewire Donna automatically. The compose file sets `DONNA_INLINE_WORKER=false` on the `donna` service so the scheduler runs only in the dedicated worker.
 
 ## Configuring AI providers
 
@@ -137,10 +137,14 @@ Every variable is optional for local use — Donna boots with zero env vars. See
 | `DONNA_STORAGE_DRIVER` | `local` | `local` filesystem or `s3` object storage for uploads. |
 | `DONNA_S3_BUCKET` / `DONNA_S3_REGION` / `DONNA_S3_ENDPOINT` | unset | Upload bucket when driver is `s3`; endpoint enables MinIO/R2 (path-style). |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | unset | AWS credentials via the SDK's standard chain (S3 storage and the S3 source connector). |
-| `DONNA_AUTH_MODE` | `local` | `local` = single-user auto-login; `password` = email + password. |
+| `DONNA_AUTH_MODE` | `local` | `local` = single-user auto-login; `password` = email + password login, with self-service registration and any configured OAuth login providers. See [docs/auth.md](docs/auth.md). |
 | `DONNA_OWNER_EMAIL` | `you@example.com` | Owner account email, created on first boot. |
 | `DONNA_OWNER_NAME` | `Donna User` | Owner display name. |
-| `DONNA_OWNER_PASSWORD` | unset | Required when `DONNA_AUTH_MODE=password`. |
+| `DONNA_OWNER_PASSWORD` | unset | Owner password, hashed on first boot (set it when using `password` mode). |
+| `DONNA_ALLOW_SIGNUP` | `true` | Allow self-service registration in `password` mode. |
+| `DONNA_COOKIE_SECURE` | `false` | `Secure` attribute on cookies — set `true` behind HTTPS (required for Apple login). |
+| `DONNA_PUBLIC_URL` | `http://localhost:<port>` | Public base URL of the API; OAuth redirect URIs are built from it. Required behind a reverse proxy. |
+| `DONNA_TOKEN_ENCRYPTION_KEY` | falls back to `DONNA_SECRET` | Dedicated key for OAuth-token encryption at rest. |
 | `DONNA_DEMO_SEED` | `true` | Seed the demo workspace on first boot (skipped if any source is already connected). |
 | `DONNA_WEB_ORIGIN` | `http://localhost:5173` | Allowed CORS origin for the dev web server. |
 | `DONNA_PUBLIC_DIR` | unset | Serve a built web bundle from the API server (the Docker image sets it). |
@@ -148,7 +152,10 @@ Every variable is optional for local use — Donna boots with zero env vars. See
 | `DONNA_LOCAL_LLM_BASE_URL` / `DONNA_LOCAL_LLM_MODEL` | unset | Bootstrap a local OpenAI-compatible provider. |
 | `DONNA_LOCAL_LLM_API_KEY_ENV` | unset | Name of an env var holding the local endpoint's key, if it needs one. |
 | `DONNA_LOCAL_EMBEDDING_MODEL` | unset | Embedding model for the local provider (enables semantic search). |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REFRESH_TOKEN` | unset | Gmail / Google Calendar / Google Drive connectors. |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | unset | Google OAuth client: "Sign in with Google" **and** the Gmail / Drive / Calendar connect buttons. |
+| `GOOGLE_REFRESH_TOKEN` | unset | Advanced/headless alternative for the Google connectors (env-supplied refresh token instead of the connect buttons). |
+| `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | unset | "Sign in with Facebook". |
+| `APPLE_CLIENT_ID` / `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | unset | "Sign in with Apple" (Services ID + ES256 key; `\n`-escaped PEM). HTTPS only. |
 | `MS_CLIENT_ID` / `MS_CLIENT_SECRET` / `MS_TENANT_ID` / `MS_REFRESH_TOKEN` | unset | Outlook / Teams / OneDrive connectors (Microsoft Graph). |
 | `SLACK_BOT_TOKEN` | unset | Slack connector. |
 | `DONNA_SOURCE_S3_BUCKET` / `DONNA_SOURCE_S3_REGION` | unset | S3 bucket used as a *source* (document listing), distinct from upload storage. |
@@ -158,18 +165,20 @@ Every variable is optional for local use — Donna boots with zero env vars. See
 
 **Mock connectors need nothing.** Demo Email, Demo Chat, Demo Calendar, and Demo Drive are real connectors that serve a deterministic narrative dataset — they support full and incremental syncs, search, and even action execution (so the approval flow is testable end to end).
 
-Real provider hooks exist for Gmail, Google Calendar, Google Drive, Outlook, Teams, OneDrive, Slack, and S3. Each declares its required env vars (the Sources page shows whether a connector is configured):
+**Google sources connect with OAuth buttons.** With a Google OAuth client configured (`GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`), Gmail, Google Drive, and Google Calendar each get a **Connect with Google** button in Settings → Connected Sources: a per-source consent flow that requests only that source's read-only scope, stores tokens encrypted at rest, refreshes them automatically, and supports Reconnect/Disconnect from the UI. The env-supplied `GOOGLE_REFRESH_TOKEN` remains as the advanced/headless path. Setup: [docs/auth.md](docs/auth.md).
+
+The other real providers (Outlook, Teams, OneDrive, Slack, S3) are configured via env vars (the Sources page shows whether a connector is configured):
 
 | Connector(s) | Required env |
 | --- | --- |
-| Gmail, Google Calendar, Google Drive | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` |
+| Gmail, Google Calendar, Google Drive | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (OAuth connect buttons) — or add `GOOGLE_REFRESH_TOKEN` for the env path |
 | Outlook, Teams, OneDrive | `MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `MS_TENANT_ID`, `MS_REFRESH_TOKEN` |
 | Slack | `SLACK_BOT_TOKEN` |
 | S3 (source) | `DONNA_SOURCE_S3_BUCKET`, `DONNA_SOURCE_S3_REGION` |
 
 See `docs/connectors.md` for per-provider setup details.
 
-**Honesty note:** the real connector hooks are written against the current public API documentation of each provider (request shapes, auth flows, cursors) and have unit tests with mocked HTTP — but they have **not yet been exercised against live provider APIs**. Expect to debug the first real connection. There is no OAuth consent flow in the UI yet; you must supply refresh tokens via env.
+**Honesty note:** the real connector hooks are written against the current public API documentation of each provider (request shapes, auth flows, cursors) and have unit tests with mocked HTTP — but they have **not yet been exercised against live provider APIs**. Expect to debug the first real connection.
 
 ## Architecture overview
 
@@ -274,7 +283,8 @@ docker run -d -v donna-data:/data -e DONNA_SECRET=... \
 Checklist for anything beyond your own machine:
 
 - **`DONNA_SECRET`** — set a long random value. It signs sessions and encrypts stored API keys; the dev fallback logs a warning and is not safe.
-- **Auth** — `DONNA_AUTH_MODE=password` plus `DONNA_OWNER_EMAIL` / `DONNA_OWNER_PASSWORD`. The default `local` mode signs in anyone who can reach the server.
+- **Auth** — `DONNA_AUTH_MODE=password` plus `DONNA_OWNER_EMAIL` / `DONNA_OWNER_PASSWORD`. The default `local` mode signs in anyone who can reach the server. Password mode also enables self-service registration (`DONNA_ALLOW_SIGNUP`) and, with provider credentials set, Google / Facebook / Apple login — see [docs/auth.md](docs/auth.md).
+- **Public URL** — set `DONNA_PUBLIC_URL` to the externally visible URL (and `DONNA_COOKIE_SECURE=true` behind HTTPS); OAuth redirect URIs are built from it.
 - **Database** — set `DATABASE_URL` to a managed Postgres for anything you care about; migrations run automatically on start.
 - **Uploads** — `DONNA_STORAGE_DRIVER=s3` with `DONNA_S3_BUCKET`, `DONNA_S3_REGION`, AWS credentials, and optionally `DONNA_S3_ENDPOINT` for MinIO/R2.
 - **Scaling** — run the worker as a separate process/container and set `DONNA_INLINE_WORKER=false` on the API so scheduled jobs run in exactly one place.
@@ -299,7 +309,9 @@ Honesty over polish:
 - **Semantic search requires an embedding provider.** Without one, search and retrieval are keyword-only (the UI labels the active mode).
 - **Single workspace per deployment**, designed for one user. `password` mode protects access, but there is no multi-tenant isolation.
 - **LLM-path citation mapping is heuristic**: the model is asked to cite `[n]` markers that map back to retrieved snippets; if it doesn't, Donna falls back to the top retrieved results. Demo-mode citations are exact.
-- **No OAuth consent flow UI.** Real connectors are configured with env-supplied refresh tokens; there's no "Sign in with Google" button yet.
+- **OAuth flows are tested against mocks, not live providers.** Sign-in with Google/Facebook/Apple and the Google source-connect flows have full unit-test coverage with mocked provider endpoints, but Facebook and Apple in particular have never been run against the live services. Microsoft and Slack connectors still have no consent-flow UI — they take env-supplied tokens only.
+- **OAuth-connected Google sources are read-only by scope.** The connect buttons request `gmail.readonly` / `drive.metadata.readonly` / `calendar.readonly`, so approval-gated sends/invites fail on those accounts; writes need the env-supplied refresh-token path with broader scopes.
+- **The login rate limiter is per-process** (in-memory): N API replicas multiply the attempts an attacker gets before throttling.
 - Keyword retrieval is a SQL scan tuned for personal-scale data, not a search cluster.
 - **Digest greetings/dates use UTC.** The fallback debrief narrative formats times in UTC; users far from UTC may see "Good morning" at the wrong hour. The scheduled-digest cron also evaluates in the server's timezone.
 - **Switching embedding providers needs a re-index.** Semantic search only matches vectors from the currently routed embedding model; chunks indexed under an older model are skipped until re-indexed (re-sync or re-upload).
@@ -320,6 +332,7 @@ docs/walkthrough.md   a 10-minute product tour
 More documentation:
 
 - [docs/architecture.md](docs/architecture.md) — subsystem map, data flows, data model
+- [docs/auth.md](docs/auth.md) — login (password + Google/Facebook/Apple), sessions, Gmail/Drive/Calendar authorization, token storage, secret rotation
 - [docs/connectors.md](docs/connectors.md) — per-provider setup (env vars, scopes, credentials)
 - [docs/developer-guide.md](docs/developer-guide.md) — add a connector, add an LLM provider, test patterns
 - [docs/deployment.md](docs/deployment.md) — local, Docker Compose, and cloud deployment

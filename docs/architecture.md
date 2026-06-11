@@ -151,8 +151,11 @@ goes through `propose`:
 
 ## Normalized data model
 
-One migration (`packages/db/src/migrations/0001_init.ts`) defines all 28
-tables in a portable SQL subset that runs identically on SQLite and Postgres.
+Two migrations define all 31 tables in a portable SQL subset that runs
+identically on SQLite and Postgres: `packages/db/src/migrations/0001_init.ts`
+(the original 28) and `0002_auth_oauth.ts` (v1.1: `auth_accounts`,
+`sessions`, `oauth_tokens`, plus new columns on `users` and
+`source_accounts`).
 
 **Portability conventions** (enforced throughout):
 
@@ -165,11 +168,12 @@ tables in a portable SQL subset that runs identically on SQLite and Postgres.
   `fromJson()` / serialized with `toJson()` from `@donna/core`
 - columns are snake_case in SQL, camelCase in code (Kysely `CamelCasePlugin`)
 
-The 28 tables, grouped:
+The 31 tables, grouped:
 
 | Group | Tables | Notes |
 |-------|--------|-------|
 | Identity | `users`, `workspaces` | single owner user per workspace; `password_hash` only set in password auth mode |
+| Auth & OAuth | `sessions`, `auth_accounts`, `oauth_tokens` | `sessions` stores only the sha256 hash of the opaque cookie token (sliding 30-day expiry, per-device revocation); `auth_accounts` links OAuth login identities (google/facebook/apple, unique per provider + subject); `oauth_tokens` holds per-source Google grants — access/refresh tokens AES-256-GCM encrypted, never plaintext |
 | Sources & ingestion | `source_accounts`, `source_items`, `source_attachments`, `connector_runs`, `uploaded_files` | `source_accounts` holds provider, status, settings JSON, and the opaque `sync_cursor`; `source_items` is the normalized item store (`dedupe_key`, `content_hash`, sender/participants as JSON `PersonRef`s) |
 | People & projects | `people`, `organizations`, `projects` | priority context: person `importance` (`vip`…`ignore`), project keywords and due dates feed scoring |
 | Prioritization & digests | `task_candidates`, `digests`, `digest_items`, `item_feedback` | scores, levels, planning category, and `signals` (JSON `ScoreSignal[]`) explain every ranking |
@@ -187,8 +191,8 @@ The 28 tables, grouped:
 
 ```ts
 export interface Services {
-  audit; settings; secrets; llm; ingestion; indexing; retrieval; scoring;
-  digest; actions; memory; feedback; assistant; storage; uploads;
+  audit; settings; secrets; tokens; llm; ingestion; indexing; retrieval;
+  scoring; digest; actions; memory; feedback; assistant; storage; uploads;
 }
 
 export interface AppContext {
@@ -201,16 +205,45 @@ export interface AppContext {
 
 `buildServices` (`apps/server/src/services/index.ts`) wires the container in
 dependency order — e.g. `ingestion` receives `{ db, connectors, secrets,
-audit, settings, indexing }`, `assistant` receives `{ db, llm, retrieval,
-memory, actions, settings, audit }`. Each service is a factory function
-(`createXService(deps)`) returning a plain object implementing its
+audit, settings, indexing, tokens }`, `assistant` receives `{ db, llm,
+retrieval, memory, actions, settings, audit }`. Each service is a factory
+function (`createXService(deps)`) returning a plain object implementing its
 `context.ts` interface, so tests can substitute any dependency with a stub.
+The v1.1 `tokens` service (`services/tokens.ts`) owns per-source Google
+OAuth grants: AES-256-GCM storage keyed by `config.tokenEncryptionKey`
+(`DONNA_TOKEN_ENCRYPTION_KEY`, falling back to `DONNA_SECRET`), single-flight
+access-token refresh handed to the connector layer during syncs, and
+revocation on disconnect — raw tokens never reach logs, audits, or errors.
 
 Route modules (`apps/server/src/routes/*.ts`) each export
 `registerXRoutes(app, ctx)` and are assembled in `buildApp`
 (`apps/server/src/app.ts`), which also installs cookie/CORS/multipart
 plugins, the error handler, session auth, and (when `DONNA_PUBLIC_DIR` is
 set) static serving of the built web UI with an SPA fallback.
+
+### Auth & sessions (v1.1)
+
+Three modules share one `SessionsService` (`services/sessions.ts`), created
+in `buildApp`:
+
+- **`src/auth.ts` (`registerAuth`)** — the `onRequest` session hook plus
+  login / register / logout / session management under `/api/auth/*`.
+  Sessions are DB rows (`sessions` table): the signed `donna_session` cookie
+  carries an opaque random token, only its sha256 hash is stored (a DB leak
+  cannot be replayed), and expiry slides — 30 days, renewed once less than
+  half remains. Two auth modes (`DONNA_AUTH_MODE`): `local` (default)
+  auto-provisions the owner and creates a session on first request;
+  `password` requires bcrypt login (rate-limited) and optionally signup
+  (`DONNA_ALLOW_SIGNUP`).
+- **`routes/auth-oauth.ts` (`registerAuthOauthRoutes`)** — OAuth **login**
+  (google / facebook / apple): browser-redirect flows with signed state
+  cookies; verified identities land in `auth_accounts` (login, signup, or
+  link-to-existing-account intents).
+- **`routes/source-oauth.ts` (`registerSourceOauthRoutes`)** — Google **data
+  source** authorization (gmail / google-drive / google-calendar): a
+  state-cookie + PKCE flow bound to the requesting session that stores the
+  encrypted grant in `oauth_tokens` (via the `tokens` service) and creates
+  the linked `source_accounts` row.
 
 Two entrypoints share this container: `src/index.ts` (API server, plus the
 in-process worker unless `DONNA_INLINE_WORKER=false`) and `src/worker.ts`
@@ -265,7 +298,7 @@ paths as production minus the narrative polish.
 ## Worker
 
 `createWorkerLoop` (`apps/server/src/worker-loop.ts`) ticks every 60 seconds.
-Each tick runs three independent sub-jobs, each in its own try/catch so one
+Each tick runs four independent sub-jobs, each in its own try/catch so one
 failure never blocks the others:
 
 1. **Scheduled digests** — per workspace, if the `digest.schedule` setting is
@@ -274,9 +307,14 @@ failure never blocks the others:
    for the workspace owner and advance the marker.
 2. **Connector syncs** — `ingestion.syncDueAccounts`: every connected account
    whose `last_sync_at` is older than the `sync.intervalMinutes` setting
-   (default 15) gets an incremental sync.
+   (default 15) gets an incremental sync. OAuth-backed Google sources refresh
+   their access tokens through the `tokens` service as part of the sync, so a
+   split worker needs `DONNA_TOKEN_ENCRYPTION_KEY` (when set) and the Google
+   client credentials (see [deployment.md](./deployment.md)).
 3. **Approval expiry** — pending `approval_requests` past `expires_at` (set 7
    days from creation) become `expired`, audited as `approval.expired`.
+4. **Session cleanup** — expired `sessions` rows are garbage-collected
+   (`sessions.deleteExpired`).
 
 The loop runs in-process with the API by default; set
 `DONNA_INLINE_WORKER=false` and run `pnpm --filter @donna/server worker` to

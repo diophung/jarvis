@@ -27,6 +27,7 @@ import type {
   MemoryService,
   ProposeActionInput,
   SecretsService,
+  TokensService,
 } from '../context.js';
 import { conflict, notFound } from '../lib/http-errors.js';
 
@@ -83,8 +84,14 @@ export function createActionsService(deps: {
   secrets: SecretsService;
   audit: AuditService;
   memory: MemoryService;
+  /**
+   * Per-source OAuth token service. Optional only so pre-v1.1 fixtures keep
+   * working — production wiring MUST pass it or write actions on
+   * OAuth-connected accounts cannot authenticate.
+   */
+  tokens?: TokensService;
 }): ActionsService {
-  const { db, connectors, secrets, audit, memory } = deps;
+  const { db, connectors, secrets, audit, memory, tokens } = deps;
 
   async function getActionRow(actionId: string): Promise<AgentActionsTable> {
     const row = await db
@@ -141,6 +148,12 @@ export function createActionsService(deps: {
       settings: fromJson<Record<string, unknown>>(account.settings, {}),
       secrets: secrets.connectorResolver(),
       logger: quietLogger,
+      // OAuth-connected accounts get a server-managed token source; env-based
+      // accounts keep resolving credentials through ctx.secrets.
+      oauth:
+        tokens && tokens.isOauthAccount(account.authRef)
+          ? tokens.tokenSourceFor(account.id)
+          : undefined,
     };
     const result = await connector.execute(ctx, {
       type: connectorActionType(row.capability, row.actionType),

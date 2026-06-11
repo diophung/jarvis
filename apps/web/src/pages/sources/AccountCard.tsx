@@ -4,10 +4,28 @@ import clsx from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import { History, MoreHorizontal, RefreshCw, Unplug } from 'lucide-react';
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { SourceCategoryIcon } from '../../components/domain.js';
 import { Badge, Button, Card, Spinner } from '../../components/ui.js';
 import { api } from '../../lib/api.js';
 import { smartTime, timeAgo } from '../../lib/format.js';
+import {
+  GOOGLE_SOURCE_ACCESS,
+  googleSourceStartUrl,
+  isGoogleSourceType,
+  oauthPrimaryLinkClass,
+  scopeLabel,
+} from './google-oauth.js';
+
+/**
+ * `GET /api/sources/accounts` enriches accounts with OAuth fields
+ * (docs/api-contract.md "Google source authorization"). Optional so the UI
+ * degrades gracefully for env/local accounts.
+ */
+export type SourceAccountView = SourceAccount & {
+  authKind?: 'oauth' | 'env' | 'local';
+  grantedScopes?: string[];
+};
 
 const STATUS_BADGE: Record<
   SourceAccountStatus,
@@ -15,7 +33,7 @@ const STATUS_BADGE: Record<
 > = {
   connected: { label: 'Connected', tone: 'green' },
   error: { label: 'Error', tone: 'red' },
-  needs_auth: { label: 'Needs sign-in', tone: 'amber' },
+  needs_auth: { label: 'Needs reauthorization', tone: 'amber' },
   disconnected: { label: 'Disconnected', tone: 'neutral' },
 };
 
@@ -99,8 +117,9 @@ function RunsList({ accountId }: { accountId: string }) {
 }
 
 /** One connected source account: status, sync controls, run history, disconnect. */
-export function AccountCard({ account }: { account: SourceAccount }) {
+export function AccountCard({ account }: { account: SourceAccountView }) {
   const qc = useQueryClient();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [runsOpen, setRunsOpen] = useState(false);
   const [lastRun, setLastRun] = useState<ConnectorRun | null>(null);
@@ -125,6 +144,12 @@ export function AccountCard({ account }: { account: SourceAccount }) {
   });
 
   const status = STATUS_BADGE[account.status];
+  const googleSource = isGoogleSourceType(account.provider) ? account.provider : null;
+  const grantedScopes = account.grantedScopes ?? [];
+  const disconnectMessage =
+    googleSource || account.authKind === 'oauth'
+      ? `Disconnect ${account.displayName}? Donna will stop syncing this source. Its stored Google access tokens will be revoked and removed.`
+      : `Disconnect ${account.displayName}? Donna will stop syncing this source.`;
 
   return (
     <Card className="p-4 flex flex-col gap-3">
@@ -141,6 +166,23 @@ export function AccountCard({ account }: { account: SourceAccount }) {
           <p className="text-xs text-ink-muted mt-1">
             {account.lastSyncAt ? `Last synced ${timeAgo(account.lastSyncAt)}` : 'Never synced'}
           </p>
+          {account.lastError && (
+            <p className="text-xs text-red-600/80 truncate mt-1" title={account.lastError}>
+              {account.lastError}
+            </p>
+          )}
+          {grantedScopes.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {grantedScopes.map((scope) => (
+                <Badge key={scope} tone="neutral" className="text-[10px] px-1.5">
+                  {scopeLabel(scope)}
+                </Badge>
+              ))}
+            </div>
+          )}
+          {googleSource && (
+            <p className="text-xs text-ink-muted mt-1.5">{GOOGLE_SOURCE_ACCESS[googleSource]}</p>
+          )}
         </div>
         <div className="relative shrink-0">
           <button
@@ -177,11 +219,7 @@ export function AccountCard({ account }: { account: SourceAccount }) {
                   danger
                   onClick={() => {
                     setMenuOpen(false);
-                    if (
-                      window.confirm(
-                        `Disconnect ${account.displayName}? Donna will stop syncing this source.`,
-                      )
-                    ) {
+                    if (window.confirm(disconnectMessage)) {
                       disconnect.mutate();
                     }
                   }}
@@ -216,6 +254,15 @@ export function AccountCard({ account }: { account: SourceAccount }) {
       )}
 
       <div className="flex items-center gap-2 mt-auto">
+        {googleSource && account.status === 'needs_auth' && (
+          <a
+            href={googleSourceStartUrl(googleSource, location.pathname)}
+            className={oauthPrimaryLinkClass}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Reconnect
+          </a>
+        )}
         <Button size="sm" onClick={() => sync.mutate('incremental')} loading={sync.isPending}>
           {!sync.isPending && <RefreshCw className="h-3.5 w-3.5" />}
           Sync now

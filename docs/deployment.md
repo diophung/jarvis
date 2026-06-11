@@ -7,6 +7,7 @@ env var below is defined in `apps/server/src/config.ts` and documented in
 mode with zero configuration.
 
 Related: [architecture.md](./architecture.md) (worker design, demo mode),
+[auth.md](./auth.md) (login, OAuth providers, redirect URIs, secret rotation),
 [connectors.md](./connectors.md) (connector env vars),
 [api-contract.md](./api-contract.md) (endpoints).
 
@@ -67,16 +68,27 @@ Services in `docker-compose.yml`:
 | `ollama` | Ollama (profile `ollama`) | volume `donna-ollama`, port 11434, for local inference |
 
 Compose passes through from your shell/`.env`: `DONNA_SECRET`,
-`DONNA_AUTH_MODE`, `DONNA_DEMO_SEED`, `DATABASE_URL`, `ANTHROPIC_API_KEY`,
-`OPENAI_API_KEY`, `GEMINI_API_KEY`, `DONNA_LOCAL_LLM_BASE_URL`,
-`DONNA_LOCAL_LLM_MODEL`.
+`DONNA_AUTH_MODE`, `DONNA_DEMO_SEED`, the auth/OAuth vars
+(`DONNA_PUBLIC_URL`, `DONNA_COOKIE_SECURE`, `DONNA_TRUST_PROXY`,
+`DONNA_ALLOW_SIGNUP`, `DONNA_TOKEN_ENCRYPTION_KEY`, `DONNA_OWNER_EMAIL`,
+`DONNA_OWNER_NAME`, `DONNA_OWNER_PASSWORD`, `DONNA_WEB_ORIGIN`,
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FACEBOOK_CLIENT_ID`,
+`FACEBOOK_CLIENT_SECRET`, `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`,
+`APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`), `DATABASE_URL`, and the LLM vars
+(`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`,
+`DONNA_LOCAL_LLM_BASE_URL`, `DONNA_LOCAL_LLM_MODEL`). Anything you leave
+unset falls back to the same default the server would use on its own —
+notably `DONNA_TOKEN_ENCRYPTION_KEY` falls back to `DONNA_SECRET`, and
+`DONNA_PUBLIC_URL` to `http://localhost:3001`. The `worker` service
+additionally receives `DONNA_TOKEN_ENCRYPTION_KEY` and
+`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, because it refreshes Google
+source tokens during scheduled syncs.
 
 **Worker split (`DONNA_INLINE_WORKER`).** The API process runs its own
 in-process scheduler unless you set `DONNA_INLINE_WORKER=false`
 (`apps/server/src/index.ts`). The compose file ships a dedicated `worker`
-service, but does not currently set that flag on the `donna` service — add
-`DONNA_INLINE_WORKER: "false"` to the `donna` environment when using the
-dedicated worker, so scheduling runs in exactly one process.
+service and sets `DONNA_INLINE_WORKER: "false"` on the `donna` service, so
+scheduling runs in exactly one process.
 
 Optional profiles:
 
@@ -125,17 +137,61 @@ DONNA_AUTH_MODE=password
 DONNA_OWNER_EMAIL=you@example.com
 DONNA_OWNER_NAME=Your Name
 DONNA_OWNER_PASSWORD=...        # hashed (bcrypt) into the owner account on FIRST boot
+DONNA_COOKIE_SECURE=true        # Secure cookies — set it once you serve over HTTPS
+# DONNA_ALLOW_SIGNUP=false      # default true: self-service registration in password mode
 ```
 
 Set `DONNA_OWNER_PASSWORD` before the first boot — the owner row is created
-once, and without it the owner has no password to log in with. Sessions are
-signed cookies (`donna_session`, 30-day max age).
+once, and without it the owner has no password to log in with (recovery is
+the `reset-password` CLI, see [auth.md](./auth.md#8-password-recovery-self-hosted)).
+Sessions are DB-backed with a signed opaque cookie (`donna_session`, sliding
+30-day expiry, revocable per device in Settings → Account & security).
+Password mode also unlocks OAuth login (below). Full details:
+[auth.md](./auth.md).
+
+**Public URL & OAuth (`DONNA_PUBLIC_URL`).** Behind a reverse proxy or any
+non-localhost deployment, set `DONNA_PUBLIC_URL` to the externally visible
+base URL (e.g. `https://donna.example.com`) — OAuth redirect URIs for both
+login and the Google source flows are built from it, and the server cannot
+infer it from proxied requests. Optional provider credentials light up
+"Sign in with …" buttons and the Google source connect buttons:
+
+```
+DONNA_PUBLIC_URL=https://donna.example.com
+GOOGLE_CLIENT_ID=...            # Google login + Gmail/Drive/Calendar connect
+GOOGLE_CLIENT_SECRET=...
+FACEBOOK_CLIENT_ID=...          # Facebook login
+FACEBOOK_CLIENT_SECRET=...
+APPLE_CLIENT_ID=...             # Apple login (Services ID) — HTTPS only
+APPLE_TEAM_ID=...
+APPLE_KEY_ID=...
+APPLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+# DONNA_TOKEN_ENCRYPTION_KEY=...  # dedicated key for OAuth tokens at rest (default: DONNA_SECRET)
+```
+
+Redirect-URI registration checklist (register the **exact** URLs at each
+provider console; see [auth.md](./auth.md#10-redirect-uris-local-vs-cloud-and-troubleshooting)
+for per-console steps and troubleshooting):
+
+- Google (login): `<DONNA_PUBLIC_URL>/api/auth/oauth/google/callback`
+- Google (sources): `<DONNA_PUBLIC_URL>/api/sources/oauth/google/callback`
+- Facebook: `<DONNA_PUBLIC_URL>/api/auth/oauth/facebook/callback`
+- Apple: `<DONNA_PUBLIC_URL>/api/auth/oauth/apple/callback`
+
+**Apple requires HTTPS.** Apple rejects `http://`/localhost return URLs, and
+its `form_post` callback depends on a `SameSite=None; Secure` state cookie —
+so Apple login only works with an HTTPS `DONNA_PUBLIC_URL` and
+`DONNA_COOKIE_SECURE=true`. Terminate TLS at your proxy/load balancer at
+minimum.
 
 **`DONNA_SECRET` — required.** Signs session cookies and encrypts UI-entered
-API keys at rest (AES-256-GCM with a key derived from it). The server boots
-with a dev fallback but logs a warning; in production set a long random
-value and keep it stable — rotating it invalidates sessions and makes stored
-encrypted API keys undecryptable.
+API keys at rest (AES-256-GCM with a key derived from it); it is also the
+fallback key for stored OAuth tokens when `DONNA_TOKEN_ENCRYPTION_KEY` is
+unset. The server boots with a dev fallback but logs a warning; in production
+set a long random value and keep it stable — rotating it signs everyone out
+and orphans stored ciphertexts unless you re-encrypt them with
+`src/scripts/rotate-token-key.ts` (`DONNA_OLD_KEY=<previous>`; see
+[auth.md](./auth.md#7-rotating-secrets)).
 
 **Web origin / CORS.** When the UI is served by the API itself
 (`DONNA_PUBLIC_DIR`, set in the image), everything is same-origin and CORS is
@@ -149,8 +205,10 @@ bundle and sets this for you.
 
 **Scaling.** The API is stateless apart from the DB and object storage, so
 API replicas scale horizontally behind a load balancer (cookie auth needs no
-sticky sessions; every replica must share the same `DONNA_SECRET` and
-`DATABASE_URL`). Set `DONNA_INLINE_WORKER=false` on API replicas and run the
+sticky sessions; every replica must share the same `DONNA_SECRET`,
+`DONNA_TOKEN_ENCRYPTION_KEY` if set, and `DATABASE_URL`). One caveat: the
+failed-login rate limiter is in-memory per process, so N replicas multiply
+the attempts before throttling. Set `DONNA_INLINE_WORKER=false` on API replicas and run the
 worker (`pnpm --filter @donna/server worker`) as its own service. Run
 **exactly one** worker replica: its jobs (cron digests, due-account syncs,
 approval expiry) coordinate through settings rows and timestamps, not

@@ -24,6 +24,17 @@ if (!config.isProdSecret) {
     'DONNA_SECRET is using the development default — set a strong secret in production.',
   );
 }
+if (
+  !config.env.DONNA_TOKEN_ENCRYPTION_KEY &&
+  !config.isProdSecret &&
+  (config.env.GOOGLE_CLIENT_ID || config.env.FACEBOOK_CLIENT_ID || config.env.APPLE_CLIENT_ID)
+) {
+  app.log.warn(
+    'OAuth is configured but the token encryption key falls back to the development-default ' +
+      'DONNA_SECRET — stored OAuth tokens are encrypted with a PUBLICLY KNOWN key. ' +
+      'Set DONNA_TOKEN_ENCRYPTION_KEY (or a strong DONNA_SECRET) before going to production.',
+  );
+}
 if (boot.seededDemo) {
   app.log.info('Demo workspace seeded (mock sources, people, projects).');
 }

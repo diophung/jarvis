@@ -6,6 +6,9 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { registerAuth } from './auth.js';
+import { registerAuthOauthRoutes } from './routes/auth-oauth.js';
+import { registerSourceOauthRoutes } from './routes/source-oauth.js';
+import { createSessionsService } from './services/sessions.js';
 import type { AppContext } from './context.js';
 import { HttpError } from './lib/http-errors.js';
 import { registerApprovalRoutes } from './routes/approvals.js';
@@ -30,6 +33,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
       redact: ['req.headers.authorization', 'req.headers.cookie'],
     },
     bodyLimit: 4 * 1024 * 1024,
+    trustProxy: ctx.config.env.DONNA_TRUST_PROXY,
   });
 
   await app.register(cookie, { secret: ctx.config.env.DONNA_SECRET });
@@ -56,7 +60,12 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     reply.code(500).send({ error: { code: 'internal', message: 'Something went wrong' } });
   });
 
-  registerAuth(app, { db: ctx.db, config: ctx.config, audit: ctx.services.audit });
+  // One shared sessions service: the auth hook, password login, and OAuth
+  // login must all mint/validate cookie tokens identically.
+  const sessions = createSessionsService(ctx.db);
+  registerAuth(app, { db: ctx.db, config: ctx.config, audit: ctx.services.audit, sessions });
+  registerAuthOauthRoutes(app, { db: ctx.db, config: ctx.config, audit: ctx.services.audit, sessions });
+  registerSourceOauthRoutes(app, { db: ctx.db, config: ctx.config, audit: ctx.services.audit, services: ctx.services });
   registerHealthRoutes(app, ctx);
   registerConversationsRoutes(app, ctx);
   registerDigestRoutes(app, ctx);
