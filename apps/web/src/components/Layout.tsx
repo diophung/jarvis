@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import {
   CheckCircle2,
   ClipboardList,
+  GraduationCap,
   FileText,
   History,
   Inbox,
@@ -261,6 +262,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </nav>
         <div className="border-t border-surface-border px-3 py-3 space-y-0.5">
           <NavItem to="/memory" icon={<ClipboardList />} label="Memory" />
+          <NavItem to="/learning" icon={<GraduationCap />} label="Learned Preferences" />
           <NavItem to="/audit" icon={<ShieldCheck />} label="Audit Log" />
           <NavItem to="/settings" icon={<Settings />} label="Settings" />
           {user && <AccountMenu user={user} authMode={authMode} onLogout={() => void logout()} />}

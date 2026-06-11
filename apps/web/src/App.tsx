@@ -11,6 +11,7 @@ import { ChatPage } from './pages/ChatPage.js';
 import { DebriefPage } from './pages/DebriefPage.js';
 import { DigestsPage } from './pages/DigestsPage.js';
 import { FilesPage } from './pages/FilesPage.js';
+import { LearningPage } from './pages/LearningPage.js';
 import { MemoryPage } from './pages/MemoryPage.js';
 import { SearchPage } from './pages/SearchPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
@@ -52,6 +53,7 @@ export default function App() {
                       <Route path="/files" element={<FilesPage />} />
                       <Route path="/approvals" element={<ApprovalsPage />} />
                       <Route path="/memory" element={<MemoryPage />} />
+                      <Route path="/learning" element={<LearningPage />} />
                       <Route path="/audit" element={<AuditPage />} />
                       <Route path="/settings" element={<SettingsPage />} />
                       <Route path="/settings/:tab" element={<SettingsPage />} />
