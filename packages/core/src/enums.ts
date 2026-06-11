@@ -201,6 +201,12 @@ export const AUDIT_EVENT_TYPES = [
   'source.oauth_connected',
   'source.oauth_disconnected',
   'source.token_refresh_failed',
+  'learning.run',
+  'learning.toggled',
+  'learning.preference.created',
+  'learning.preference.updated',
+  'learning.preference.deleted',
+  'learning.preference.corrected',
 ] as const;
 export type AuditEventType = (typeof AUDIT_EVENT_TYPES)[number];
 
