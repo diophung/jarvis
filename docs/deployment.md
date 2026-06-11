@@ -109,9 +109,20 @@ Run the same image (API + optional separate worker) on any container
 platform. The pieces to externalize:
 
 **Database — managed Postgres.** Set
-`DATABASE_URL=postgres://user:pass@host:5432/donna`. The schema is written in
-a portable SQL subset and migrates automatically on boot; the Kysely client
-pools up to 10 connections per process.
+`DATABASE_URL=postgres://user:pass@host:5432/donna?sslmode=require`
+(Aurora / AlloyDB / Cloud SQL / Neon). The schema is written in a portable
+SQL subset and migrates automatically on boot. Pool size, connect/idle
+timeouts, and the server-side statement timeout are tunable via
+`DONNA_DB_*` vars; pgvector is auto-detected and used for semantic search
+when the extension is available. Readiness lives at `/api/health/ready`,
+operational metrics at `/api/health/metrics`. Full architecture, scale
+posture, partitioning DDL, and runbooks (including the SQLite→Postgres
+backfill tool): [production-database.md](./production-database.md).
+
+**Cache — optional Redis/Valkey.** Set `DONNA_REDIS_URL` (ElastiCache,
+Memorystore, Upstash) to share the hot-read cache across replicas; without
+it each process uses a bounded in-memory cache. The cache is disposable —
+an outage degrades to database reads behind a circuit breaker.
 
 **Uploads — S3-compatible object storage.**
 

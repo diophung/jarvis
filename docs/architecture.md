@@ -151,12 +151,14 @@ goes through `propose`:
 
 ## Normalized data model
 
-Three migrations define all 33 tables in a portable SQL subset that runs
+Four migrations define all 35 tables in a portable SQL subset that runs
 identically on SQLite and Postgres: `packages/db/src/migrations/0001_init.ts`
 (the original 28), `0002_auth_oauth.ts` (v1.1: `auth_accounts`,
 `sessions`, `oauth_tokens`, plus new columns on `users` and
-`source_accounts`), and `0003_self_learning.ts` (v1.2: `learning_signals`,
-`learned_preferences`).
+`source_accounts`), `0003_self_learning.ts` (v1.2: `learning_signals`,
+`learned_preferences`), and `0004_production_ops.ts` (v1.3:
+`idempotency_keys`, `data_deletion_requests`, hot-path indexes — see
+[production-database.md](./production-database.md)).
 
 **Portability conventions** (enforced throughout):
 
@@ -169,7 +171,7 @@ identically on SQLite and Postgres: `packages/db/src/migrations/0001_init.ts`
   `fromJson()` / serialized with `toJson()` from `@donna/core`
 - columns are snake_case in SQL, camelCase in code (Kysely `CamelCasePlugin`)
 
-The 33 tables, grouped:
+The 35 tables, grouped:
 
 | Group | Tables | Notes |
 |-------|--------|-------|
@@ -185,6 +187,7 @@ The 33 tables, grouped:
 | LLM | `llm_provider_configs`, `llm_task_routes`, `llm_call_logs` | provider configs hold `api_key_env` (env var *name*) or `api_key_encrypted` (AES-256-GCM, key derived from `DONNA_SECRET`); call logs record counts/latency only — never message content |
 | Retrieval | `retrieval_chunks`, `embedding_records` | chunk text + JSON metadata; vectors stored as JSON number arrays |
 | Audit & settings | `audit_logs`, `app_settings` | audit metadata is redacted before write; settings are workspace-scoped JSON values |
+| Production ops | `idempotency_keys`, `data_deletion_requests` | write replay protection and durable account-deletion jobs ([production-database.md](./production-database.md)) |
 
 ## Service container
 
@@ -193,9 +196,9 @@ The 33 tables, grouped:
 
 ```ts
 export interface Services {
-  audit; settings; secrets; tokens; llm; ingestion; indexing; retrieval;
-  scoring; digest; actions; memory; feedback; learning; personalization;
-  assistant; storage; uploads;
+  audit; settings; secrets; tokens; cache; idempotency; vectors; privacy;
+  llm; ingestion; indexing; retrieval; scoring; digest; actions; memory;
+  feedback; learning; personalization; assistant; storage; uploads;
 }
 
 export interface AppContext {
