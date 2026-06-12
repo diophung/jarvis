@@ -1,6 +1,6 @@
 import type { CapabilityDef } from '@donna/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -328,13 +328,51 @@ describe('SettingsPage', () => {
     });
   });
 
-  it('saves a digest schedule preset as its cron expression', async () => {
+  it('saves a changed time as a daily cron expression', async () => {
+    // GET seeds the editor with the default daily 7:00 (0 7 * * *).
     renderAt('/settings/schedule');
-    const select = await screen.findByRole('combobox');
-    await userEvent.selectOptions(select, '0 8 * * *');
+    const time = await screen.findByLabelText('Time');
+    fireEvent.change(time, { target: { value: '08:00' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Save schedule' }));
     await waitFor(() => {
       const put = calls.find((c) => c.method === 'PUT' && c.url === '/api/digests/schedule');
       expect(put?.body).toEqual({ cron: '0 8 * * *', enabled: true });
+    });
+  });
+
+  it('builds a weekly cron from the day chips', async () => {
+    renderAt('/settings/schedule');
+    await userEvent.click(await screen.findByRole('button', { name: 'Weekly' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Mon' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Fri' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save schedule' }));
+    await waitFor(() => {
+      const put = calls.find((c) => c.method === 'PUT' && c.url === '/api/digests/schedule');
+      expect(put?.body).toEqual({ cron: '0 7 * * 1,5', enabled: true });
+    });
+  });
+
+  it('pauses scheduled debriefs via the on/off switch', async () => {
+    renderAt('/settings/schedule');
+    await userEvent.click(await screen.findByRole('switch', { name: /scheduled debriefs are on/i }));
+    await waitFor(() => {
+      const put = calls.find((c) => c.method === 'PUT' && c.url === '/api/digests/schedule');
+      expect(put?.body).toEqual({ cron: '0 7 * * *', enabled: false });
+    });
+  });
+
+  it('keeps a custom cron expression editable through the escape hatch', async () => {
+    renderAt('/settings/schedule');
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Use a custom cron expression' }),
+    );
+    const cron = screen.getByLabelText(/cron expression/i);
+    await userEvent.clear(cron);
+    await userEvent.type(cron, '15 6 * * 1-5');
+    await userEvent.click(screen.getByRole('button', { name: 'Save schedule' }));
+    await waitFor(() => {
+      const put = calls.find((c) => c.method === 'PUT' && c.url === '/api/digests/schedule');
+      expect(put?.body).toEqual({ cron: '15 6 * * 1-5', enabled: true });
     });
   });
 
