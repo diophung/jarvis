@@ -10,6 +10,8 @@ import clsx from 'clsx';
 import { ListTodo, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { SourceItemModal } from '../components/domain.js';
+import type { BulkApplyResult, QuickAction } from '../components/quick-actions.js';
+import { applyToEach, BulkActionBar, useSelection } from '../components/quick-actions.js';
 import { Button, EmptyState, LoadingPane, PageHeader, Select } from '../components/ui.js';
 import { api } from '../lib/api.js';
 import { TaskCard } from './tasks/TaskCard.js';
@@ -91,7 +93,7 @@ export function TasksPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
   });
 
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data]);
   const groups = useMemo(
     () =>
       CATEGORY_ORDER.map((cat) => ({
@@ -100,6 +102,23 @@ export function TasksPage() {
       })).filter((g) => g.tasks.length > 0),
     [items],
   );
+
+  const itemIds = useMemo(() => items.map((t) => t.id), [items]);
+  const { selected, toggle, selectAll, deselectAll } = useSelection(itemIds);
+
+  const bulkApply = async (
+    action: QuickAction,
+    scope: 'selected' | 'all',
+  ): Promise<BulkApplyResult> => {
+    const targets = scope === 'all' ? items : items.filter((t) => selected.has(t.id));
+    const { ok, failed } = await applyToEach(targets, (t) =>
+      action.type === 'status'
+        ? api.patch<{ task: TaskCandidate }>(`/api/tasks/${t.id}`, { status: action.status })
+        : api.post<{ ok: true }>('/api/feedback', { kind: action.kind, taskCandidateId: t.id }),
+    );
+    qc.invalidateQueries({ queryKey: ['tasks'] });
+    return { applied: ok, ...(failed > 0 ? { failed } : {}) };
+  };
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-8">
@@ -150,6 +169,16 @@ export function TasksPage() {
 
       {isLoading && <LoadingPane label="Loading priorities…" />}
 
+      {!isLoading && items.length > 0 && (
+        <BulkActionBar
+          total={items.length}
+          selectedCount={selected.size}
+          onSelectAll={selectAll}
+          onDeselectAll={deselectAll}
+          onApply={bulkApply}
+        />
+      )}
+
       {!isLoading && items.length === 0 && (
         <EmptyState
           icon={<ListTodo />}
@@ -170,6 +199,8 @@ export function TasksPage() {
                 <TaskCard
                   key={task.id}
                   task={task}
+                  selected={selected.has(task.id)}
+                  onToggleSelect={toggle}
                   onOpenSource={setOpenItemId}
                   onSetStatus={(id, next) => setTaskStatus.mutate({ id, status: next })}
                   onFeedback={(id, kind) => feedback.mutateAsync({ id, kind })}

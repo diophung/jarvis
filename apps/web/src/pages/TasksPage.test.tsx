@@ -160,4 +160,56 @@ describe('TasksPage', () => {
     renderPage();
     expect(await screen.findByText('Nothing open — enjoy the calm.')).toBeInTheDocument();
   });
+
+  it('bulk applies the chosen action to selected items only', async () => {
+    const { calls } = stubApi([
+      makeTask(),
+      makeTask({ id: 'tc_2', sourceItemId: 'si_2', title: 'Nudge legal about the NDA' }),
+    ]);
+    renderPage();
+
+    await screen.findByText('Reply to the budget email');
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Select "Reply to the budget email"' }),
+    );
+    expect(screen.getByText('1 of 2 selected')).toBeInTheDocument();
+
+    await userEvent.selectOptions(
+      screen.getByDisplayValue('Choose an action…'),
+      'status:deferred',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Apply to Selected' }));
+
+    expect(await screen.findByText('Applied to 1 item.')).toBeInTheDocument();
+    const patches = calls.filter((c) => c.method === 'PATCH');
+    expect(patches.map((c) => c.url)).toEqual(['/api/tasks/tc_1']);
+    expect(patches[0]?.body).toEqual({ status: 'deferred' });
+  });
+
+  it('select all / deselect all drive the count, and Apply to All hits every item', async () => {
+    const { calls } = stubApi([
+      makeTask(),
+      makeTask({ id: 'tc_2', sourceItemId: 'si_2', title: 'Nudge legal about the NDA' }),
+    ]);
+    renderPage();
+
+    await screen.findByText('Reply to the budget email');
+    await userEvent.click(screen.getByRole('button', { name: 'Select All' }));
+    expect(screen.getByText('2 of 2 selected')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Deselect All' }));
+    expect(screen.getByText('0 of 2 selected')).toBeInTheDocument();
+
+    await userEvent.selectOptions(
+      screen.getByDisplayValue('Choose an action…'),
+      'feedback:important',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Apply to All' }));
+
+    expect(await screen.findByText('Applied to 2 items.')).toBeInTheDocument();
+    const posts = calls.filter((c) => c.method === 'POST' && c.url === '/api/feedback');
+    expect(posts.map((c) => c.body)).toEqual([
+      { kind: 'important', taskCandidateId: 'tc_1' },
+      { kind: 'important', taskCandidateId: 'tc_2' },
+    ]);
+  });
 });

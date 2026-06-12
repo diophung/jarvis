@@ -1,6 +1,6 @@
 import type { DigestItem } from '@donna/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DebriefPage } from '../DebriefPage.js';
@@ -11,7 +11,7 @@ const baseItem: DigestItem = {
   digestId: 'dig_1',
   workspaceId: 'ws_1',
   sourceItemId: 'src_1',
-  taskCandidateId: null,
+  taskCandidateId: 'tc_1',
   title: 'Board deck review requested',
   sourceLabel: 'Gmail',
   sourceCategory: 'email',
@@ -50,6 +50,7 @@ const latestDigest: DigestWithItems = {
       ...baseItem,
       id: 'di_2',
       sourceItemId: 'src_2',
+      taskCandidateId: null,
       title: 'Ping legal about the MSA',
       sourceLabel: 'Slack',
       sourceCategory: 'chat',
@@ -175,6 +176,86 @@ describe('DebriefPage', () => {
       const post = calls.find((c) => c.url.includes('/api/digests/generate'));
       expect(post).toBeDefined();
       expect(JSON.parse(String(post!.init?.body))).toEqual({ kind: 'manual' });
+    });
+  });
+
+  it('quick actions PATCH the linked task and POST feedback with the digest item id', async () => {
+    stubFetch((url) => {
+      if (url.includes('/api/digests/latest')) return { digest: latestDigest };
+      if (url === '/api/tasks/tc_1') return { task: { id: 'tc_1', status: 'done' } };
+      if (url === '/api/feedback') return { ok: true };
+      throw new Error(`unexpected request: ${url}`);
+    });
+    renderAt('/debrief');
+
+    const title = await screen.findByText('Board deck review requested');
+    const first = title.closest('div.bg-surface-raised');
+    if (!(first instanceof HTMLElement)) throw new Error('card not found');
+    fireEvent.click(within(first).getByRole('button', { name: 'Done' }));
+    expect(await within(first).findByText('Marked done.')).toBeInTheDocument();
+    const patch = calls.find((c) => c.init?.method === 'PATCH');
+    expect(patch?.url).toBe('/api/tasks/tc_1');
+    expect(JSON.parse(String(patch?.init?.body))).toEqual({ status: 'done' });
+
+    // The second item has no linked task: Done/Defer disabled, feedback still works.
+    const second = screen.getByText('Ping legal about the MSA').closest('div.bg-surface-raised');
+    if (!(second instanceof HTMLElement)) throw new Error('card not found');
+    expect(within(second).getByRole('button', { name: 'Done' })).toBeDisabled();
+    expect(within(second).getByRole('button', { name: 'Defer' })).toBeDisabled();
+    fireEvent.click(within(second).getByRole('button', { name: 'Urgent' }));
+    expect(await within(second).findByText('Thanks — noted.')).toBeInTheDocument();
+    const post = calls.find((c) => c.url === '/api/feedback');
+    expect(JSON.parse(String(post?.init?.body))).toEqual({
+      kind: 'urgent',
+      digestItemId: 'di_2',
+      sourceItemId: 'src_2',
+    });
+  });
+
+  it('bulk Apply to All updates linked tasks and reports skipped items', async () => {
+    stubFetch((url) => {
+      if (url.includes('/api/digests/latest')) return { digest: latestDigest };
+      if (url.startsWith('/api/tasks/')) return { task: { id: 'tc_1', status: 'done' } };
+      throw new Error(`unexpected request: ${url}`);
+    });
+    renderAt('/debrief');
+    await screen.findByText('Board deck review requested');
+
+    fireEvent.change(screen.getByDisplayValue('Choose an action…'), {
+      target: { value: 'status:done' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply to All' }));
+
+    expect(
+      await screen.findByText('Applied to 1 item · skipped 1 without a linked task.'),
+    ).toBeInTheDocument();
+    const patches = calls.filter((c) => c.init?.method === 'PATCH');
+    expect(patches.map((p) => p.url)).toEqual(['/api/tasks/tc_1']);
+  });
+
+  it('bulk Apply to Selected sends feedback only for checked items', async () => {
+    stubFetch((url) => {
+      if (url.includes('/api/digests/latest')) return { digest: latestDigest };
+      if (url === '/api/feedback') return { ok: true };
+      throw new Error(`unexpected request: ${url}`);
+    });
+    renderAt('/debrief');
+    await screen.findByText('Board deck review requested');
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select "Ping legal about the MSA"' }));
+    expect(screen.getByText('1 of 2 selected')).toBeInTheDocument();
+    fireEvent.change(screen.getByDisplayValue('Choose an action…'), {
+      target: { value: 'feedback:urgent' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply to Selected' }));
+
+    expect(await screen.findByText('Applied to 1 item.')).toBeInTheDocument();
+    const posts = calls.filter((c) => c.url === '/api/feedback');
+    expect(posts).toHaveLength(1);
+    expect(JSON.parse(String(posts[0]?.init?.body))).toEqual({
+      kind: 'urgent',
+      digestItemId: 'di_2',
+      sourceItemId: 'src_2',
     });
   });
 

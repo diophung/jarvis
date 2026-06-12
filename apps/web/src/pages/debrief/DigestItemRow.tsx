@@ -1,22 +1,35 @@
-import type { DigestItem } from '@donna/core';
+import type { DigestItem, FeedbackKind } from '@donna/core';
 import clsx from 'clsx';
 import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { SignalsList, SourceCategoryIcon } from '../../components/domain.js';
+import { QuickActionBar } from '../../components/quick-actions.js';
 import { Card, CategoryBadge, LevelPill } from '../../components/ui.js';
 import { smartTime } from '../../lib/format.js';
 
 /**
  * One ranked debrief item: title (opens the underlying source when available),
  * provenance line, the priority/urgency/effort trio, recommended action,
- * explanation, and a "Why this matters" disclosure with scoring signals.
+ * explanation, a "Why this matters" disclosure with scoring signals, and the
+ * same quick-action row as Priorities cards. Done/Defer act on the linked
+ * task candidate, so they're disabled when the item doesn't have one.
  */
 export function DigestItemRow({
   item,
+  selected,
+  onToggleSelect,
   onOpenSource,
+  onSetStatus,
+  onFeedback,
 }: {
   item: DigestItem;
+  selected: boolean;
+  onToggleSelect: (id: string) => void;
   onOpenSource: (sourceItemId: string) => void;
+  /** PATCH /api/tasks/:taskCandidateId — resolves when recorded. */
+  onSetStatus: (item: DigestItem, status: 'done' | 'deferred') => Promise<unknown>;
+  /** POST /api/feedback — resolves when recorded. */
+  onFeedback: (item: DigestItem, kind: FeedbackKind) => Promise<unknown>;
 }) {
   const [showWhy, setShowWhy] = useState(false);
   const sourceItemId = item.sourceItemId;
@@ -24,6 +37,13 @@ export function DigestItemRow({
   return (
     <Card className="p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
+        <input
+          type="checkbox"
+          className="mt-1 h-3.5 w-3.5 shrink-0 accent-donna-600"
+          checked={selected}
+          onChange={() => onToggleSelect(item.id)}
+          aria-label={`Select "${item.title}"`}
+        />
         <div className="min-w-0 flex-1">
           {sourceItemId ? (
             <button
@@ -79,6 +99,12 @@ export function DigestItemRow({
           <SignalsList signals={item.signals} />
         </div>
       )}
+
+      <QuickActionBar
+        statusDisabled={item.taskCandidateId === null}
+        onSetStatus={(status) => onSetStatus(item, status)}
+        onFeedback={(kind) => onFeedback(item, kind)}
+      />
     </Card>
   );
 }

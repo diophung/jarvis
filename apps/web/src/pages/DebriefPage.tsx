@@ -1,9 +1,12 @@
+import type { DigestItem, FeedbackKind, TaskCandidate } from '@donna/core';
 import { DIGEST_SECTION_LABELS, DIGEST_SECTIONS } from '@donna/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Cpu, History, RefreshCw, Sparkles, Sun } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SourceItemModal } from '../components/domain.js';
+import type { BulkApplyResult, QuickAction } from '../components/quick-actions.js';
+import { applyToEach, BulkActionBar, useSelection } from '../components/quick-actions.js';
 import { Badge, Button, Card, EmptyState, LoadingPane, Markdown } from '../components/ui.js';
 import { api } from '../lib/api.js';
 import { fullDate, timeAgo } from '../lib/format.js';
@@ -53,6 +56,62 @@ export function DebriefPage() {
         .sort((a, b) => a.rank - b.rank),
     })).filter((s) => s.items.length > 0);
   }, [digest]);
+
+  const visibleItems = useMemo(() => sections.flatMap((s) => s.items), [sections]);
+  const itemIds = useMemo(() => visibleItems.map((i) => i.id), [visibleItems]);
+  const { selected, toggle, selectAll, deselectAll } = useSelection(itemIds);
+
+  // Done/Defer act on the task candidate behind the digest item — the same
+  // endpoint the Priorities page uses — so the two pages stay in sync.
+  const setTaskStatus = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'done' | 'deferred' }) =>
+      api.patch<{ task: TaskCandidate }>(`/api/tasks/${id}`, { status }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
+  });
+
+  const feedback = useMutation({
+    mutationFn: (input: {
+      kind: FeedbackKind;
+      digestItemId: string;
+      taskCandidateId?: string;
+      sourceItemId?: string;
+    }) => api.post<{ ok: true }>('/api/feedback', input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
+  });
+
+  const feedbackPayload = (item: DigestItem, kind: FeedbackKind) => ({
+    kind,
+    digestItemId: item.id,
+    ...(item.taskCandidateId !== null ? { taskCandidateId: item.taskCandidateId } : {}),
+    ...(item.sourceItemId !== null ? { sourceItemId: item.sourceItemId } : {}),
+  });
+
+  const bulkApply = async (
+    action: QuickAction,
+    scope: 'selected' | 'all',
+  ): Promise<BulkApplyResult> => {
+    const chosen = scope === 'all' ? visibleItems : visibleItems.filter((i) => selected.has(i.id));
+    if (action.type === 'status') {
+      const withTask = chosen.filter((i) => i.taskCandidateId !== null);
+      const { ok, failed } = await applyToEach(withTask, (i) =>
+        api.patch<{ task: TaskCandidate }>(`/api/tasks/${i.taskCandidateId}`, {
+          status: action.status,
+        }),
+      );
+      qc.invalidateQueries({ queryKey: ['tasks'] });
+      const skipped = chosen.length - withTask.length;
+      return {
+        applied: ok,
+        ...(skipped > 0 ? { skipped } : {}),
+        ...(failed > 0 ? { failed } : {}),
+      };
+    }
+    const { ok, failed } = await applyToEach(chosen, (i) =>
+      api.post<{ ok: true }>('/api/feedback', feedbackPayload(i, action.kind)),
+    );
+    qc.invalidateQueries({ queryKey: ['tasks'] });
+    return { applied: ok, ...(failed > 0 ? { failed } : {}) };
+  };
 
   if (isLoading) {
     return (
@@ -170,20 +229,43 @@ export function DebriefPage() {
         </Card>
       )}
 
-      <div className="mt-8 space-y-8">
-        {sections.map(({ section, items }) => (
-          <section key={section}>
-            <div className="mb-3 flex items-baseline gap-2">
-              <h2 className="text-[15px] font-semibold">{DIGEST_SECTION_LABELS[section]}</h2>
-              <span className="text-[12px] tabular-nums text-ink-faint">{items.length}</span>
-            </div>
-            <div className="space-y-3">
-              {items.map((item) => (
-                <DigestItemRow key={item.id} item={item} onOpenSource={setOpenSourceItemId} />
-              ))}
-            </div>
-          </section>
-        ))}
+      <div className="mt-8">
+        {visibleItems.length > 0 && (
+          <BulkActionBar
+            total={visibleItems.length}
+            selectedCount={selected.size}
+            onSelectAll={selectAll}
+            onDeselectAll={deselectAll}
+            onApply={bulkApply}
+          />
+        )}
+        <div className="space-y-8">
+          {sections.map(({ section, items }) => (
+            <section key={section}>
+              <div className="mb-3 flex items-baseline gap-2">
+                <h2 className="text-[15px] font-semibold">{DIGEST_SECTION_LABELS[section]}</h2>
+                <span className="text-[12px] tabular-nums text-ink-faint">{items.length}</span>
+              </div>
+              <div className="space-y-3">
+                {items.map((item) => (
+                  <DigestItemRow
+                    key={item.id}
+                    item={item}
+                    selected={selected.has(item.id)}
+                    onToggleSelect={toggle}
+                    onOpenSource={setOpenSourceItemId}
+                    onSetStatus={(it, status) =>
+                      it.taskCandidateId !== null
+                        ? setTaskStatus.mutateAsync({ id: it.taskCandidateId, status })
+                        : Promise.resolve()
+                    }
+                    onFeedback={(it, kind) => feedback.mutateAsync(feedbackPayload(it, kind))}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       </div>
 
       {digest.planMarkdown && (
