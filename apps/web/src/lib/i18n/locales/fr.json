@@ -1,0 +1,99 @@
+{
+  "common": { "email": "E-mail", "password": "Mot de passe", "loading": "Chargement…" },
+  "nav": {
+    "newChat": "Nouvelle discussion",
+    "dailyDebrief": "Point quotidien",
+    "priorities": "Priorités",
+    "search": "Rechercher",
+    "approvals": "Approbations",
+    "yourData": "Vos données",
+    "connectedSources": "Sources connectées",
+    "uploadedFiles": "Fichiers importés",
+    "digestHistory": "Historique des synthèses",
+    "conversations": "Conversations",
+    "newConversation": "Nouvelle conversation",
+    "deleteConversation": "Supprimer la conversation",
+    "memory": "Mémoire",
+    "learnedPreferences": "Préférences apprises",
+    "auditLog": "Journal d'audit",
+    "settings": "Paramètres",
+    "accountMenu": "Menu du compte",
+    "accountSettings": "Paramètres du compte",
+    "signOut": "Se déconnecter",
+    "localMode": "mode local",
+    "localModeExplain": "Mode local mono-utilisateur — vous êtes connecté automatiquement, il n'y a donc aucune déconnexion possible.",
+    "demoBanner": "Mode démo — aucun fournisseur d'IA configuré. Les réponses sont simulées.",
+    "demoBannerAction": "Configurer un modèle local ou cloud →"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "subtitle": "Vos données, vos modèles, vos règles.",
+    "sectionsAria": "Sections des paramètres",
+    "tabs": {
+      "profile": "Profil",
+      "preferences": "Préférences",
+      "connectedSources": "Sources connectées",
+      "providers": "Fournisseurs d'IA",
+      "permissions": "Autorisations",
+      "approvals": "Approbations",
+      "memory": "Mémoire",
+      "schedule": "Planification des synthèses",
+      "security": "Compte et sécurité",
+      "auditLog": "Journal d'audit",
+      "deployment": "Déploiement"
+    },
+    "language": {
+      "title": "Langue",
+      "description": "Choisissez la langue de l'interface de Donna. Les traductions sont ajoutées au fil du temps ; le texte non traduit s'affiche en anglais.",
+      "label": "Langue d'affichage",
+      "hint": "Enregistrée sur votre compte et mémorisée sur cet appareil."
+    }
+  },
+  "auth": {
+    "divider": { "or": "ou" },
+    "oauth": {
+      "continueWith": "Continuer avec {{provider}}",
+      "signUpWith": "S'inscrire avec {{provider}}",
+      "notConfigured": "La connexion via {{provider}} n'est pas encore configurée sur ce serveur — consultez docs/auth.md pour la configuration."
+    },
+    "signin": {
+      "title": "Se connecter à Donna",
+      "submit": "Se connecter",
+      "localModeRedirect": "Donna fonctionne en mode local mono-utilisateur — connexion en cours…",
+      "invalidCredentials": "E-mail ou mot de passe incorrect.",
+      "tooManyAttempts": "Trop de tentatives — réessayez dans quelques minutes.",
+      "failed": "Échec de la connexion — veuillez réessayer.",
+      "newToDonna": "Nouveau sur Donna ?",
+      "createAccount": "Créer un compte",
+      "forgotPassword": "Mot de passe oublié ?",
+      "errors": {
+        "oauth_denied": "La connexion a été annulée.",
+        "oauth_state_mismatch": "Échec de la connexion — veuillez réessayer.",
+        "oauth_failed": "Échec de la connexion — veuillez réessayer.",
+        "email_unverified": "Cet e-mail est déjà associé à un compte. Connectez-vous avec votre mot de passe, puis associez ce fournisseur dans les Paramètres.",
+        "email_in_use": "Cet e-mail est déjà associé à un compte. Connectez-vous avec votre mot de passe, puis associez ce fournisseur dans les Paramètres.",
+        "already_linked": "Ce compte est déjà associé à un autre utilisateur.",
+        "no_email": "Votre compte fournisseur n'a aucune adresse e-mail.",
+        "signup_disabled": "Les inscriptions sont désactivées."
+      }
+    },
+    "signup": {
+      "title": "Créez votre compte Donna",
+      "name": "Nom",
+      "confirmPassword": "Confirmer le mot de passe",
+      "terms": "J'accepte les Conditions d'utilisation et la Politique de confidentialité.",
+      "submit": "Créer le compte",
+      "passwordsNoMatch": "Les mots de passe ne correspondent pas.",
+      "failed": "Échec de l'inscription — veuillez réessayer.",
+      "haveAccount": "Vous avez déjà un compte ?",
+      "signIn": "Se connecter"
+    },
+    "forgot": {
+      "title": "Réinitialiser votre mot de passe",
+      "intro1": "Donna est auto-hébergé et n'envoie pas d'e-mails ; il n'y a donc aucun lien de réinitialisation que nous puissions vous envoyer.",
+      "intro2": "À la place, la personne qui gère votre serveur Donna (peut-être vous !) peut définir un nouveau mot de passe depuis la machine du serveur :",
+      "intro3": "Une fois cela fait, revenez et connectez-vous avec le nouveau mot de passe.",
+      "backToSignIn": "Retour à la connexion"
+    }
+  }
+}

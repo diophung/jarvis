@@ -1,0 +1,99 @@
+{
+  "common": { "email": "Correo electrónico", "password": "Contraseña", "loading": "Cargando…" },
+  "nav": {
+    "newChat": "Nuevo chat",
+    "dailyDebrief": "Resumen diario",
+    "priorities": "Prioridades",
+    "search": "Buscar",
+    "approvals": "Aprobaciones",
+    "yourData": "Tus datos",
+    "connectedSources": "Fuentes conectadas",
+    "uploadedFiles": "Archivos subidos",
+    "digestHistory": "Historial de resúmenes",
+    "conversations": "Conversaciones",
+    "newConversation": "Nueva conversación",
+    "deleteConversation": "Eliminar conversación",
+    "memory": "Memoria",
+    "learnedPreferences": "Preferencias aprendidas",
+    "auditLog": "Registro de auditoría",
+    "settings": "Ajustes",
+    "accountMenu": "Menú de cuenta",
+    "accountSettings": "Ajustes de cuenta",
+    "signOut": "Cerrar sesión",
+    "localMode": "modo local",
+    "localModeExplain": "Modo local de un solo usuario: tu sesión se inicia automáticamente, así que no hay nada de lo que cerrar sesión.",
+    "demoBanner": "Modo demo: no hay ningún proveedor de IA configurado. Las respuestas son simuladas.",
+    "demoBannerAction": "Configura un modelo local o en la nube →"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "subtitle": "Tus datos, tus modelos, tus reglas.",
+    "sectionsAria": "Secciones de ajustes",
+    "tabs": {
+      "profile": "Perfil",
+      "preferences": "Preferencias",
+      "connectedSources": "Fuentes conectadas",
+      "providers": "Proveedores de IA",
+      "permissions": "Permisos",
+      "approvals": "Aprobaciones",
+      "memory": "Memoria",
+      "schedule": "Programación de resúmenes",
+      "security": "Cuenta y seguridad",
+      "auditLog": "Registro de auditoría",
+      "deployment": "Despliegue"
+    },
+    "language": {
+      "title": "Idioma",
+      "description": "Elige el idioma que usa la interfaz de Donna. Las traducciones se añaden con el tiempo; el texto sin traducir se muestra en inglés.",
+      "label": "Idioma de la interfaz",
+      "hint": "Se guarda en tu cuenta y se recuerda en este dispositivo."
+    }
+  },
+  "auth": {
+    "divider": { "or": "o" },
+    "oauth": {
+      "continueWith": "Continuar con {{provider}}",
+      "signUpWith": "Registrarse con {{provider}}",
+      "notConfigured": "El inicio de sesión con {{provider}} aún no está configurado en este servidor; consulta docs/auth.md para la configuración."
+    },
+    "signin": {
+      "title": "Inicia sesión en Donna",
+      "submit": "Iniciar sesión",
+      "localModeRedirect": "Donna se está ejecutando en modo local de un solo usuario: iniciando tu sesión…",
+      "invalidCredentials": "Correo electrónico o contraseña no válidos.",
+      "tooManyAttempts": "Demasiados intentos: vuelve a intentarlo en unos minutos.",
+      "failed": "Error al iniciar sesión; inténtalo de nuevo.",
+      "newToDonna": "¿Nuevo en Donna?",
+      "createAccount": "Crear una cuenta",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "errors": {
+        "oauth_denied": "Se canceló el inicio de sesión.",
+        "oauth_state_mismatch": "Error al iniciar sesión; inténtalo de nuevo.",
+        "oauth_failed": "Error al iniciar sesión; inténtalo de nuevo.",
+        "email_unverified": "Ese correo electrónico ya tiene una cuenta. Inicia sesión con tu contraseña y luego vincula este proveedor en Ajustes.",
+        "email_in_use": "Ese correo electrónico ya tiene una cuenta. Inicia sesión con tu contraseña y luego vincula este proveedor en Ajustes.",
+        "already_linked": "Esa cuenta ya está vinculada a otro usuario.",
+        "no_email": "La cuenta de tu proveedor no tiene ninguna dirección de correo electrónico.",
+        "signup_disabled": "Los registros están deshabilitados."
+      }
+    },
+    "signup": {
+      "title": "Crea tu cuenta de Donna",
+      "name": "Nombre",
+      "confirmPassword": "Confirmar contraseña",
+      "terms": "Acepto las Condiciones del servicio y la Política de privacidad.",
+      "submit": "Crear cuenta",
+      "passwordsNoMatch": "Las contraseñas no coinciden.",
+      "failed": "Error en el registro; inténtalo de nuevo.",
+      "haveAccount": "¿Ya tienes una cuenta?",
+      "signIn": "Iniciar sesión"
+    },
+    "forgot": {
+      "title": "Restablece tu contraseña",
+      "intro1": "Donna es autoalojada y no envía correos electrónicos, así que no hay ningún enlace de restablecimiento que podamos enviarte.",
+      "intro2": "En su lugar, quien administre tu servidor de Donna (¡quizá tú!) puede establecer una nueva contraseña desde la máquina del servidor:",
+      "intro3": "Una vez hecho esto, vuelve e inicia sesión con la nueva contraseña.",
+      "backToSignIn": "Volver al inicio de sesión"
+    }
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "common": { "email": "Email", "password": "Mật khẩu", "loading": "Đang tải…" },
+  "nav": {
+    "newChat": "Trò chuyện mới",
+    "dailyDebrief": "Tổng kết hằng ngày",
+    "priorities": "Ưu tiên",
+    "search": "Tìm kiếm",
+    "approvals": "Phê duyệt",
+    "yourData": "Dữ liệu của bạn",
+    "connectedSources": "Nguồn đã kết nối",
+    "uploadedFiles": "Tệp đã tải lên",
+    "digestHistory": "Lịch sử bản tóm tắt",
+    "conversations": "Cuộc trò chuyện",
+    "newConversation": "Cuộc trò chuyện mới",
+    "deleteConversation": "Xóa cuộc trò chuyện",
+    "memory": "Bộ nhớ",
+    "learnedPreferences": "Tùy chọn đã học",
+    "auditLog": "Nhật ký kiểm tra",
+    "settings": "Cài đặt",
+    "accountMenu": "Menu tài khoản",
+    "accountSettings": "Cài đặt tài khoản",
+    "signOut": "Đăng xuất",
+    "localMode": "chế độ cục bộ",
+    "localModeExplain": "Chế độ cục bộ một người dùng — bạn được tự động đăng nhập, nên không có gì để đăng xuất.",
+    "demoBanner": "Chế độ demo — chưa cấu hình nhà cung cấp AI. Phản hồi chỉ là giả lập.",
+    "demoBannerAction": "Thiết lập mô hình cục bộ hoặc đám mây →"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "subtitle": "Dữ liệu của bạn, mô hình của bạn, quy tắc của bạn.",
+    "sectionsAria": "Các mục cài đặt",
+    "tabs": {
+      "profile": "Hồ sơ",
+      "preferences": "Tùy chọn",
+      "connectedSources": "Nguồn đã kết nối",
+      "providers": "Nhà cung cấp AI",
+      "permissions": "Quyền hạn",
+      "approvals": "Phê duyệt",
+      "memory": "Bộ nhớ",
+      "schedule": "Lịch tóm tắt",
+      "security": "Tài khoản & bảo mật",
+      "auditLog": "Nhật ký kiểm tra",
+      "deployment": "Triển khai"
+    },
+    "language": {
+      "title": "Ngôn ngữ",
+      "description": "Chọn ngôn ngữ cho giao diện của Donna. Bản dịch được bổ sung dần theo thời gian; phần chưa dịch sẽ hiển thị bằng tiếng Anh.",
+      "label": "Ngôn ngữ hiển thị",
+      "hint": "Được lưu vào tài khoản của bạn và ghi nhớ trên thiết bị này."
+    }
+  },
+  "auth": {
+    "divider": { "or": "hoặc" },
+    "oauth": {
+      "continueWith": "Tiếp tục với {{provider}}",
+      "signUpWith": "Đăng ký với {{provider}}",
+      "notConfigured": "Đăng nhập bằng {{provider}} chưa được cấu hình trên máy chủ này — xem docs/auth.md để thiết lập."
+    },
+    "signin": {
+      "title": "Đăng nhập vào Donna",
+      "submit": "Đăng nhập",
+      "localModeRedirect": "Donna đang chạy ở chế độ cục bộ một người dùng — đang đăng nhập cho bạn…",
+      "invalidCredentials": "Email hoặc mật khẩu không đúng.",
+      "tooManyAttempts": "Quá nhiều lần thử — vui lòng thử lại sau vài phút.",
+      "failed": "Đăng nhập thất bại — vui lòng thử lại.",
+      "newToDonna": "Mới biết đến Donna?",
+      "createAccount": "Tạo tài khoản",
+      "forgotPassword": "Quên mật khẩu?",
+      "errors": {
+        "oauth_denied": "Đã hủy đăng nhập.",
+        "oauth_state_mismatch": "Đăng nhập thất bại — vui lòng thử lại.",
+        "oauth_failed": "Đăng nhập thất bại — vui lòng thử lại.",
+        "email_unverified": "Email này đã có tài khoản. Hãy đăng nhập bằng mật khẩu, sau đó liên kết nhà cung cấp này trong Cài đặt.",
+        "email_in_use": "Email này đã có tài khoản. Hãy đăng nhập bằng mật khẩu, sau đó liên kết nhà cung cấp này trong Cài đặt.",
+        "already_linked": "Tài khoản đó đã được liên kết với một người dùng khác.",
+        "no_email": "Tài khoản nhà cung cấp của bạn không có địa chỉ email.",
+        "signup_disabled": "Tính năng đăng ký đã bị tắt."
+      }
+    },
+    "signup": {
+      "title": "Tạo tài khoản Donna của bạn",
+      "name": "Tên",
+      "confirmPassword": "Xác nhận mật khẩu",
+      "terms": "Tôi đồng ý với Điều khoản dịch vụ và Chính sách bảo mật.",
+      "submit": "Tạo tài khoản",
+      "passwordsNoMatch": "Mật khẩu không khớp.",
+      "failed": "Đăng ký thất bại — vui lòng thử lại.",
+      "haveAccount": "Đã có tài khoản?",
+      "signIn": "Đăng nhập"
+    },
+    "forgot": {
+      "title": "Đặt lại mật khẩu",
+      "intro1": "Donna tự lưu trữ và không gửi email, nên chúng tôi không thể gửi cho bạn liên kết đặt lại.",
+      "intro2": "Thay vào đó, người vận hành máy chủ Donna của bạn (có thể là chính bạn!) có thể đặt mật khẩu mới ngay trên máy chủ:",
+      "intro3": "Sau khi hoàn tất, hãy quay lại và đăng nhập bằng mật khẩu mới.",
+      "backToSignIn": "Quay lại đăng nhập"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Button, Input, LoadingPane } from '../../components/ui.js';
 import { api, ApiError } from '../../lib/api.js';
@@ -7,6 +8,7 @@ import { useAuth } from '../../lib/auth.js';
 import { AuthShell, Divider, OauthButtons } from './shared.js';
 
 export function SignUpPage() {
+  const { t } = useTranslation();
   const { methods, authMode, loading, refresh } = useAuth();
   const navigate = useNavigate();
 
@@ -37,7 +39,7 @@ export function SignUpPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (password !== confirm) {
-      setError('Passwords do not match.');
+      setError(t('auth.signup.passwordsNoMatch'));
       return;
     }
     setSubmitting(true);
@@ -49,17 +51,17 @@ export function SignUpPage() {
     } catch (err) {
       // The server's registration error copy is intentionally generic (it
       // never reveals whether an account exists) — surface it verbatim.
-      setError(err instanceof ApiError ? err.message : 'Sign-up failed — please try again.');
+      setError(err instanceof ApiError ? err.message : t('auth.signup.failed'));
       setSubmitting(false);
     }
   };
 
   return (
-    <AuthShell title="Create your Donna account">
+    <AuthShell title={t('auth.signup.title')}>
       <form onSubmit={submit} className="space-y-3">
         <div>
           <label htmlFor="signup-name" className="block text-sm font-medium mb-1">
-            Name
+            {t('auth.signup.name')}
           </label>
           <Input
             id="signup-name"
@@ -73,7 +75,7 @@ export function SignUpPage() {
         </div>
         <div>
           <label htmlFor="signup-email" className="block text-sm font-medium mb-1">
-            Email
+            {t('common.email')}
           </label>
           <Input
             id="signup-email"
@@ -87,7 +89,7 @@ export function SignUpPage() {
         </div>
         <div>
           <label htmlFor="signup-password" className="block text-sm font-medium mb-1">
-            Password
+            {t('common.password')}
           </label>
           <Input
             id="signup-password"
@@ -102,7 +104,7 @@ export function SignUpPage() {
         </div>
         <div>
           <label htmlFor="signup-confirm" className="block text-sm font-medium mb-1">
-            Confirm password
+            {t('auth.signup.confirmPassword')}
           </label>
           <Input
             id="signup-confirm"
@@ -123,7 +125,7 @@ export function SignUpPage() {
             onChange={(e) => setAgreed(e.target.checked)}
             className="mt-0.5 accent-donna-600"
           />
-          <span>I acknowledge the Terms of Service and Privacy Policy.</span>
+          <span>{t('auth.signup.terms')}</span>
         </label>
         {error && (
           <p role="alert" className="text-sm text-red-600">
@@ -131,17 +133,17 @@ export function SignUpPage() {
           </p>
         )}
         <Button type="submit" variant="primary" className="w-full" loading={submitting}>
-          Create account
+          {t('auth.signup.submit')}
         </Button>
       </form>
 
-      <Divider label="or" />
+      <Divider label={t('auth.divider.or')} />
       <OauthButtons providers={providers} intent="signup" returnTo="/" />
 
       <p className="mt-5 text-center text-sm text-ink-muted">
-        Already have an account?{' '}
+        {t('auth.signup.haveAccount')}{' '}
         <Link to="/signin" className="text-donna-700 underline underline-offset-2">
-          Sign in
+          {t('auth.signup.signIn')}
         </Link>
       </p>
     </AuthShell>

@@ -3,8 +3,11 @@ import { PERSON_IMPORTANCES } from '@donna/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Input, LoadingPane, Select, Textarea } from '../../components/ui.js';
 import { api } from '../../lib/api.js';
+import { LOCALE_META, SUPPORTED_LOCALES, type Locale } from '../../lib/i18n/locales.js';
+import { useLocale } from '../../lib/i18n/useLocale.js';
 import {
   Field,
   prefStrings,
@@ -17,6 +20,27 @@ import {
 } from './shared.js';
 
 const IMPORTANCE_OPTIONS = PERSON_IMPORTANCES.map((v) => ({ value: v, label: v }));
+const LANGUAGE_OPTIONS = SUPPORTED_LOCALES.map((l) => ({ value: l, label: LOCALE_META[l].nativeName }));
+
+function LanguageSection() {
+  const { t } = useTranslation();
+  const { locale, setLocale } = useLocale();
+  return (
+    <SettingsSection
+      title={t('settings.language.title')}
+      description={t('settings.language.description')}
+    >
+      <Field label={t('settings.language.label')} hint={t('settings.language.hint')}>
+        <Select
+          value={locale}
+          onChange={(v) => setLocale(v as Locale)}
+          options={LANGUAGE_OPTIONS}
+          className="max-w-xs"
+        />
+      </Field>
+    </SettingsSection>
+  );
+}
 const PROJECT_PRIORITIES = ['high', 'normal', 'low'] as const;
 const PROJECT_STATUSES = ['active', 'paused', 'done', 'archived'] as const;
 
@@ -377,6 +401,7 @@ export function PreferencesTab() {
   if (isLoading) return <LoadingPane label="Loading preferences…" />;
   return (
     <div className="space-y-5">
+      <LanguageSection />
       <PeopleSection />
       <ProjectsSection />
       <TopicsSection />

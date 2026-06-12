@@ -1,0 +1,105 @@
+{
+  "common": {
+    "email": "Email",
+    "password": "Password",
+    "loading": "Loading…"
+  },
+  "nav": {
+    "newChat": "New chat",
+    "dailyDebrief": "Daily Debrief",
+    "priorities": "Priorities",
+    "search": "Search",
+    "approvals": "Approvals",
+    "yourData": "Your data",
+    "connectedSources": "Connected Sources",
+    "uploadedFiles": "Uploaded Files",
+    "digestHistory": "Digest History",
+    "conversations": "Conversations",
+    "newConversation": "New conversation",
+    "deleteConversation": "Delete conversation",
+    "memory": "Memory",
+    "learnedPreferences": "Learned Preferences",
+    "auditLog": "Audit Log",
+    "settings": "Settings",
+    "accountMenu": "Account menu",
+    "accountSettings": "Account settings",
+    "signOut": "Sign out",
+    "localMode": "local mode",
+    "localModeExplain": "Local single-user mode — you're signed in automatically, so there's nothing to sign out of.",
+    "demoBanner": "Demo mode — no AI provider configured. Responses are mocked.",
+    "demoBannerAction": "Set up a local or cloud model →"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Your data, your models, your rules.",
+    "sectionsAria": "Settings sections",
+    "tabs": {
+      "profile": "Profile",
+      "preferences": "Preferences",
+      "connectedSources": "Connected Sources",
+      "providers": "AI Providers",
+      "permissions": "Permissions",
+      "approvals": "Approvals",
+      "memory": "Memory",
+      "schedule": "Digest Schedule",
+      "security": "Account & security",
+      "auditLog": "Audit Log",
+      "deployment": "Deployment"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Choose the language Donna's interface uses. Translations are added over time; untranslated text falls back to English.",
+      "label": "Display language",
+      "hint": "Saved to your account and remembered on this device."
+    }
+  },
+  "auth": {
+    "divider": {
+      "or": "or"
+    },
+    "oauth": {
+      "continueWith": "Continue with {{provider}}",
+      "signUpWith": "Sign up with {{provider}}",
+      "notConfigured": "{{provider}} sign-in isn't configured on this server yet — see docs/auth.md for setup."
+    },
+    "signin": {
+      "title": "Sign in to Donna",
+      "submit": "Sign in",
+      "localModeRedirect": "Donna is running in local single-user mode — signing you in…",
+      "invalidCredentials": "Invalid email or password.",
+      "tooManyAttempts": "Too many attempts — try again in a few minutes.",
+      "failed": "Sign-in failed — please try again.",
+      "newToDonna": "New to Donna?",
+      "createAccount": "Create an account",
+      "forgotPassword": "Forgot password?",
+      "errors": {
+        "oauth_denied": "Sign-in was cancelled.",
+        "oauth_state_mismatch": "Sign-in failed — please try again.",
+        "oauth_failed": "Sign-in failed — please try again.",
+        "email_unverified": "That email already has an account. Sign in with your password, then link this provider in Settings.",
+        "email_in_use": "That email already has an account. Sign in with your password, then link this provider in Settings.",
+        "already_linked": "That account is already linked to a different user.",
+        "no_email": "Your provider account has no email address.",
+        "signup_disabled": "Sign-ups are disabled."
+      }
+    },
+    "signup": {
+      "title": "Create your Donna account",
+      "name": "Name",
+      "confirmPassword": "Confirm password",
+      "terms": "I acknowledge the Terms of Service and Privacy Policy.",
+      "submit": "Create account",
+      "passwordsNoMatch": "Passwords do not match.",
+      "failed": "Sign-up failed — please try again.",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "intro1": "Donna is self-hosted and doesn’t send email, so there’s no reset link we can send you.",
+      "intro2": "Instead, whoever runs your Donna server (maybe you!) can set a new password from the server machine:",
+      "intro3": "Once that’s done, come back and sign in with the new password.",
+      "backToSignIn": "Back to sign in"
+    }
+  }
+}

@@ -14,6 +14,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, Navigate, NavLink, useParams } from 'react-router-dom';
 import { PageHeader } from '../components/ui.js';
 import { DeploymentTab } from './settings/DeploymentTab.js';
@@ -25,43 +26,61 @@ import { ScheduleTab } from './settings/ScheduleTab.js';
 import { SecurityTab } from './settings/SecurityTab.js';
 
 type RailEntry =
-  | { kind: 'tab'; id: string; label: string; icon: ReactNode; render: () => ReactNode }
-  | { kind: 'link'; to: string; label: string; icon: ReactNode };
+  | { kind: 'tab'; id: string; labelKey: string; icon: ReactNode; render: () => ReactNode }
+  | { kind: 'link'; to: string; labelKey: string; icon: ReactNode };
 
 /** Rail entries in display order. Links jump to their full pages. */
 const RAIL: RailEntry[] = [
-  { kind: 'tab', id: 'profile', label: 'Profile', icon: <UserRound />, render: () => <ProfileTab /> },
+  {
+    kind: 'tab',
+    id: 'profile',
+    labelKey: 'settings.tabs.profile',
+    icon: <UserRound />,
+    render: () => <ProfileTab />,
+  },
   {
     kind: 'tab',
     id: 'preferences',
-    label: 'Preferences',
+    labelKey: 'settings.tabs.preferences',
     icon: <SlidersHorizontal />,
     render: () => <PreferencesTab />,
   },
-  { kind: 'link', to: '/sources', label: 'Connected Sources', icon: <Inbox /> },
-  { kind: 'tab', id: 'providers', label: 'AI Providers', icon: <Cpu />, render: () => <ProvidersTab /> },
+  { kind: 'link', to: '/sources', labelKey: 'settings.tabs.connectedSources', icon: <Inbox /> },
+  {
+    kind: 'tab',
+    id: 'providers',
+    labelKey: 'settings.tabs.providers',
+    icon: <Cpu />,
+    render: () => <ProvidersTab />,
+  },
   {
     kind: 'tab',
     id: 'permissions',
-    label: 'Permissions',
+    labelKey: 'settings.tabs.permissions',
     icon: <ShieldCheck />,
     render: () => <PermissionsTab />,
   },
-  { kind: 'link', to: '/approvals', label: 'Approvals', icon: <CheckCircle2 /> },
-  { kind: 'link', to: '/memory', label: 'Memory', icon: <Brain /> },
+  { kind: 'link', to: '/approvals', labelKey: 'settings.tabs.approvals', icon: <CheckCircle2 /> },
+  { kind: 'link', to: '/memory', labelKey: 'settings.tabs.memory', icon: <Brain /> },
   {
     kind: 'tab',
     id: 'schedule',
-    label: 'Digest Schedule',
+    labelKey: 'settings.tabs.schedule',
     icon: <CalendarClock />,
     render: () => <ScheduleTab />,
   },
-  { kind: 'tab', id: 'security', label: 'Account & security', icon: <Lock />, render: () => <SecurityTab /> },
-  { kind: 'link', to: '/audit', label: 'Audit Log', icon: <ScrollText /> },
+  {
+    kind: 'tab',
+    id: 'security',
+    labelKey: 'settings.tabs.security',
+    icon: <Lock />,
+    render: () => <SecurityTab />,
+  },
+  { kind: 'link', to: '/audit', labelKey: 'settings.tabs.auditLog', icon: <ScrollText /> },
   {
     kind: 'tab',
     id: 'deployment',
-    label: 'Deployment',
+    labelKey: 'settings.tabs.deployment',
     icon: <Container />,
     render: () => <DeploymentTab />,
   },
@@ -78,19 +97,20 @@ const railItemClass = (active: boolean) =>
   );
 
 export function SettingsPage() {
+  const { t } = useTranslation();
   const { tab } = useParams<{ tab: string }>();
   const activeId = tab ?? 'profile';
-  const active = TABS.find((t) => t.id === activeId);
+  const active = TABS.find((entry) => entry.id === activeId);
 
   // Unknown tab in the URL — send the user somewhere real.
   if (!active) return <Navigate to="/settings/profile" replace />;
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      <PageHeader title="Settings" subtitle="Your data, your models, your rules." />
+      <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
       <div className="flex flex-col md:flex-row gap-8 items-start">
         <nav
-          aria-label="Settings sections"
+          aria-label={t('settings.sectionsAria')}
           className="w-full md:w-52 shrink-0 md:sticky md:top-8 space-y-0.5"
         >
           {RAIL.map((entry) =>
@@ -101,12 +121,12 @@ export function SettingsPage() {
                 className={() => railItemClass(entry.id === activeId)}
               >
                 <span className="[&>svg]:h-4 [&>svg]:w-4 shrink-0">{entry.icon}</span>
-                <span className="truncate">{entry.label}</span>
+                <span className="truncate">{t(entry.labelKey)}</span>
               </NavLink>
             ) : (
               <Link key={entry.to} to={entry.to} className={railItemClass(false)}>
                 <span className="[&>svg]:h-4 [&>svg]:w-4 shrink-0">{entry.icon}</span>
-                <span className="truncate flex-1">{entry.label}</span>
+                <span className="truncate flex-1">{t(entry.labelKey)}</span>
                 <ArrowUpRight className="h-3.5 w-3.5 text-ink-faint" />
               </Link>
             ),

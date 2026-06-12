@@ -20,10 +20,12 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { useAuth, type AuthUser } from '../lib/auth.js';
 import { useLlmStatus, usePendingApprovalsCount } from '../lib/hooks.js';
+import { LocaleBootstrap } from '../lib/i18n/useLocale.js';
 
 function NavItem({
   to,
@@ -60,6 +62,7 @@ function NavItem({
 }
 
 function ConversationList() {
+  const { t } = useTranslation();
   const { data } = useQuery({
     queryKey: ['conversations'],
     queryFn: () => api.get<{ items: Conversation[] }>('/api/conversations'),
@@ -79,7 +82,7 @@ function ConversationList() {
   return (
     <div className="mt-4">
       <div className="px-2.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint mb-1.5">
-        Conversations
+        {t('nav.conversations')}
       </div>
       <div className="space-y-0.5">
         {items.slice(0, 30).map((c) => (
@@ -96,10 +99,10 @@ function ConversationList() {
               }
             >
               <MessageSquare className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{c.title || 'New conversation'}</span>
+              <span className="truncate">{c.title || t('nav.newConversation')}</span>
             </NavLink>
             <button
-              title="Delete conversation"
+              title={t('nav.deleteConversation')}
               onClick={() => del.mutate(c.id)}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 hidden group-hover:block text-ink-faint hover:text-red-600"
             >
@@ -113,6 +116,7 @@ function ConversationList() {
 }
 
 function DemoModeBanner() {
+  const { t } = useTranslation();
   const { data } = useLlmStatus();
   const location = useLocation();
   if (!data?.demoMode) return null;
@@ -123,8 +127,8 @@ function DemoModeBanner() {
       className="block bg-amber-50 border-b border-amber-200 text-amber-900 text-[13px] px-4 py-2 text-center hover:bg-amber-100"
     >
       <Sparkles className="inline h-3.5 w-3.5 mr-1.5 -mt-0.5" />
-      Demo mode — no AI provider configured. Responses are mocked.{' '}
-      <span className="underline font-medium">Set up a local or cloud model →</span>
+      {t('nav.demoBanner')}{' '}
+      <span className="underline font-medium">{t('nav.demoBannerAction')}</span>
     </Link>
   );
 }
@@ -144,6 +148,7 @@ function AccountMenu({
   authMode: 'local' | 'password' | null;
   onLogout: () => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -165,7 +170,7 @@ function AccountMenu({
               onClick={() => setOpen(false)}
               className="flex items-center gap-2 px-3 py-2 text-[13px] hover:bg-surface-sunken"
             >
-              <Settings className="h-3.5 w-3.5 text-ink-faint" /> Account settings
+              <Settings className="h-3.5 w-3.5 text-ink-faint" /> {t('nav.accountSettings')}
             </Link>
             {authMode === 'password' ? (
               <button
@@ -176,15 +181,14 @@ function AccountMenu({
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-surface-sunken"
               >
-                <LogOut className="h-3.5 w-3.5 text-ink-faint" /> Sign out
+                <LogOut className="h-3.5 w-3.5 text-ink-faint" /> {t('nav.signOut')}
               </button>
             ) : (
               <div
                 className="px-3 py-2 text-[11px] text-ink-faint border-t border-surface-border"
                 title="Set DONNA_AUTH_MODE=password to enable the sign-in screen and logout."
               >
-                Local single-user mode — you're signed in automatically, so there's nothing to
-                sign out of.
+                {t('nav.localModeExplain')}
               </div>
             )}
           </div>
@@ -194,7 +198,7 @@ function AccountMenu({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label={t('nav.accountMenu')}
         className="w-full flex items-center gap-2 px-2.5 pt-2 pb-1 rounded-lg hover:bg-surface-sunken transition-colors"
       >
         {user.avatarUrl ? (
@@ -210,7 +214,7 @@ function AccountMenu({
         )}
         <span className="text-[12px] text-ink-muted truncate flex-1 text-left">{user.name}</span>
         {authMode === 'local' && (
-          <span className="shrink-0 text-[10px] text-ink-faint">local mode</span>
+          <span className="shrink-0 text-[10px] text-ink-faint">{t('nav.localMode')}</span>
         )}
       </button>
     </div>
@@ -218,6 +222,7 @@ function AccountMenu({
 }
 
 export function Layout({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, authMode, logout } = useAuth();
   const { data: approvals } = usePendingApprovalsCount();
@@ -231,6 +236,8 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      {/* Applies the account's saved locale once preferences load. */}
+      <LocaleBootstrap />
       {/* Sidebar */}
       <aside className="w-64 shrink-0 border-r border-surface-border bg-surface flex flex-col">
         <div className="px-4 pt-4 pb-3 flex items-center gap-2">
@@ -244,27 +251,27 @@ export function Layout({ children }: { children: ReactNode }) {
             onClick={newChat}
             className="w-full flex items-center gap-2 rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-sm font-medium hover:border-donna-300 transition-colors"
           >
-            <Plus className="h-4 w-4 text-donna-600" /> New chat
+            <Plus className="h-4 w-4 text-donna-600" /> {t('nav.newChat')}
           </button>
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
-          <NavItem to="/debrief" icon={<Sun />} label="Daily Debrief" />
-          <NavItem to="/tasks" icon={<ListTodo />} label="Priorities" />
-          <NavItem to="/search" icon={<Search />} label="Search" />
-          <NavItem to="/approvals" icon={<CheckCircle2 />} label="Approvals" badge={approvals} />
+          <NavItem to="/debrief" icon={<Sun />} label={t('nav.dailyDebrief')} />
+          <NavItem to="/tasks" icon={<ListTodo />} label={t('nav.priorities')} />
+          <NavItem to="/search" icon={<Search />} label={t('nav.search')} />
+          <NavItem to="/approvals" icon={<CheckCircle2 />} label={t('nav.approvals')} badge={approvals} />
           <div className="pt-3 pb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
-            Your data
+            {t('nav.yourData')}
           </div>
-          <NavItem to="/sources" icon={<Inbox />} label="Connected Sources" />
-          <NavItem to="/files" icon={<FileText />} label="Uploaded Files" />
-          <NavItem to="/digests" icon={<History />} label="Digest History" />
+          <NavItem to="/sources" icon={<Inbox />} label={t('nav.connectedSources')} />
+          <NavItem to="/files" icon={<FileText />} label={t('nav.uploadedFiles')} />
+          <NavItem to="/digests" icon={<History />} label={t('nav.digestHistory')} />
           <ConversationList />
         </nav>
         <div className="border-t border-surface-border px-3 py-3 space-y-0.5">
-          <NavItem to="/memory" icon={<ClipboardList />} label="Memory" />
-          <NavItem to="/learning" icon={<GraduationCap />} label="Learned Preferences" />
-          <NavItem to="/audit" icon={<ShieldCheck />} label="Audit Log" />
-          <NavItem to="/settings" icon={<Settings />} label="Settings" />
+          <NavItem to="/memory" icon={<ClipboardList />} label={t('nav.memory')} />
+          <NavItem to="/learning" icon={<GraduationCap />} label={t('nav.learnedPreferences')} />
+          <NavItem to="/audit" icon={<ShieldCheck />} label={t('nav.auditLog')} />
+          <NavItem to="/settings" icon={<Settings />} label={t('nav.settings')} />
           {user && <AccountMenu user={user} authMode={authMode} onLogout={() => void logout()} />}
         </div>
       </aside>

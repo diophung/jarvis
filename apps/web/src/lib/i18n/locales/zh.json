@@ -1,0 +1,99 @@
+{
+  "common": { "email": "邮箱", "password": "密码", "loading": "加载中…" },
+  "nav": {
+    "newChat": "新对话",
+    "dailyDebrief": "每日简报",
+    "priorities": "优先事项",
+    "search": "搜索",
+    "approvals": "待审批",
+    "yourData": "你的数据",
+    "connectedSources": "已连接的来源",
+    "uploadedFiles": "上传的文件",
+    "digestHistory": "摘要历史",
+    "conversations": "会话",
+    "newConversation": "新建会话",
+    "deleteConversation": "删除会话",
+    "memory": "记忆",
+    "learnedPreferences": "已学习的偏好",
+    "auditLog": "审计日志",
+    "settings": "设置",
+    "accountMenu": "账户菜单",
+    "accountSettings": "账户设置",
+    "signOut": "退出登录",
+    "localMode": "本地模式",
+    "localModeExplain": "本地单用户模式 —— 你已自动登录，因此无需退出。",
+    "demoBanner": "演示模式 —— 未配置 AI 服务，回复为模拟内容。",
+    "demoBannerAction": "设置本地或云端模型 →"
+  },
+  "settings": {
+    "title": "设置",
+    "subtitle": "你的数据，你的模型，你做主。",
+    "sectionsAria": "设置分区",
+    "tabs": {
+      "profile": "个人资料",
+      "preferences": "偏好设置",
+      "connectedSources": "已连接的来源",
+      "providers": "AI 服务商",
+      "permissions": "权限",
+      "approvals": "审批",
+      "memory": "记忆",
+      "schedule": "摘要计划",
+      "security": "账户与安全",
+      "auditLog": "审计日志",
+      "deployment": "部署"
+    },
+    "language": {
+      "title": "语言",
+      "description": "选择 Donna 界面使用的语言。译文会逐步完善；尚未翻译的内容将显示英文。",
+      "label": "显示语言",
+      "hint": "已保存到你的账户，并在本设备上记住。"
+    }
+  },
+  "auth": {
+    "divider": { "or": "或" },
+    "oauth": {
+      "continueWith": "使用 {{provider}} 继续",
+      "signUpWith": "使用 {{provider}} 注册",
+      "notConfigured": "本服务器尚未配置 {{provider}} 登录 —— 请参阅 docs/auth.md 进行设置。"
+    },
+    "signin": {
+      "title": "登录 Donna",
+      "submit": "登录",
+      "localModeRedirect": "Donna 正在本地单用户模式下运行 —— 正在为你登录…",
+      "invalidCredentials": "邮箱或密码有误。",
+      "tooManyAttempts": "尝试次数过多 —— 请几分钟后重试。",
+      "failed": "登录失败 —— 请重试。",
+      "newToDonna": "初次使用 Donna？",
+      "createAccount": "创建账户",
+      "forgotPassword": "忘记密码？",
+      "errors": {
+        "oauth_denied": "登录已取消。",
+        "oauth_state_mismatch": "登录失败 —— 请重试。",
+        "oauth_failed": "登录失败 —— 请重试。",
+        "email_unverified": "该邮箱已注册账户。请使用密码登录，然后在设置中关联此服务商。",
+        "email_in_use": "该邮箱已注册账户。请使用密码登录，然后在设置中关联此服务商。",
+        "already_linked": "该账户已关联到其他用户。",
+        "no_email": "你的服务商账户没有邮箱地址。",
+        "signup_disabled": "注册功能已停用。"
+      }
+    },
+    "signup": {
+      "title": "创建你的 Donna 账户",
+      "name": "姓名",
+      "confirmPassword": "确认密码",
+      "terms": "我已知悉并同意服务条款和隐私政策。",
+      "submit": "创建账户",
+      "passwordsNoMatch": "两次输入的密码不一致。",
+      "failed": "注册失败 —— 请重试。",
+      "haveAccount": "已有账户？",
+      "signIn": "登录"
+    },
+    "forgot": {
+      "title": "重置密码",
+      "intro1": "Donna 为自托管应用，不会发送邮件，因此无法向你发送重置链接。",
+      "intro2": "你可以让运行 Donna 服务器的人（也许就是你！）在服务器上设置新密码：",
+      "intro3": "完成后，请返回并使用新密码登录。",
+      "backToSignIn": "返回登录"
+    }
+  }
+}

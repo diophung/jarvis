@@ -1,5 +1,6 @@
 /** Shared pieces for the auth pages: centered shell, divider, OAuth buttons. */
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card } from '../../components/ui.js';
 import type { OauthLoginProvider } from '../../lib/auth.js';
 import { apiUrl } from '../../lib/auth.js';
@@ -101,20 +102,21 @@ export function OauthButtons({
   intent: 'signin' | 'signup';
   returnTo: string;
 }) {
-  const verb = intent === 'signup' ? 'Sign up with' : 'Continue with';
+  const { t } = useTranslation();
+  const verbKey = intent === 'signup' ? 'auth.oauth.signUpWith' : 'auth.oauth.continueWith';
   const base =
     'flex w-full items-center justify-center gap-2 rounded-lg border border-surface-border bg-surface-raised px-3.5 py-2 text-sm font-medium';
   return (
     <div className="space-y-2">
       {ALL_PROVIDERS.map((p) => {
-        const label = `${verb} ${PROVIDER_LABELS[p]}`;
+        const label = t(verbKey, { provider: PROVIDER_LABELS[p] });
         if (!providers.includes(p)) {
           return (
             <button
               key={p}
               type="button"
               disabled
-              title={`${PROVIDER_LABELS[p]} sign-in isn't configured on this server yet — see docs/auth.md for setup.`}
+              title={t('auth.oauth.notConfigured', { provider: PROVIDER_LABELS[p] })}
               className={`${base} text-ink-faint opacity-60 cursor-not-allowed`}
             >
               <ProviderGlyph provider={p} />
