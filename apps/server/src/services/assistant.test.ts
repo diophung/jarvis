@@ -470,3 +470,61 @@ describe('assistant demo path', () => {
     expect(persisted.content).toContain("Noted — I'll remember that.");
   });
 });
+
+describe('graceful degradation when personalization stores are unavailable', () => {
+  it('still answers when memory and retrieval lookups fail', async () => {
+    const audit = createAuditService({ db });
+    const settings = createSettingsService({ db });
+    const failingMemory: MemoryService = {
+      ...makeMemoryStub(),
+      relevant: async () => {
+        throw new Error('memory store unavailable');
+      },
+    };
+    const failingRetrieval: RetrievalService = {
+      search: async () => {
+        throw new Error('retrieval backend down');
+      },
+    };
+    const degraded = createAssistantService({
+      db,
+      llm: makeLlmStub(),
+      retrieval: failingRetrieval,
+      memory: failingMemory,
+      actions: makeActionsStub(),
+      settings,
+      audit,
+    });
+
+    await db
+      .insertInto('messages')
+      .values({
+        id: newId('msg'),
+        conversationId,
+        workspaceId,
+        role: 'user',
+        content: 'What needs my attention today?',
+        citations: toJson([]),
+        suggestedActions: toJson([]),
+        status: 'complete',
+        modelUsed: null,
+        llmCallId: null,
+        error: null,
+        createdAt: nowIso(),
+      })
+      .execute();
+
+    const events: AssistantStreamEvent[] = [];
+    const message = await degraded.respond({
+      workspaceId,
+      userId,
+      conversationId,
+      send: (event) => events.push(event),
+    });
+
+    // Donna answered from the remaining context instead of crashing.
+    expect(message.status).toBe('complete');
+    expect(message.content.length).toBeGreaterThan(0);
+    expect(events.some((e) => e.type === 'error')).toBe(false);
+  });
+});

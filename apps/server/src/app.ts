@@ -11,6 +11,7 @@ import { registerSourceOauthRoutes } from './routes/source-oauth.js';
 import { createSessionsService } from './services/sessions.js';
 import type { AppContext } from './context.js';
 import { HttpError } from './lib/http-errors.js';
+import { registerIdempotencyHooks } from './lib/idempotency-hooks.js';
 import { registerApprovalRoutes } from './routes/approvals.js';
 import { registerAuditRoutes } from './routes/audit.js';
 import { registerConversationsRoutes } from './routes/conversations.js';
@@ -21,6 +22,7 @@ import { registerLlmRoutes } from './routes/llm.js';
 import { registerMemoryRoutes } from './routes/memory.js';
 import { registerPeopleProjectRoutes } from './routes/people-projects.js';
 import { registerPolicyRoutes } from './routes/policies.js';
+import { registerPrivacyRoutes } from './routes/privacy.js';
 import { registerPreferenceRoutes } from './routes/preferences.js';
 import { registerSearchRoutes } from './routes/search.js';
 import { registerSourcesRoutes } from './routes/sources.js';
@@ -65,6 +67,8 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   // login must all mint/validate cookie tokens identically.
   const sessions = createSessionsService(ctx.db);
   registerAuth(app, { db: ctx.db, config: ctx.config, audit: ctx.services.audit, sessions });
+  // Replay protection for unsafe writes (routes opt in via config.idempotent).
+  registerIdempotencyHooks(app, ctx.services.idempotency);
   registerAuthOauthRoutes(app, { db: ctx.db, config: ctx.config, audit: ctx.services.audit, sessions });
   registerSourceOauthRoutes(app, { db: ctx.db, config: ctx.config, audit: ctx.services.audit, services: ctx.services });
   registerHealthRoutes(app, ctx);
@@ -79,6 +83,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   registerPolicyRoutes(app, ctx);
   registerMemoryRoutes(app, ctx);
   registerLearningRoutes(app, ctx);
+  registerPrivacyRoutes(app, ctx);
   registerPreferenceRoutes(app, ctx);
   registerLlmRoutes(app, ctx);
   registerAuditRoutes(app, ctx);

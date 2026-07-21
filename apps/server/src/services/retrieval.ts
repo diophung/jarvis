@@ -11,12 +11,12 @@
  */
 import { fromJson, type SourceCategory } from '@donna/core';
 import type { Db } from '@donna/db';
-import type { LlmRouterService, RetrievalService, SearchResult } from '../context.js';
+import type { LlmRouterService, RetrievalService, SearchResult, VectorStore } from '../context.js';
 
 const MAX_TOKENS = 8;
 const MIN_TOKEN_LENGTH = 3;
 const KEYWORD_CANDIDATE_LIMIT = 500;
-const EMBEDDING_CANDIDATE_LIMIT = 2000;
+const SEMANTIC_HIT_LIMIT = 60;
 const MIN_COSINE = 0.2;
 const DEFAULT_LIMIT = 20;
 const SNIPPET_LENGTH = 200;
@@ -90,8 +90,12 @@ export function cosineSimilarity(a: number[], b: number[]): number {
   return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-export function createRetrievalService(deps: { db: Db; llm: LlmRouterService }): RetrievalService {
-  const { db, llm } = deps;
+export function createRetrievalService(deps: {
+  db: Db;
+  llm: LlmRouterService;
+  vectors: VectorStore;
+}): RetrievalService {
+  const { db, llm, vectors } = deps;
 
   return {
     async search(workspaceId, query, opts = {}) {
@@ -146,7 +150,9 @@ export function createRetrievalService(deps: { db: Db; llm: LlmRouterService }):
         }
       }
 
-      // ---- Semantic leg (only when an embedding provider is configured)
+      // ---- Semantic leg (only when an embedding provider is configured).
+      // Vector ranking goes through the VectorStore abstraction (SQL scan or
+      // pgvector); a vector-backend failure degrades to keyword-only.
       let mode: 'keyword' | 'semantic+keyword' = 'keyword';
       const ec = await llm.embeddingClient(workspaceId);
       if (ec !== null) {
@@ -155,51 +161,33 @@ export function createRetrievalService(deps: { db: Db; llm: LlmRouterService }):
           const queryVector = embedded.vectors[0];
           if (queryVector === undefined) throw new Error('embedding returned no vectors');
 
-          let eq = db
-            .selectFrom('embeddingRecords')
-            .innerJoin('retrievalChunks', 'retrievalChunks.id', 'embeddingRecords.chunkId')
-            .select([
-              'retrievalChunks.id as id',
-              'retrievalChunks.sourceType as sourceType',
-              'retrievalChunks.refId as refId',
-              'retrievalChunks.text as text',
-              'retrievalChunks.metadata as metadata',
-              'retrievalChunks.createdAt as createdAt',
-              'embeddingRecords.vector as vector',
-            ])
-            .where('embeddingRecords.workspaceId', '=', workspaceId)
-            // Only vectors from the active embedding model are comparable;
-            // mixed-model (mixed-dims) records would corrupt similarity.
-            .where('embeddingRecords.model', '=', ec.model);
+          const searchOpts: Parameters<typeof vectors.search>[3] = {
+            limit: Math.max(limit * 3, SEMANTIC_HIT_LIMIT),
+            minCosine: MIN_COSINE,
+          };
           if (opts.sourceTypes !== undefined && opts.sourceTypes.length > 0) {
-            eq = eq.where('retrievalChunks.sourceType', 'in', opts.sourceTypes);
+            searchOpts.sourceTypes = opts.sourceTypes;
           }
-          const erows = await eq
-            .orderBy('embeddingRecords.createdAt', 'desc')
-            .limit(EMBEDDING_CANDIDATE_LIMIT)
-            .execute();
+          const hits = await vectors.search(workspaceId, ec.model, queryVector, searchOpts);
 
           mode = 'semantic+keyword';
-          for (const row of erows) {
-            const vector = fromJson<number[]>(row.vector, []);
-            const cosine = cosineSimilarity(queryVector, vector);
-            if (cosine <= MIN_COSINE) continue;
-            const existing = candidates.get(row.id);
+          for (const hit of hits) {
+            const existing = candidates.get(hit.chunkId);
             if (existing !== undefined) {
-              existing.cosine = Math.max(existing.cosine, cosine);
+              existing.cosine = Math.max(existing.cosine, hit.cosine);
             } else {
-              candidates.set(row.id, {
+              candidates.set(hit.chunkId, {
                 chunk: {
-                  id: row.id,
-                  sourceType: row.sourceType,
-                  refId: row.refId,
-                  text: row.text,
-                  createdAt: row.createdAt,
+                  id: hit.chunkId,
+                  sourceType: hit.sourceType,
+                  refId: hit.refId,
+                  text: hit.text,
+                  createdAt: hit.createdAt,
                 },
-                meta: fromJson<ChunkMetadata>(row.metadata, {}),
+                meta: fromJson<ChunkMetadata>(hit.metadata, {}),
                 keywordScore: 0,
                 matchedTokens: [],
-                cosine,
+                cosine: hit.cosine,
               });
             }
           }

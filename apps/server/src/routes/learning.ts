@@ -64,7 +64,7 @@ export function registerLearningRoutes(app: FastifyInstance, ctx: AppContext): v
     return { preferences, enabled, actionableConfidence: MIN_ACTIONABLE_CONFIDENCE };
   });
 
-  app.post('/api/learning/preferences', async (request) => {
+  app.post('/api/learning/preferences', { config: { idempotent: true } }, async (request) => {
     const body = CreateBody.safeParse(request.body);
     if (!body.success) throw badRequest('statement is required (3-2000 chars)');
     const input: Parameters<typeof learning.createExplicit>[2] = {
@@ -81,7 +81,7 @@ export function registerLearningRoutes(app: FastifyInstance, ctx: AppContext): v
     return learning.explain(request.workspaceId, id);
   });
 
-  app.post('/api/learning/preferences/:id/correct', async (request) => {
+  app.post('/api/learning/preferences/:id/correct', { config: { idempotent: true } }, async (request) => {
     const { id } = z.object({ id: z.string() }).parse(request.params);
     const body = CorrectionBody.safeParse(request.body);
     if (!body.success) throw badRequest('Invalid correction');
@@ -126,7 +126,7 @@ export function registerLearningRoutes(app: FastifyInstance, ctx: AppContext): v
   });
 
   /** Style learning from a user's edit of an AI-generated draft. */
-  app.post('/api/learning/draft-feedback', async (request) => {
+  app.post('/api/learning/draft-feedback', { config: { idempotent: true } }, async (request) => {
     const body = DraftFeedbackBody.safeParse(request.body);
     if (!body.success) throw badRequest('original and edited are required');
     const input: Parameters<typeof learning.learnFromDraftEdit>[2] = {

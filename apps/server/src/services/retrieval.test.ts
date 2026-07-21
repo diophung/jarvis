@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { LlmRouterService, RoutedLlm } from '../context.js';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';
 import { cosineSimilarity, createRetrievalService, makeSnippet, tokenize } from './retrieval.js';
+import { createSqlScanVectorStore } from './vector-store.js';
 
 function nullEmbeddingRouter(): LlmRouterService {
   return { embeddingClient: async () => null } as unknown as LlmRouterService;
@@ -107,7 +108,7 @@ describe('retrieval service (keyword leg)', () => {
       title: 'Offsite',
     });
 
-    const retrieval = createRetrievalService({ db, llm: nullEmbeddingRouter() });
+    const retrieval = createRetrievalService({ db, llm: nullEmbeddingRouter(), vectors: createSqlScanVectorStore({ db }) });
     const { results, mode } = await retrieval.search(workspaceId, 'budget review');
 
     expect(mode).toBe('keyword');
@@ -134,7 +135,7 @@ describe('retrieval service (keyword leg)', () => {
       title: 'Other note',
     });
 
-    const retrieval = createRetrievalService({ db, llm: nullEmbeddingRouter() });
+    const retrieval = createRetrievalService({ db, llm: nullEmbeddingRouter(), vectors: createSqlScanVectorStore({ db }) });
     const { results } = await retrieval.search(workspaceId, 'budget review');
     expect(results.map((r) => r.refId)).toEqual(['itm_strong', 'itm_weak']);
     const strong = results[0];
@@ -164,7 +165,7 @@ describe('retrieval service (keyword leg)', () => {
       title: 'Budget thread',
     });
 
-    const retrieval = createRetrievalService({ db, llm: nullEmbeddingRouter() });
+    const retrieval = createRetrievalService({ db, llm: nullEmbeddingRouter(), vectors: createSqlScanVectorStore({ db }) });
     const all = await retrieval.search(workspaceId, 'budget');
     // Two referenced entities, each deduped to one best chunk.
     expect(all.results).toHaveLength(2);
@@ -184,7 +185,7 @@ describe('retrieval service (keyword leg)', () => {
         title: `Item ${i}`,
       });
     }
-    const retrieval = createRetrievalService({ db, llm: nullEmbeddingRouter() });
+    const retrieval = createRetrievalService({ db, llm: nullEmbeddingRouter(), vectors: createSqlScanVectorStore({ db }) });
     const { results } = await retrieval.search(workspaceId, 'budget', { limit: 2 });
     expect(results).toHaveLength(2);
   });
@@ -195,7 +196,7 @@ describe('retrieval service (keyword leg)', () => {
       refId: 'itm_other',
       text: 'budget belonging to another workspace',
     });
-    const retrieval = createRetrievalService({ db, llm: nullEmbeddingRouter() });
+    const retrieval = createRetrievalService({ db, llm: nullEmbeddingRouter(), vectors: createSqlScanVectorStore({ db }) });
     const { results } = await retrieval.search(workspaceId, 'budget');
     expect(results).toHaveLength(0);
   });
@@ -239,7 +240,7 @@ describe('retrieval service (semantic leg)', () => {
         .execute();
     }
 
-    const retrieval = createRetrievalService({ db, llm: router });
+    const retrieval = createRetrievalService({ db, llm: router, vectors: createSqlScanVectorStore({ db }) });
     const { results, mode } = await retrieval.search(workspaceId, query);
 
     expect(mode).toBe('semantic+keyword');
@@ -291,7 +292,7 @@ describe('retrieval service (semantic leg)', () => {
         .execute();
     }
 
-    const retrieval = createRetrievalService({ db, llm: router });
+    const retrieval = createRetrievalService({ db, llm: router, vectors: createSqlScanVectorStore({ db }) });
     const { results, mode } = await retrieval.search(workspaceId, query);
     expect(mode).toBe('semantic+keyword');
     expect(results.map((r) => r.refId)).toEqual(['itm_current']);
@@ -312,7 +313,7 @@ describe('retrieval service (semantic leg)', () => {
     } as unknown as RoutedLlm;
     const router = { embeddingClient: async () => routed } as unknown as LlmRouterService;
 
-    const retrieval = createRetrievalService({ db, llm: router });
+    const retrieval = createRetrievalService({ db, llm: router, vectors: createSqlScanVectorStore({ db }) });
     const { results, mode } = await retrieval.search(workspaceId, 'budget');
     expect(mode).toBe('keyword');
     expect(results).toHaveLength(1);

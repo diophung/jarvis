@@ -8,7 +8,7 @@ import { buildServices } from '../services/index.js';
 const config = loadConfig({ DONNA_DEMO_SEED: 'true' });
 const db = createDb({ databaseUrl: config.env.DATABASE_URL, sqlitePath: config.sqlitePath });
 await migrateToLatest(db);
-const services = buildServices({ db, config, connectors: createDefaultRegistry() });
+const services = await buildServices({ db, config, connectors: createDefaultRegistry() });
 const result = await bootstrap(db, config, services);
 console.log(
   result.seededDemo

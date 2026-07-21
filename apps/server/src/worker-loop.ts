@@ -12,6 +12,8 @@
  *  4. Session cleanup: expired sessions rows are garbage-collected.
  *  5. Self-learning: hourly signal extraction + preference inference per
  *     workspace, plus daily confidence decay (learning.* settings keys).
+ *  6. Privacy: pending data_deletion_requests are claimed and purged.
+ *  7. Idempotency: expired idempotency_keys rows are garbage-collected.
  */
 import { nowIso } from '@donna/core';
 import { Cron } from 'croner';
@@ -40,7 +42,7 @@ interface DigestSchedule {
 export function createWorkerLoop(ctx: AppContext, opts: { tickMs?: number } = {}): WorkerLoop {
   const tickMs = opts.tickMs ?? DEFAULT_TICK_MS;
   const { db } = ctx;
-  const { settings, digest, ingestion, audit, learning } = ctx.services;
+  const { settings, digest, ingestion, audit, learning, idempotency, privacy } = ctx.services;
   const sessions = createSessionsService(db);
   let timer: ReturnType<typeof setInterval> | null = null;
   /** Reentrancy latch: a slow tick (e.g. real-LLM digest >60s) must not overlap the next. */
@@ -173,6 +175,17 @@ export function createWorkerLoop(ctx: AppContext, opts: { tickMs?: number } = {}
         await runLearning();
       } catch (err) {
         console.error('[worker] learning job failed', err);
+      }
+      try {
+        // Privacy: execute pending "delete all my data" jobs.
+        await privacy.processPending();
+      } catch (err) {
+        console.error('[worker] data deletion job failed', err);
+      }
+      try {
+        await idempotency.cleanupExpired();
+      } catch (err) {
+        console.error('[worker] idempotency cleanup failed', err);
       }
     } finally {
       running = false;

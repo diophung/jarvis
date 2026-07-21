@@ -7,6 +7,7 @@ import type { AppContext, IndexingService, LlmRouterService, Services } from '..
 import { HttpError } from '../lib/http-errors.js';
 import { createIndexingService } from '../services/indexing.js';
 import { createRetrievalService } from '../services/retrieval.js';
+import { createSqlScanVectorStore } from '../services/vector-store.js';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';
 import { registerSearchRoutes } from './search.js';
 
@@ -22,8 +23,8 @@ beforeEach(async () => {
   const nullEmbeddingRouter = {
     embeddingClient: async () => null,
   } as unknown as LlmRouterService;
-  indexing = createIndexingService({ db, llm: nullEmbeddingRouter });
-  const retrieval = createRetrievalService({ db, llm: nullEmbeddingRouter });
+  indexing = createIndexingService({ db, llm: nullEmbeddingRouter, vectors: createSqlScanVectorStore({ db }) });
+  const retrieval = createRetrievalService({ db, llm: nullEmbeddingRouter, vectors: createSqlScanVectorStore({ db }) });
   const ctx: AppContext = {
     config: {} as AppConfig,
     db,

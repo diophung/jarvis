@@ -13,6 +13,7 @@ import { createAuditService } from '../services/audit.js';
 import { createIndexingService } from '../services/indexing.js';
 import { createStorageService } from '../services/storage.js';
 import { createUploadsService } from '../services/uploads.js';
+import { createSqlScanVectorStore } from '../services/vector-store.js';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';
 import { registerUploadsRoutes } from './uploads.js';
 
@@ -52,7 +53,7 @@ beforeEach(async () => {
   const nullEmbeddingRouter = {
     embeddingClient: async () => null,
   } as unknown as LlmRouterService;
-  const indexing = createIndexingService({ db, llm: nullEmbeddingRouter });
+  const indexing = createIndexingService({ db, llm: nullEmbeddingRouter, vectors: createSqlScanVectorStore({ db }) });
   const uploads = createUploadsService({ db, storage, indexing, audit });
   const ctx: AppContext = {
     config,

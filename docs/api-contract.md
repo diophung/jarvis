@@ -174,6 +174,21 @@ See [self-learning.md](./self-learning.md) for the full subsystem reference.
 - `POST /api/projects` `{ name, description?, priority?, keywords? }` → `{ project }`
 - `PATCH /api/projects/:id` `{ name?, description?, status?, priority?, keywords? }` → `{ project }`
 
+## Privacy (account data)
+- `GET /api/account/export` → full per-table account export (attachment; rows capped per table with `truncated` flags)
+- `POST /api/account/delete-data` → `{ request: DataDeletionRequest }` (durable worker-processed purge; 409 while one is in flight)
+- `GET /api/account/delete-data` → `{ request: DataDeletionRequest | null }` (latest request + per-table purge counts)
+
+## Idempotency
+Unsafe write endpoints (`POST /api/feedback`, `POST /api/memory`,
+`POST /api/learning/preferences`, `POST /api/learning/preferences/:id/correct`,
+`POST /api/learning/draft-feedback`, `POST /api/account/delete-data`) accept an
+`Idempotency-Key` header. Retries with the same key + body replay the stored
+response (`idempotency-replayed: true`); the same key with a different body →
+409 `idempotency_key_reuse`; a concurrent duplicate → 409
+`idempotency_in_flight`. Keys are scoped per workspace+user+endpoint and
+expire after 24h.
+
 ## Audit & system
 - `GET /api/audit` → `{ items: AuditLog[] }` — query `limit`, `before`, `eventType`, `actor`
 - `GET /api/settings` → `{ settings: Record<string, unknown> }` (app settings incl. sync interval)

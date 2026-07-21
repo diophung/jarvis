@@ -36,6 +36,20 @@ const EnvSchema = z.object({
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),
   DATABASE_URL: z.string().optional(),
+  /** Max Postgres pool connections per process (replicas × size must stay under the server's max_connections). */
+  DONNA_DB_POOL_SIZE: z.coerce.number().int().positive().max(200).default(10),
+  /** Fail a connection attempt after this long (ms). */
+  DONNA_DB_CONNECT_TIMEOUT_MS: z.coerce.number().int().positive().default(5_000),
+  /** Recycle idle pooled connections after this long (ms). */
+  DONNA_DB_IDLE_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
+  /** Server-side statement timeout — no query may run longer (ms). */
+  DONNA_DB_STATEMENT_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
+  /** Queries at/above this duration are logged as slow (ms). */
+  DONNA_DB_SLOW_QUERY_MS: z.coerce.number().int().positive().default(250),
+  /** redis:// URL enables the shared cache; unset = per-process in-memory cache. */
+  DONNA_REDIS_URL: z.string().optional(),
+  /** Default cache TTL for hot reads (seconds). Cache is disposable — never truth. */
+  DONNA_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   DONNA_DATA_DIR: z.string().default('./data'),
   DONNA_STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
   DONNA_S3_BUCKET: z.string().optional(),

@@ -39,4 +39,6 @@ export const IdPrefix = {
   appSetting: 'set',
   learningSignal: 'sig',
   learnedPreference: 'lpr',
+  idempotencyKey: 'idk',
+  dataDeletionRequest: 'del',
 } as const;

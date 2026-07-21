@@ -537,6 +537,40 @@ export interface LearnedPreferencesTable {
   updatedAt: string;
 }
 
+export interface IdempotencyKeysTable {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  /** Route identity (e.g. "POST /api/feedback") so the same key can be reused across endpoints. */
+  endpoint: string;
+  /** Client-supplied Idempotency-Key header value. */
+  key: string;
+  /** sha256 of the request body — a reused key with a different body is a conflict. */
+  requestHash: string;
+  status: string; // 'in_progress' | 'completed'
+  responseStatus: number | null;
+  responseBody: string | null; // json
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DataDeletionRequestsTable {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  requestedBy: string;
+  scope: string; // 'workspace'
+  status: string; // 'pending' | 'running' | 'completed' | 'failed'
+  tablesPurged: string; // json Record<table, rowsDeleted>
+  error: string | null;
+  requestedAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppSettingsTable {
   id: string;
   workspaceId: string;
@@ -579,4 +613,6 @@ export interface DB {
   appSettings: AppSettingsTable;
   learningSignals: LearningSignalsTable;
   learnedPreferences: LearnedPreferencesTable;
+  idempotencyKeys: IdempotencyKeysTable;
+  dataDeletionRequests: DataDeletionRequestsTable;
 }

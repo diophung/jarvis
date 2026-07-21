@@ -11,3 +11,4 @@ data/
 !data/.gitkeep
 *.tsbuildinfo
 .vite/
+data-smoke/

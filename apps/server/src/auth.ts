@@ -16,6 +16,7 @@ const SESSION_COOKIE_MAX_AGE_S = 60 * 60 * 24 * 30;
 /** Paths under /api that never require a session. */
 const PUBLIC_PATHS = new Set([
   '/api/health',
+  '/api/health/ready',
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/methods',
