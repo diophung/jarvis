@@ -13,7 +13,7 @@
   "dependencies": {
     "@jarvis/core": "workspace:*",
     "better-sqlite3": "^12.10.0",
-    "kysely": "^0.27.5",
+    "kysely": "^0.28.17",
     "pg": "^8.13.1"
   },
   "devDependencies": {
