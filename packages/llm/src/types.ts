@@ -3,7 +3,7 @@
  * SDKs. One adapter covers every OpenAI-compatible endpoint (OpenAI, vLLM,
  * Ollama, SGLang, LM Studio, llama.cpp, OpenRouter, ...).
  */
-import type { LlmProviderKind, LlmTask } from '@donna/core';
+import type { LlmProviderKind, LlmTask } from '@jarvis/core';
 
 export interface LlmMessage {
   role: 'system' | 'user' | 'assistant';

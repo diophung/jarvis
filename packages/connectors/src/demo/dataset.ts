@@ -1,5 +1,5 @@
 /**
- * Donna's demo world. A coherent, narrative mock dataset used by the mock
+ * Jarvis's demo world. A coherent, narrative mock dataset used by the mock
  * connectors so the entire product works — and demos well — with zero external
  * credentials.
  *
@@ -14,7 +14,7 @@
  * Everything is generated RELATIVE to the `now` passed in, so demos always
  * look fresh. The function is pure: same `now` in, identical dataset out.
  */
-import type { PersonImportance, PersonRef, RawSourceItem } from '@donna/core';
+import type { PersonImportance, PersonRef, RawSourceItem } from '@jarvis/core';
 
 export interface DemoPerson {
   name: string;

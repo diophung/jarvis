@@ -5,8 +5,8 @@
  * persistence goes through the VectorStore abstraction (SQL scan or
  * pgvector — see services/vector-store.ts).
  */
-import { chunkText, newId, nowIso, toJson } from '@donna/core';
-import type { Db } from '@donna/db';
+import { chunkText, newId, nowIso, toJson } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import type { IndexingService, LlmRouterService, VectorStore } from '../context.js';
 
 const INSERT_BATCH = 50;

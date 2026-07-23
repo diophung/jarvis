@@ -160,7 +160,7 @@ describe('ChatPage', () => {
       expect(screen.getByText(prompt)).toBeInTheDocument();
     }
     expect(
-      screen.getByText('Donna can read your connected sources. External actions always ask first.'),
+      screen.getByText('Jarvis can read your connected sources. External actions always ask first.'),
     ).toBeInTheDocument();
   });
 

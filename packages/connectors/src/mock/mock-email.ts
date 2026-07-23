@@ -3,7 +3,7 @@
  * and demonstrates the approval flow end-to-end: `send_email` / `reply_email`
  * "succeed" with a fake external reference and never touch the network.
  */
-import type { RawSourceItem } from '@donna/core';
+import type { RawSourceItem } from '@jarvis/core';
 import type {
   AttachmentContent,
   Connector,

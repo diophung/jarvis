@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fromJson } from '@donna/core';
-import type { Db } from '@donna/db';
+import { fromJson } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { loadConfig, type AppConfig } from '../config.js';
 import type { LlmRouterService, UploadsService } from '../context.js';
@@ -26,8 +26,8 @@ const nullEmbeddingRouter = {
 } as unknown as LlmRouterService;
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'donna-uploads-'));
-  config = loadConfig({ DONNA_DATA_DIR: dir, DONNA_STORAGE_DRIVER: 'local' });
+  dir = await mkdtemp(path.join(tmpdir(), 'jarvis-uploads-'));
+  config = loadConfig({ JARVIS_DATA_DIR: dir, JARVIS_STORAGE_DRIVER: 'local' });
 });
 
 afterAll(async () => {

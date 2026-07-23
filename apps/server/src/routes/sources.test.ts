@@ -1,6 +1,6 @@
-import { newId, nowIso, toJson } from '@donna/core';
-import { createDefaultRegistry } from '@donna/connectors';
-import type { Db } from '@donna/db';
+import { newId, nowIso, toJson } from '@jarvis/core';
+import { createDefaultRegistry } from '@jarvis/connectors';
+import type { Db } from '@jarvis/db';
 import fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AppContext, IndexingService, Services, TokensService } from '../context.js';

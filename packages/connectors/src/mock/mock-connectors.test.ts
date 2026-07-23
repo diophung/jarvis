@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RawSourceItem } from '@donna/core';
+import type { RawSourceItem } from '@jarvis/core';
 import type { Connector, SyncRequest } from '../types.js';
 import { createDemoDataset } from '../demo/dataset.js';
 import { MockEmailConnector } from './mock-email.js';

@@ -14,7 +14,7 @@
  *
  * Write side (approval flow only): `send_email` POSTs to /me/sendMail.
  */
-import type { PersonRef, RawSourceItem } from '@donna/core';
+import type { PersonRef, RawSourceItem } from '@jarvis/core';
 import type {
   Connector,
   ConnectorAction,
@@ -184,7 +184,7 @@ export class OutlookConnector implements Connector {
   }
 }
 
-/** Map a Graph message resource to Donna's RawSourceItem. */
+/** Map a Graph message resource to Jarvis's RawSourceItem. */
 export function mapOutlookMessage(msg: GraphMessage): RawSourceItem | null {
   if (!msg.id) return null;
   const toRef = (r: GraphRecipient): PersonRef => ({

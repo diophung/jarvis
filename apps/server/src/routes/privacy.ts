@@ -11,7 +11,7 @@ export function registerPrivacyRoutes(app: FastifyInstance, ctx: AppContext): vo
 
   app.get('/api/account/export', async (request, reply) => {
     const data = await privacy.exportAccountData(request.workspaceId, request.userId);
-    reply.header('content-disposition', 'attachment; filename="donna-account-export.json"');
+    reply.header('content-disposition', 'attachment; filename="jarvis-account-export.json"');
     return data;
   });
 

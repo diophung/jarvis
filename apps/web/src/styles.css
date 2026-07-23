@@ -10,60 +10,60 @@
     @apply bg-surface text-ink font-sans;
   }
   ::selection {
-    @apply bg-donna-200;
+    @apply bg-jarvis-200;
   }
 }
 
 @layer components {
   /* Markdown rendering inside chat + digests */
-  .prose-donna {
+  .prose-jarvis {
     @apply text-[15px] leading-relaxed text-ink;
   }
-  .prose-donna h1,
-  .prose-donna h2,
-  .prose-donna h3 {
+  .prose-jarvis h1,
+  .prose-jarvis h2,
+  .prose-jarvis h3 {
     @apply font-semibold text-ink mt-5 mb-2;
   }
-  .prose-donna h1 {
+  .prose-jarvis h1 {
     @apply text-xl;
   }
-  .prose-donna h2 {
+  .prose-jarvis h2 {
     @apply text-lg;
   }
-  .prose-donna h3 {
+  .prose-jarvis h3 {
     @apply text-base;
   }
-  .prose-donna p {
+  .prose-jarvis p {
     @apply my-2;
   }
-  .prose-donna ul {
+  .prose-jarvis ul {
     @apply list-disc pl-5 my-2 space-y-1;
   }
-  .prose-donna ol {
+  .prose-jarvis ol {
     @apply list-decimal pl-5 my-2 space-y-1;
   }
-  .prose-donna strong {
+  .prose-jarvis strong {
     @apply font-semibold;
   }
-  .prose-donna a {
-    @apply text-donna-700 underline decoration-donna-300 underline-offset-2;
+  .prose-jarvis a {
+    @apply text-jarvis-700 underline decoration-jarvis-300 underline-offset-2;
   }
-  .prose-donna code {
+  .prose-jarvis code {
     @apply bg-surface-sunken rounded px-1 py-0.5 text-[13px];
   }
-  .prose-donna pre {
+  .prose-jarvis pre {
     @apply bg-surface-sunken rounded-lg p-3 overflow-x-auto my-3;
   }
-  .prose-donna blockquote {
+  .prose-jarvis blockquote {
     @apply border-l-2 border-surface-border pl-3 text-ink-muted my-2;
   }
-  .prose-donna table {
+  .prose-jarvis table {
     @apply w-full text-sm my-3;
   }
-  .prose-donna th {
+  .prose-jarvis th {
     @apply text-left font-medium border-b border-surface-border py-1.5 pr-3;
   }
-  .prose-donna td {
+  .prose-jarvis td {
     @apply border-b border-surface-border/60 py-1.5 pr-3 align-top;
   }
 }

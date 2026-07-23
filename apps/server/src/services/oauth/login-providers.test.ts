@@ -67,17 +67,17 @@ beforeAll(async () => {
 
 function makeConfig(overrides: Partial<Record<string, string>> = {}): AppConfig {
   return loadConfig({
-    DONNA_AUTH_MODE: 'password',
-    DONNA_ALLOW_SIGNUP: 'true',
-    DONNA_WEB_ORIGIN: 'http://web.test',
-    DONNA_PUBLIC_URL: 'http://api.test',
-    DONNA_PUBLIC_DIR: undefined,
-    DONNA_COOKIE_SECURE: 'false',
+    JARVIS_AUTH_MODE: 'password',
+    JARVIS_ALLOW_SIGNUP: 'true',
+    JARVIS_WEB_ORIGIN: 'http://web.test',
+    JARVIS_PUBLIC_URL: 'http://api.test',
+    JARVIS_PUBLIC_DIR: undefined,
+    JARVIS_COOKIE_SECURE: 'false',
     GOOGLE_CLIENT_ID: 'google-client-id',
     GOOGLE_CLIENT_SECRET: 'google-secret',
     FACEBOOK_CLIENT_ID: 'fb-client-id',
     FACEBOOK_CLIENT_SECRET: 'fb-secret',
-    APPLE_CLIENT_ID: 'com.donna.test',
+    APPLE_CLIENT_ID: 'com.jarvis.test',
     APPLE_TEAM_ID: 'TEAMID1234',
     APPLE_KEY_ID: 'KEYID12345',
     APPLE_PRIVATE_KEY: applePrivateKeyPem,
@@ -224,7 +224,7 @@ describe('buildStartRedirect', () => {
     const payload = createLoginStatePayload('apple', { intent: 'login' });
     const url = new URL(buildStartRedirect('apple', config, payload));
     expect(url.origin + url.pathname).toBe('https://appleid.apple.com/auth/authorize');
-    expect(url.searchParams.get('client_id')).toBe('com.donna.test');
+    expect(url.searchParams.get('client_id')).toBe('com.jarvis.test');
     expect(url.searchParams.get('redirect_uri')).toBe(
       'http://api.test/api/auth/oauth/apple/callback',
     );
@@ -235,9 +235,9 @@ describe('buildStartRedirect', () => {
   });
 
   it('builds redirect URIs from the public API URL', () => {
-    const config = makeConfig({ DONNA_PUBLIC_URL: 'https://donna.example.com/' });
+    const config = makeConfig({ JARVIS_PUBLIC_URL: 'https://jarvis.example.com/' });
     expect(loginRedirectUri(config, 'apple')).toBe(
-      'https://donna.example.com/api/auth/oauth/apple/callback',
+      'https://jarvis.example.com/api/auth/oauth/apple/callback',
     );
   });
 });
@@ -268,7 +268,7 @@ describe('small helpers', () => {
       issuer: 'TEAMID1234',
       audience: 'https://appleid.apple.com',
     });
-    expect(payload.sub).toBe('com.donna.test');
+    expect(payload.sub).toBe('com.jarvis.test');
     expect(payload.exp! - payload.iat!).toBe(3600);
   });
 });
@@ -437,7 +437,7 @@ describe('exchangeLoginCode apple', () => {
       .setProtectedHeader({ alg: 'ES256', kid: 'a1' })
       .setSubject('apple-sub-1')
       .setIssuer('https://appleid.apple.com')
-      .setAudience('com.donna.test')
+      .setAudience('com.jarvis.test')
       .setIssuedAt()
       .setExpirationTime('1h')
       .sign(appleServerKeys.privateKey);
@@ -463,7 +463,7 @@ describe('exchangeLoginCode apple', () => {
     // The token call must carry a freshly minted ES256 client_secret JWT.
     const tokenCall = fetchCalls.find((c) => c.url.startsWith('https://appleid.apple.com/'));
     const body = new URLSearchParams(String(tokenCall?.init?.body));
-    expect(body.get('client_id')).toBe('com.donna.test');
+    expect(body.get('client_id')).toBe('com.jarvis.test');
     expect(body.get('grant_type')).toBe('authorization_code');
     const clientSecret = body.get('client_secret') ?? '';
     expect(clientSecret.split('.')).toHaveLength(3);

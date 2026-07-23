@@ -3,9 +3,9 @@ import {
   createDefaultRegistry,
   createDemoDataset,
   type Connector,
-} from '@donna/connectors';
-import { fromJson, newId, nowIso, toJson, type RawSourceItem } from '@donna/core';
-import type { Db } from '@donna/db';
+} from '@jarvis/connectors';
+import { fromJson, newId, nowIso, toJson, type RawSourceItem } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import { describe, expect, it } from 'vitest';
 import type { IndexingService } from '../context.js';
 import { HttpError } from '../lib/http-errors.js';

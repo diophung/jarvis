@@ -1,5 +1,5 @@
 import cookie from '@fastify/cookie';
-import type { Db } from '@donna/db';
+import type { Db } from '@jarvis/db';
 import bcrypt from 'bcryptjs';
 import fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -32,7 +32,7 @@ async function buildApp(env: Partial<Record<string, string>> = {}): Promise<Fast
     ...env,
   });
   const app = fastify();
-  await app.register(cookie, { secret: config.env.DONNA_SECRET });
+  await app.register(cookie, { secret: config.env.JARVIS_SECRET });
   // Mirror app.ts so HttpError maps to the contract error shape.
   app.setErrorHandler((err, _request, reply) => {
     if (err instanceof HttpError) {
@@ -59,12 +59,12 @@ function setCookieHeader(res: { headers: Record<string, unknown> }): string {
 
 /** Raw signed cookie value straight from Set-Cookie (no decode/encode drift). */
 function sessionCookie(res: { headers: Record<string, unknown> }): string {
-  const match = setCookieHeader(res).match(/donna_session=([^;]+)/);
+  const match = setCookieHeader(res).match(/jarvis_session=([^;]+)/);
   return match?.[1] ?? '';
 }
 
 function asCookieHeader(value: string): { cookie: string } {
-  return { cookie: `donna_session=${value}` };
+  return { cookie: `jarvis_session=${value}` };
 }
 
 async function setPassword(password = PASSWORD): Promise<void> {
@@ -105,26 +105,26 @@ afterEach(async () => {
 });
 
 describe('config flags', () => {
-  it('parses DONNA_COOKIE_SECURE (default false) and DONNA_INLINE_WORKER (default true)', () => {
-    const defaults = loadConfig({ DONNA_COOKIE_SECURE: undefined, DONNA_INLINE_WORKER: undefined });
-    expect(defaults.env.DONNA_COOKIE_SECURE).toBe(false);
-    expect(defaults.env.DONNA_INLINE_WORKER).toBe(true);
+  it('parses JARVIS_COOKIE_SECURE (default false) and JARVIS_INLINE_WORKER (default true)', () => {
+    const defaults = loadConfig({ JARVIS_COOKIE_SECURE: undefined, JARVIS_INLINE_WORKER: undefined });
+    expect(defaults.env.JARVIS_COOKIE_SECURE).toBe(false);
+    expect(defaults.env.JARVIS_INLINE_WORKER).toBe(true);
 
-    const flipped = loadConfig({ DONNA_COOKIE_SECURE: 'true', DONNA_INLINE_WORKER: 'false' });
-    expect(flipped.env.DONNA_COOKIE_SECURE).toBe(true);
-    expect(flipped.env.DONNA_INLINE_WORKER).toBe(false);
+    const flipped = loadConfig({ JARVIS_COOKIE_SECURE: 'true', JARVIS_INLINE_WORKER: 'false' });
+    expect(flipped.env.JARVIS_COOKIE_SECURE).toBe(true);
+    expect(flipped.env.JARVIS_INLINE_WORKER).toBe(false);
   });
 
-  it('parses DONNA_TRUST_PROXY (default false)', () => {
-    expect(loadConfig({ DONNA_TRUST_PROXY: undefined }).env.DONNA_TRUST_PROXY).toBe(false);
-    expect(loadConfig({ DONNA_TRUST_PROXY: 'true' }).env.DONNA_TRUST_PROXY).toBe(true);
-    expect(loadConfig({ DONNA_TRUST_PROXY: '0' }).env.DONNA_TRUST_PROXY).toBe(false);
+  it('parses JARVIS_TRUST_PROXY (default false)', () => {
+    expect(loadConfig({ JARVIS_TRUST_PROXY: undefined }).env.JARVIS_TRUST_PROXY).toBe(false);
+    expect(loadConfig({ JARVIS_TRUST_PROXY: 'true' }).env.JARVIS_TRUST_PROXY).toBe(true);
+    expect(loadConfig({ JARVIS_TRUST_PROXY: '0' }).env.JARVIS_TRUST_PROXY).toBe(false);
   });
 });
 
 describe('CSRF origin checking', () => {
   it('403s a state-changing request with a foreign Origin and performs no work', async () => {
-    const app = await buildApp({ DONNA_AUTH_MODE: 'local' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'local' });
     const res = await app.inject({
       method: 'POST',
       url: '/api/auth/password',
@@ -143,8 +143,8 @@ describe('CSRF origin checking', () => {
   });
 
   it('allows the web origin, the API public origin, and requests with no Origin', async () => {
-    const app = await buildApp({ DONNA_AUTH_MODE: 'local' });
-    // DONNA_WEB_ORIGIN default is http://localhost:5173.
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'local' });
+    // JARVIS_WEB_ORIGIN default is http://localhost:5173.
     const webOrigin = await app.inject({
       method: 'POST',
       url: '/api/auth/password',
@@ -152,7 +152,7 @@ describe('CSRF origin checking', () => {
       payload: { newPassword: 'a-brand-new-passphrase' },
     });
     expect(webOrigin.statusCode).toBe(200);
-    // publicUrl defaults to http://localhost:<DONNA_PORT> (3001).
+    // publicUrl defaults to http://localhost:<JARVIS_PORT> (3001).
     const apiOrigin = await app.inject({
       method: 'POST',
       url: '/api/auth/logout',
@@ -165,7 +165,7 @@ describe('CSRF origin checking', () => {
   });
 
   it('does not block GETs or the OAuth callback paths (Apple form_post is cross-site)', async () => {
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const get = await app.inject({
       method: 'GET',
       url: '/api/auth/methods',
@@ -185,30 +185,30 @@ describe('CSRF origin checking', () => {
 });
 
 describe('session cookie Secure attribute', () => {
-  it('local-mode auto-login sets Secure only when DONNA_COOKIE_SECURE=true', async () => {
-    const insecureApp = await buildApp({ DONNA_AUTH_MODE: 'local', DONNA_COOKIE_SECURE: 'false' });
+  it('local-mode auto-login sets Secure only when JARVIS_COOKIE_SECURE=true', async () => {
+    const insecureApp = await buildApp({ JARVIS_AUTH_MODE: 'local', JARVIS_COOKIE_SECURE: 'false' });
     const insecure = await insecureApp.inject({ method: 'GET', url: '/api/me' });
     expect(insecure.statusCode).toBe(200);
-    expect(setCookieHeader(insecure)).toContain('donna_session');
+    expect(setCookieHeader(insecure)).toContain('jarvis_session');
     expect(setCookieHeader(insecure)).not.toMatch(/;\s*Secure/i);
 
-    const secureApp = await buildApp({ DONNA_AUTH_MODE: 'local', DONNA_COOKIE_SECURE: 'true' });
+    const secureApp = await buildApp({ JARVIS_AUTH_MODE: 'local', JARVIS_COOKIE_SECURE: 'true' });
     const secure = await secureApp.inject({ method: 'GET', url: '/api/me' });
     expect(secure.statusCode).toBe(200);
-    expect(setCookieHeader(secure)).toContain('donna_session');
+    expect(setCookieHeader(secure)).toContain('jarvis_session');
     expect(setCookieHeader(secure)).toMatch(/;\s*Secure/i);
   });
 
-  it('password login sets Secure when DONNA_COOKIE_SECURE=true', async () => {
+  it('password login sets Secure when JARVIS_COOKIE_SECURE=true', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password', DONNA_COOKIE_SECURE: 'true' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password', JARVIS_COOKIE_SECURE: 'true' });
     const res = await app.inject({
       method: 'POST',
       url: '/api/auth/login',
       payload: { email: userEmail, password: PASSWORD },
     });
     expect(res.statusCode).toBe(200);
-    expect(setCookieHeader(res)).toContain('donna_session');
+    expect(setCookieHeader(res)).toContain('jarvis_session');
     expect(setCookieHeader(res)).toMatch(/;\s*Secure/i);
   });
 });
@@ -225,7 +225,7 @@ describe('password policy', () => {
 });
 
 describe('POST /api/auth/register', () => {
-  const env = { DONNA_AUTH_MODE: 'password', DONNA_ALLOW_SIGNUP: 'true' };
+  const env = { JARVIS_AUTH_MODE: 'password', JARVIS_ALLOW_SIGNUP: 'true' };
 
   it('creates a user + workspace, sets a session cookie, returns a sanitized user', async () => {
     const app = await buildApp(env);
@@ -284,11 +284,11 @@ describe('POST /api/auth/register', () => {
 
   it('403s when signup is disabled or auth mode is local', async () => {
     const payload = { email: 'new@user.example', name: 'New', password: 'a-long-enough-pass' };
-    const disabled = await buildApp({ DONNA_AUTH_MODE: 'password', DONNA_ALLOW_SIGNUP: 'false' });
+    const disabled = await buildApp({ JARVIS_AUTH_MODE: 'password', JARVIS_ALLOW_SIGNUP: 'false' });
     expect(
       (await disabled.inject({ method: 'POST', url: '/api/auth/register', payload })).statusCode,
     ).toBe(403);
-    const local = await buildApp({ DONNA_AUTH_MODE: 'local', DONNA_ALLOW_SIGNUP: 'true' });
+    const local = await buildApp({ JARVIS_AUTH_MODE: 'local', JARVIS_ALLOW_SIGNUP: 'true' });
     expect(
       (await local.inject({ method: 'POST', url: '/api/auth/register', payload })).statusCode,
     ).toBe(403);
@@ -298,7 +298,7 @@ describe('POST /api/auth/register', () => {
 describe('POST /api/auth/login', () => {
   it('sets a session cookie, updates lastLoginAt, audits and sanitizes the user', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const res = await app.inject({
       method: 'POST',
       url: '/api/auth/login',
@@ -325,7 +325,7 @@ describe('POST /api/auth/login', () => {
 
   it('returns the same generic 401 for unknown email, wrong password and passwordless users', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     await seedWorkspace(db, { email: 'nopass@example.com' }); // passwordless user
 
     const attempts = [
@@ -355,7 +355,7 @@ describe('POST /api/auth/login', () => {
 
   it('rate limits after 5 failures for the same email+ip, even with the right password', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     for (let i = 0; i < 5; i++) {
       const res = await app.inject({
         method: 'POST',
@@ -383,7 +383,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('blocks an IP after 20 failures even when the attacker rotates emails', { timeout: 30_000 }, async () => {
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     for (let i = 0; i < 20; i++) {
       const res = await app.inject({
         method: 'POST',
@@ -404,7 +404,7 @@ describe('POST /api/auth/login', () => {
 
   it('audits failed logins only for emails that match an existing user', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const unknown = await app.inject({
       method: 'POST',
       url: '/api/auth/login',
@@ -424,7 +424,7 @@ describe('POST /api/auth/login', () => {
 
   it('clears the failure counter on success', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     for (let i = 0; i < 4; i++) {
       await app.inject({
         method: 'POST',
@@ -454,7 +454,7 @@ describe('POST /api/auth/login', () => {
 describe('POST /api/auth/logout', () => {
   it('revokes the DB session so the cookie stops working in password mode', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const token = await loginCookie(app);
 
     const out = await app.inject({
@@ -471,7 +471,7 @@ describe('POST /api/auth/logout', () => {
   });
 
   it('still returns 200 when the session row is already gone (local mode)', async () => {
-    const app = await buildApp({ DONNA_AUTH_MODE: 'local' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'local' });
     await db.deleteFrom('sessions').execute();
     const res = await app.inject({ method: 'POST', url: '/api/auth/logout' });
     expect(res.statusCode).toBe(200);
@@ -494,7 +494,7 @@ describe('session expiry', () => {
 
   it('an expired cookie is a 401 in password mode', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const token = await loginCookie(app);
     await db
       .updateTable('sessions')
@@ -507,20 +507,20 @@ describe('session expiry', () => {
 
 describe('GET /api/auth/methods', () => {
   it('is public and reports mode + signup', async () => {
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password', DONNA_ALLOW_SIGNUP: 'true' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password', JARVIS_ALLOW_SIGNUP: 'true' });
     const res = await app.inject({ method: 'GET', url: '/api/auth/methods' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ authMode: 'password', signupEnabled: true, oauthProviders: [] });
   });
 
-  it('signupEnabled is false in local mode and when DONNA_ALLOW_SIGNUP=false', async () => {
-    const local = await buildApp({ DONNA_AUTH_MODE: 'local', DONNA_ALLOW_SIGNUP: 'true' });
+  it('signupEnabled is false in local mode and when JARVIS_ALLOW_SIGNUP=false', async () => {
+    const local = await buildApp({ JARVIS_AUTH_MODE: 'local', JARVIS_ALLOW_SIGNUP: 'true' });
     expect(
       ((await local.inject({ method: 'GET', url: '/api/auth/methods' })).json() as {
         signupEnabled: boolean;
       }).signupEnabled,
     ).toBe(false);
-    const off = await buildApp({ DONNA_AUTH_MODE: 'password', DONNA_ALLOW_SIGNUP: 'false' });
+    const off = await buildApp({ JARVIS_AUTH_MODE: 'password', JARVIS_ALLOW_SIGNUP: 'false' });
     expect(
       ((await off.inject({ method: 'GET', url: '/api/auth/methods' })).json() as {
         signupEnabled: boolean;
@@ -530,7 +530,7 @@ describe('GET /api/auth/methods', () => {
 
   it('lists only fully-configured OAuth providers', async () => {
     const partial = await buildApp({
-      DONNA_AUTH_MODE: 'password',
+      JARVIS_AUTH_MODE: 'password',
       GOOGLE_CLIENT_ID: 'gid',
       FACEBOOK_CLIENT_ID: 'fid',
       FACEBOOK_CLIENT_SECRET: 'fsecret',
@@ -543,7 +543,7 @@ describe('GET /api/auth/methods', () => {
     expect((res.json() as { oauthProviders: string[] }).oauthProviders).toEqual(['facebook']);
 
     const full = await buildApp({
-      DONNA_AUTH_MODE: 'password',
+      JARVIS_AUTH_MODE: 'password',
       GOOGLE_CLIENT_ID: 'gid',
       GOOGLE_CLIENT_SECRET: 'gsecret',
       FACEBOOK_CLIENT_ID: 'fid',
@@ -565,7 +565,7 @@ describe('GET /api/auth/methods', () => {
 describe('POST /api/auth/password', () => {
   it('rejects a wrong current password with 401 invalid_credentials', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const token = await loginCookie(app);
     const res = await app.inject({
       method: 'POST',
@@ -579,7 +579,7 @@ describe('POST /api/auth/password', () => {
 
   it('requires currentPassword when one is set and validates the new password', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const token = await loginCookie(app);
     const missing = await app.inject({
       method: 'POST',
@@ -600,7 +600,7 @@ describe('POST /api/auth/password', () => {
 
   it('changes the password and revokes all other sessions', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const keep = await loginCookie(app);
     const other = await loginCookie(app);
 
@@ -644,7 +644,7 @@ describe('POST /api/auth/password', () => {
   });
 
   it('lets a passwordless user set a password without currentPassword (local mode)', async () => {
-    const app = await buildApp({ DONNA_AUTH_MODE: 'local' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'local' });
     const res = await app.inject({
       method: 'POST',
       url: '/api/auth/password',
@@ -659,7 +659,7 @@ describe('POST /api/auth/password', () => {
 describe('session management endpoints', () => {
   it('lists sessions with a current flag and no token material', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const a = await loginCookie(app);
     await loginCookie(app);
 
@@ -681,7 +681,7 @@ describe('session management endpoints', () => {
 
   it('revokes one of my sessions by id; 404 for unknown or foreign ids', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const mine = await loginCookie(app);
     const otherCookie = await loginCookie(app);
     const list = await app.inject({
@@ -731,7 +731,7 @@ describe('session management endpoints', () => {
 
   it('revokes all sessions except the current one', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const keep = await loginCookie(app);
     const b = await loginCookie(app);
     const c = await loginCookie(app);
@@ -760,7 +760,7 @@ describe('session management endpoints', () => {
 describe('GET /api/me and PATCH /api/me', () => {
   it('returns a sanitized user (hasPassword, emailVerified boolean, never passwordHash)', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const token = await loginCookie(app);
     const res = await app.inject({ method: 'GET', url: '/api/me', headers: asCookieHeader(token) });
     expect(res.statusCode).toBe(200);
@@ -777,7 +777,7 @@ describe('GET /api/me and PATCH /api/me', () => {
   });
 
   it('PATCH /api/me updates the profile and returns a sanitized user', async () => {
-    const app = await buildApp({ DONNA_AUTH_MODE: 'local' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'local' });
     const res = await app.inject({
       method: 'PATCH',
       url: '/api/me',
@@ -793,7 +793,7 @@ describe('GET /api/me and PATCH /api/me', () => {
   it('PATCH /api/me rejects changing email to one already in use', async () => {
     await seedWorkspace(db, { email: 'occupied@example.com' });
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const token = await loginCookie(app);
     const res = await app.inject({
       method: 'PATCH',
@@ -808,7 +808,7 @@ describe('GET /api/me and PATCH /api/me', () => {
 
 describe('auth middleware', () => {
   it('401s on protected routes without a cookie in password mode', async () => {
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     for (const url of ['/api/me', '/api/auth/sessions', '/api/anything-else']) {
       const res = await app.inject({ method: 'GET', url });
       expect(res.statusCode).toBe(401);
@@ -816,7 +816,7 @@ describe('auth middleware', () => {
   });
 
   it('leaves public paths open in password mode', async () => {
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     expect((await app.inject({ method: 'GET', url: '/api/auth/methods' })).statusCode).toBe(200);
     // No route registered here, but the middleware lets /api/auth/oauth/*
     // through: 404 from the router, not 401 from auth.
@@ -827,7 +827,7 @@ describe('auth middleware', () => {
   });
 
   it('local mode auto-login creates a real DB session and reuses it via the cookie', async () => {
-    const app = await buildApp({ DONNA_AUTH_MODE: 'local' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'local' });
     const first = await app.inject({ method: 'GET', url: '/api/me' });
     expect(first.statusCode).toBe(200);
     const token = sessionCookie(first);
@@ -850,7 +850,7 @@ describe('auth middleware', () => {
   });
 
   it('cookieless local-mode requests reuse one memoized session row', async () => {
-    const app = await buildApp({ DONNA_AUTH_MODE: 'local' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'local' });
     const first = await app.inject({ method: 'GET', url: '/api/me' });
     expect(first.statusCode).toBe(200);
     const second = await app.inject({ method: 'GET', url: '/api/me' });
@@ -870,7 +870,7 @@ describe('auth middleware', () => {
 
   it('the session cookie is signed: a tampered value is rejected (401 in password mode)', async () => {
     await setPassword();
-    const app = await buildApp({ DONNA_AUTH_MODE: 'password' });
+    const app = await buildApp({ JARVIS_AUTH_MODE: 'password' });
     const token = await loginCookie(app);
     const tampered = `${token.slice(0, -4)}AAAA`;
     const res = await app.inject({

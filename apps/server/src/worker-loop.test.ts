@@ -1,6 +1,6 @@
-import { createDefaultRegistry } from '@donna/connectors';
-import { newId, nowIso, toJson } from '@donna/core';
-import type { Db } from '@donna/db';
+import { createDefaultRegistry } from '@jarvis/connectors';
+import { newId, nowIso, toJson } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import { describe, expect, it, vi } from 'vitest';
 import type { AppConfig } from './config.js';
 import type {

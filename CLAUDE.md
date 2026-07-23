@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Donna is a self-hostable digital executive assistant: it syncs email, chat, calendar, and cloud storage into one normalized model, scores what matters with explainable rules, writes a daily debrief, answers questions over your real data with citations, and takes approval-gated actions. It runs fully without any AI key (demo mode).
+Jarvis is a self-hostable digital executive assistant: it syncs email, chat, calendar, and cloud storage into one normalized model, scores what matters with explainable rules, writes a daily debrief, answers questions over your real data with citations, and takes approval-gated actions. It runs fully without any AI key (demo mode).
 
 ## Commands
 
@@ -19,7 +19,7 @@ pnpm db:migrate     # apply migrations (also runs automatically on server start)
 pnpm seed:demo      # force demo seed (no-op when sources already exist)
 ```
 
-Per-package test: `pnpm --filter @donna/server test`. Single test: `pnpm --filter @donna/server exec vitest run src/services/scoring.test.ts` (add `-t "<name>"` to filter by test name). No env needed — Donna boots in demo mode (SQLite at `./data/donna.db`, mock sources, mock LLM, local auto-login). Copy `.env.example` to `.env` to configure more.
+Per-package test: `pnpm --filter @jarvis/server test`. Single test: `pnpm --filter @jarvis/server exec vitest run src/services/scoring.test.ts` (add `-t "<name>"` to filter by test name). No env needed — Jarvis boots in demo mode (SQLite at `./data/jarvis.db`, mock sources, mock LLM, local auto-login). Copy `.env.example` to `.env` to configure more.
 
 ## Architecture
 
@@ -42,6 +42,6 @@ Deep dives live in `docs/` (architecture.md, developer-guide.md, connectors.md, 
 - **ESM with `.js` import extensions** on all relative imports, even between `.ts` files. Runs under `tsx`/vitest with no build step.
 - **String unions, not TS enums** — all live in `packages/core/src/enums.ts` as `as const` arrays.
 - **Portable SQL** (SQLite + Postgres): only TEXT/INTEGER/REAL; prefixed text ids via `newId('itm')` (`core/ids.ts`); ISO-8601 text timestamps; integer `0|1` booleans. Migrations are statically imported in `packages/db/src/migrate.ts` — add `000N_*.ts` and register it there.
-- **JSON-as-text**: parse with `fromJson(text, fallback)`, write with `toJson(value)` from `@donna/core` — never raw `JSON.parse`. camelCase in code, snake_case in SQL (Kysely `CamelCasePlugin`).
+- **JSON-as-text**: parse with `fromJson(text, fallback)`, write with `toJson(value)` from `@jarvis/core` — never raw `JSON.parse`. camelCase in code, snake_case in SQL (Kysely `CamelCasePlugin`).
 - **Secrets** referenced by env var *name* (`apiKeyEnv`, `SecretResolver`) or stored AES-256-GCM-encrypted; secret values never appear in logs, errors, or audit metadata.
 - **Tests** are vitest, colocated as `*.test.ts`. `createTestDb()` / `seedWorkspace()` (`apps/server/src/test/helpers.ts`) for DB; route tests use `app.inject` with a stubbed auth hook; stub the LLM with `createMockAdapter()` + `isMock: true`; stub connector network with `vi.stubGlobal('fetch', …)`. Code style: Prettier (singleQuote, semi, trailingComma all, printWidth 100).

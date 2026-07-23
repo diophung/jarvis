@@ -9,8 +9,8 @@
  * Legs are merged per chunk (normalized keyword * 0.5 + cosine * 0.5),
  * deduped to the best chunk per referenced entity, and capped at `limit`.
  */
-import { fromJson, type SourceCategory } from '@donna/core';
-import type { Db } from '@donna/db';
+import { fromJson, type SourceCategory } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import type { LlmRouterService, RetrievalService, SearchResult, VectorStore } from '../context.js';
 
 const MAX_TOKENS = 8;

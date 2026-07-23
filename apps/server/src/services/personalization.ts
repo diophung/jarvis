@@ -1,13 +1,13 @@
 /**
  * Personalization service: resolves the output configuration for a task from
- * the user's learned preferences (pure resolution in @donna/core), enriched
+ * the user's learned preferences (pure resolution in @jarvis/core), enriched
  * with live context — currently calendar density as a cognitive-load hint.
  *
  * Always returns both the config AND the applied preferences with reasons,
- * so every personalized surface can show "why Donna chose this".
+ * so every personalized surface can show "why Jarvis chose this".
  */
-import { nowIso, resolvePersonalization } from '@donna/core';
-import type { Db } from '@donna/db';
+import { nowIso, resolvePersonalization } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import type { LearningService, PersonalizationService } from '../context.js';
 
 const HOUR_MS = 3_600_000;

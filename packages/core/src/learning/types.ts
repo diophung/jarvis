@@ -176,7 +176,7 @@ export interface LearnedPreference {
   pinned: number; // 0|1 — pinned preferences do not decay
   decayHalfLifeDays: number;
   lastReinforcedAt: string;
-  /** "Why Donna thinks this" — mandatory explainability. */
+  /** "Why Jarvis thinks this" — mandatory explainability. */
   explanation: string;
   /** Capped list of supporting evidence references. */
   sources: SignalSource[];
@@ -195,7 +195,7 @@ export type PreferenceDraft = Omit<
 >;
 
 /**
- * Minimum confidence before a preference influences Donna's behavior.
+ * Minimum confidence before a preference influences Jarvis's behavior.
  * Below this it is shown to the user as "tentative" but never acted on
  * (habit research: one-off behavior is a poor predictor).
  */

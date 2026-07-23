@@ -14,7 +14,7 @@
  *
  * Write side (approval flow only): `create_event` POSTs to events.insert.
  */
-import type { PersonRef, RawSourceItem } from '@donna/core';
+import type { PersonRef, RawSourceItem } from '@jarvis/core';
 import type {
   Connector,
   ConnectorAction,
@@ -205,7 +205,7 @@ export class GoogleCalendarConnector implements Connector {
   }
 }
 
-/** Map a Calendar API event resource to Donna's RawSourceItem. */
+/** Map a Calendar API event resource to Jarvis's RawSourceItem. */
 export function mapGoogleCalendarEvent(event: GoogleCalendarEvent): RawSourceItem | null {
   if (!event.id) return null;
   const startsAt = event.start?.dateTime ?? event.start?.date;

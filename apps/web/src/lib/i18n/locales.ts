@@ -6,7 +6,7 @@ export type Locale = (typeof SUPPORTED_LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = 'en';
 
 /** localStorage key holding the user's chosen locale (for instant first paint). */
-export const LOCALE_STORAGE_KEY = 'donna.locale';
+export const LOCALE_STORAGE_KEY = 'jarvis.locale';
 
 /** Preference key the locale is mirrored to on the server (per-user). */
 export const LOCALE_PREFERENCE_KEY = 'ui.locale';

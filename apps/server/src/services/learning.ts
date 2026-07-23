@@ -4,7 +4,7 @@
  * inference run, decay, and the user-facing preference management APIs
  * (list / explain / correct / pin / delete / search / merge / contradictions).
  *
- * All actual learning logic is pure and lives in @donna/core/learning; this
+ * All actual learning logic is pure and lives in @jarvis/core/learning; this
  * service feeds it data and persists its output. Every mutation is audited —
  * no hidden profiling.
  */
@@ -40,8 +40,8 @@ import {
   type PreferenceCategory,
   type PreferenceDraft,
   type SourceCategory,
-} from '@donna/core';
-import type { Db, LearnedPreferencesTable, LearningSignalsTable, SourceItemsTable } from '@donna/db';
+} from '@jarvis/core';
+import type { Db, LearnedPreferencesTable, LearningSignalsTable, SourceItemsTable } from '@jarvis/db';
 import {
   SETTING_KEYS,
   type AuditService,
@@ -632,7 +632,7 @@ export function createLearningService(deps: {
         pinned: 0,
         decayHalfLifeDays: 365,
         lastReinforcedAt: now,
-        explanation: 'You told Donna this directly. Correct or delete it anytime.',
+        explanation: 'You told Jarvis this directly. Correct or delete it anytime.',
         sources: [{ sourceType: 'user_command', observedAt: now, note: 'Stated in preference settings' }],
         contradictions: [],
         userNote: null,
@@ -873,7 +873,7 @@ function inferCategory(key: string, fallback: PreferenceCategory): PreferenceCat
 
 function badRequestSensitive() {
   return badRequest(
-    'This statement touches a sensitive attribute Donna does not learn (health, politics, religion, or similar). Use a regular memory note instead.',
+    'This statement touches a sensitive attribute Jarvis does not learn (health, politics, religion, or similar). Use a regular memory note instead.',
     'sensitive_attribute',
   );
 }

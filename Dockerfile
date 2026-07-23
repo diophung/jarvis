@@ -1,6 +1,6 @@
-# Donna — single image for API server, worker, and built web UI.
-# Run the API:    docker run donna
-# Run the worker: docker run donna pnpm --filter @donna/server worker
+# Jarvis — single image for API server, worker, and built web UI.
+# Run the API:    docker run jarvis
+# Run the worker: docker run jarvis pnpm --filter @jarvis/server worker
 FROM node:22-bookworm-slim AS build
 RUN corepack enable
 WORKDIR /app
@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 
 # Build the web bundle
 COPY . .
-RUN pnpm --filter @donna/web build
+RUN pnpm --filter @jarvis/web build
 
 FROM node:22-bookworm-slim AS runner
 RUN corepack enable
@@ -25,11 +25,11 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /app /app
 
-ENV DONNA_PORT=3001 \
-    DONNA_HOST=0.0.0.0 \
-    DONNA_DATA_DIR=/data \
-    DONNA_PUBLIC_DIR=/app/apps/web/dist
+ENV JARVIS_PORT=3001 \
+    JARVIS_HOST=0.0.0.0 \
+    JARVIS_DATA_DIR=/data \
+    JARVIS_PUBLIC_DIR=/app/apps/web/dist
 VOLUME /data
 EXPOSE 3001
 
-CMD ["pnpm", "--filter", "@donna/server", "start"]
+CMD ["pnpm", "--filter", "@jarvis/server", "start"]

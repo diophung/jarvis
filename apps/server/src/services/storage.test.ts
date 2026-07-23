@@ -11,8 +11,8 @@ describe('storage service (local driver)', () => {
   let config: AppConfig;
 
   beforeAll(async () => {
-    dir = await mkdtemp(path.join(tmpdir(), 'donna-storage-'));
-    config = loadConfig({ DONNA_DATA_DIR: dir, DONNA_STORAGE_DRIVER: 'local' });
+    dir = await mkdtemp(path.join(tmpdir(), 'jarvis-storage-'));
+    config = loadConfig({ JARVIS_DATA_DIR: dir, JARVIS_STORAGE_DRIVER: 'local' });
   });
 
   afterAll(async () => {
@@ -21,7 +21,7 @@ describe('storage service (local driver)', () => {
 
   it('round-trips save/read/remove with a stable sha256', async () => {
     const storage = createStorageService({ config });
-    const data = Buffer.from('hello donna storage', 'utf8');
+    const data = Buffer.from('hello jarvis storage', 'utf8');
 
     const saved = await storage.save('wsp_test', 'My Report (final).txt', data);
     expect(saved.sizeBytes).toBe(data.length);

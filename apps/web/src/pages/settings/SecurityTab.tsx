@@ -1,11 +1,11 @@
 /**
  * Account & security tab: sign-in methods (password), linked OAuth login
  * accounts, email verification, active sessions, plus deployment-level
- * security info (DONNA_SECRET warning, logging, data location).
+ * security info (JARVIS_SECRET warning, logging, data location).
  *
  * Endpoints per docs/api-contract.md "Auth & profile" / "OAuth login".
  */
-import type { AuthAccount, OauthLoginProvider, User } from '@donna/core';
+import type { AuthAccount, OauthLoginProvider, User } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, EyeOff, FolderLock, KeySquare, MailCheck } from 'lucide-react';
 import type { FormEvent } from 'react';
@@ -60,7 +60,7 @@ function linkErrorMessage(code: string): string {
 const linkButtonClass =
   'inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors ' +
   'text-[13px] px-2.5 py-1.5 bg-surface-raised border border-surface-border text-ink hover:bg-surface-sunken ' +
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-donna-400';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-jarvis-400';
 
 /** Small monogram avatar for an OAuth provider (no brand assets needed). */
 function ProviderMark({ provider }: { provider: string }) {
@@ -155,7 +155,7 @@ function SignInMethodsSection({
   return (
     <SettingsSection
       title="Sign-in methods"
-      description="How you prove it's you — and how access to this Donna instance is protected."
+      description="How you prove it's you — and how access to this Jarvis instance is protected."
     >
       <InfoRow label="Auth mode">
         <span className="inline-flex items-center gap-2">
@@ -211,7 +211,7 @@ function SignInMethodsSection({
             environment variables and restart:
           </p>
           <CopyBlock
-            code={`DONNA_AUTH_MODE=password\nDONNA_OWNER_EMAIL=you@example.com\nDONNA_OWNER_PASSWORD=a-strong-password`}
+            code={`JARVIS_AUTH_MODE=password\nJARVIS_OWNER_EMAIL=you@example.com\nJARVIS_OWNER_PASSWORD=a-strong-password`}
           />
         </div>
       )}
@@ -477,16 +477,16 @@ export function SecurityTab() {
           <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-700 shrink-0" />
           <div className="text-sm text-amber-900">
             <h2 className="font-semibold flex items-center gap-1.5">
-              <KeySquare className="h-4 w-4" /> Set a real DONNA_SECRET
+              <KeySquare className="h-4 w-4" /> Set a real JARVIS_SECRET
             </h2>
             <p className="mt-1.5">
-              <code className="bg-amber-100 rounded px-1">DONNA_SECRET</code> signs your session
-              cookie and encrypts API keys saved through this page. If it is unset, Donna falls
+              <code className="bg-amber-100 rounded px-1">JARVIS_SECRET</code> signs your session
+              cookie and encrypts API keys saved through this page. If it is unset, Jarvis falls
               back to a built-in development value — sessions can be forged and stored keys are not
-              truly protected. Set a long random value before exposing Donna beyond your machine:
+              truly protected. Set a long random value before exposing Jarvis beyond your machine:
             </p>
             <div className="mt-2">
-              <CopyBlock code={'DONNA_SECRET="$(openssl rand -hex 32)"'} />
+              <CopyBlock code={'JARVIS_SECRET="$(openssl rand -hex 32)"'} />
             </div>
           </div>
         </div>
@@ -494,7 +494,7 @@ export function SecurityTab() {
 
       <SettingsSection
         title="Logging & redaction"
-        description="What Donna writes to its own logs."
+        description="What Jarvis writes to its own logs."
       >
         <div className="flex items-start gap-2.5 text-sm">
           <EyeOff className="h-4 w-4 mt-0.5 text-ink-faint shrink-0" />

@@ -1,6 +1,6 @@
-import { fromJson, newId, nowIso, toJson } from '@donna/core';
-import type { Db, SourceItemsTable } from '@donna/db';
-import { createMockAdapter, LlmClient } from '@donna/llm';
+import { fromJson, newId, nowIso, toJson } from '@jarvis/core';
+import type { Db, SourceItemsTable } from '@jarvis/db';
+import { createMockAdapter, LlmClient } from '@jarvis/llm';
 import { describe, expect, it } from 'vitest';
 import type { LlmRouterService, RoutedLlm } from '../context.js';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';
@@ -112,7 +112,7 @@ describe('extractTitleKeywords', () => {
 describe('scoring.buildContext', () => {
   it('collects people, projects, preferences, self emails, and feedback signals', async () => {
     const db = await createTestDb();
-    const { workspaceId, userId } = await seedWorkspace(db, { email: 'me@donna.example' });
+    const { workspaceId, userId } = await seedWorkspace(db, { email: 'me@jarvis.example' });
     const now = nowIso();
 
     await db
@@ -122,7 +122,7 @@ describe('scoring.buildContext', () => {
           id: newId('per'),
           workspaceId,
           displayName: 'Me',
-          emails: toJson(['me-alias@donna.example']),
+          emails: toJson(['me-alias@jarvis.example']),
           handles: toJson(['@me']),
           organizationId: null,
           title: null,
@@ -222,8 +222,8 @@ describe('scoring.buildContext', () => {
     const ctx = await service.buildContext(workspaceId, now);
 
     expect(ctx.now).toBe(now);
-    expect(ctx.selfEmails).toContain('me@donna.example');
-    expect(ctx.selfEmails).toContain('me-alias@donna.example');
+    expect(ctx.selfEmails).toContain('me@jarvis.example');
+    expect(ctx.selfEmails).toContain('me-alias@jarvis.example');
 
     const sarah = ctx.people.find((p) => p.displayName === 'Sarah Chen');
     expect(sarah).toMatchObject({

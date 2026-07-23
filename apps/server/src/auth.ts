@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
-import { newId, nowIso } from '@donna/core';
-import type { Db } from '@donna/db';
+import { newId, nowIso } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import bcrypt from 'bcryptjs';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
@@ -10,7 +10,7 @@ import { HttpError, badRequest, forbidden, notFound, unauthorized } from './lib/
 import { isUniqueViolation, sanitizeUser, provisionUser } from './services/users.js';
 import type { SessionsService } from './services/sessions.js';
 
-const SESSION_COOKIE = 'donna_session';
+const SESSION_COOKIE = 'jarvis_session';
 const SESSION_COOKIE_MAX_AGE_S = 60 * 60 * 24 * 30;
 
 /** Paths under /api that never require a session. */
@@ -94,7 +94,7 @@ type FailureMap = Map<string, { count: number; windowStartMs: number }>;
  * ip alone. NOTE: per-process only — in a multi-instance deployment each
  * instance counts independently, so attackers get N*limit attempts.
  * Acceptable for self-hosted v1.1; move to a shared store (DB/Redis) if
- * Donna ever runs horizontally scaled.
+ * Jarvis ever runs horizontally scaled.
  */
 const loginFailures: FailureMap = new Map();
 const ipLoginFailures: FailureMap = new Map();
@@ -186,7 +186,7 @@ function setSessionCookie(reply: FastifyReply, config: AppConfig, token: string)
     path: '/',
     httpOnly: true,
     sameSite: 'lax',
-    secure: config.env.DONNA_COOKIE_SECURE,
+    secure: config.env.JARVIS_COOKIE_SECURE,
     signed: true,
     maxAge: SESSION_COOKIE_MAX_AGE_S,
   });
@@ -197,7 +197,7 @@ function clearSessionCookie(reply: FastifyReply, config: AppConfig): void {
     path: '/',
     httpOnly: true,
     sameSite: 'lax',
-    secure: config.env.DONNA_COOKIE_SECURE,
+    secure: config.env.JARVIS_COOKIE_SECURE,
   });
 }
 
@@ -229,7 +229,7 @@ export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
 
   // Origins allowed to make state-changing requests (CSRF defense).
   const allowedOrigins = new Set(
-    [config.publicUrl, config.env.DONNA_WEB_ORIGIN]
+    [config.publicUrl, config.env.JARVIS_WEB_ORIGIN]
       .map(originOf)
       .filter((o): o is string => o !== null),
   );
@@ -272,7 +272,7 @@ export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
       }
     }
 
-    if (config.env.DONNA_AUTH_MODE === 'local') {
+    if (config.env.JARVIS_AUTH_MODE === 'local') {
       const owner = await resolveOwner();
       if (owner) {
         // Reuse the memoized auto-login session while it is still valid so
@@ -310,7 +310,7 @@ export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
   });
 
   app.post('/api/auth/register', async (request, reply) => {
-    if (config.env.DONNA_AUTH_MODE !== 'password' || !config.env.DONNA_ALLOW_SIGNUP) {
+    if (config.env.JARVIS_AUTH_MODE !== 'password' || !config.env.JARVIS_ALLOW_SIGNUP) {
       throw forbidden('Signup is not enabled');
     }
     const body = z
@@ -450,8 +450,8 @@ export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
       oauthProviders.push('apple');
     }
     return {
-      authMode: env.DONNA_AUTH_MODE,
-      signupEnabled: env.DONNA_AUTH_MODE === 'password' && env.DONNA_ALLOW_SIGNUP,
+      authMode: env.JARVIS_AUTH_MODE,
+      signupEnabled: env.JARVIS_AUTH_MODE === 'password' && env.JARVIS_ALLOW_SIGNUP,
       oauthProviders,
     };
   });
@@ -547,7 +547,7 @@ export function registerAuth(app: FastifyInstance, deps: AuthDeps): void {
       .where('id', '=', request.workspaceId)
       .executeTakeFirst();
     if (!user || !workspace) throw unauthorized();
-    return { user: sanitizeUser(user), workspace, authMode: config.env.DONNA_AUTH_MODE };
+    return { user: sanitizeUser(user), workspace, authMode: config.env.JARVIS_AUTH_MODE };
   });
 
   app.patch('/api/me', async (request) => {
@@ -592,15 +592,15 @@ export async function ensureOwner(db: Db, config: AppConfig): Promise<SessionInf
   const now = nowIso();
   const userId = newId('usr');
   const workspaceId = newId('wsp');
-  const passwordHash = config.env.DONNA_OWNER_PASSWORD
-    ? await bcrypt.hash(config.env.DONNA_OWNER_PASSWORD, 10)
+  const passwordHash = config.env.JARVIS_OWNER_PASSWORD
+    ? await bcrypt.hash(config.env.JARVIS_OWNER_PASSWORD, 10)
     : null;
   await db
     .insertInto('users')
     .values({
       id: userId,
-      email: config.env.DONNA_OWNER_EMAIL.toLowerCase(),
-      name: config.env.DONNA_OWNER_NAME,
+      email: config.env.JARVIS_OWNER_EMAIL.toLowerCase(),
+      name: config.env.JARVIS_OWNER_NAME,
       passwordHash,
       role: 'owner',
       emailVerified: 0,
@@ -613,7 +613,7 @@ export async function ensureOwner(db: Db, config: AppConfig): Promise<SessionInf
     .values({
       id: workspaceId,
       ownerUserId: userId,
-      name: `${config.env.DONNA_OWNER_NAME}'s Workspace`,
+      name: `${config.env.JARVIS_OWNER_NAME}'s Workspace`,
       createdAt: now,
       updatedAt: now,
     })

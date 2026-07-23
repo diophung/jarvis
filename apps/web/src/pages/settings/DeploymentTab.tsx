@@ -3,20 +3,20 @@ import { Badge, LoadingPane } from '../../components/ui.js';
 import { CopyBlock, InfoRow, SettingsSection, useSystem } from './shared.js';
 
 const DOCKER_RUN =
-  'docker build -t donna . && docker run -d --name donna -p 3001:3001 ' +
-  '-v donna-data:/data -e DONNA_SECRET="$(openssl rand -hex 32)" donna';
+  'docker build -t jarvis . && docker run -d --name jarvis -p 3001:3001 ' +
+  '-v jarvis-data:/data -e JARVIS_SECRET="$(openssl rand -hex 32)" jarvis';
 
 const ENV_VARS: { name: string; description: string }[] = [
-  { name: 'DONNA_SECRET', description: 'Signs sessions and encrypts stored API keys. Required in production.' },
-  { name: 'DONNA_PORT', description: 'API + web port (default 3001).' },
-  { name: 'DONNA_DATA_DIR', description: 'Where SQLite and uploaded files live (default ./data).' },
+  { name: 'JARVIS_SECRET', description: 'Signs sessions and encrypts stored API keys. Required in production.' },
+  { name: 'JARVIS_PORT', description: 'API + web port (default 3001).' },
+  { name: 'JARVIS_DATA_DIR', description: 'Where SQLite and uploaded files live (default ./data).' },
   { name: 'DATABASE_URL', description: 'Set a postgres:// URL to use managed Postgres instead of SQLite.' },
-  { name: 'DONNA_STORAGE_DRIVER', description: 'File storage: local (default) or s3.' },
-  { name: 'DONNA_AUTH_MODE', description: 'local (single-user auto-login) or password.' },
-  { name: 'DONNA_OWNER_EMAIL / DONNA_OWNER_PASSWORD', description: 'Initial owner account; password required in password mode.' },
-  { name: 'DONNA_DEMO_SEED', description: 'Seed a demo workspace with mock sources on first boot (default true).' },
+  { name: 'JARVIS_STORAGE_DRIVER', description: 'File storage: local (default) or s3.' },
+  { name: 'JARVIS_AUTH_MODE', description: 'local (single-user auto-login) or password.' },
+  { name: 'JARVIS_OWNER_EMAIL / JARVIS_OWNER_PASSWORD', description: 'Initial owner account; password required in password mode.' },
+  { name: 'JARVIS_DEMO_SEED', description: 'Seed a demo workspace with mock sources on first boot (default true).' },
   { name: 'ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY', description: 'Bootstrap cloud AI providers on first boot.' },
-  { name: 'DONNA_LOCAL_LLM_BASE_URL / DONNA_LOCAL_LLM_MODEL', description: 'Bootstrap a local OpenAI-compatible provider (Ollama, vLLM, SGLang).' },
+  { name: 'JARVIS_LOCAL_LLM_BASE_URL / JARVIS_LOCAL_LLM_MODEL', description: 'Bootstrap a local OpenAI-compatible provider (Ollama, vLLM, SGLang).' },
 ];
 
 export function DeploymentTab() {
@@ -28,7 +28,7 @@ export function DeploymentTab() {
     <div className="space-y-5">
       <SettingsSection
         title="This instance"
-        description="How this copy of Donna is currently running."
+        description="How this copy of Jarvis is currently running."
       >
         <InfoRow label="Version">{system?.version ?? 'unknown'}</InfoRow>
         <InfoRow label="Database">
@@ -68,7 +68,7 @@ export function DeploymentTab() {
 
       <SettingsSection
         title="Run it yourself"
-        description="One container holds the API, worker, and web UI. SQLite and uploads persist in the donna-data volume."
+        description="One container holds the API, worker, and web UI. SQLite and uploads persist in the jarvis-data volume."
       >
         <div className="space-y-4">
           <div>

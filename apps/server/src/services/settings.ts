@@ -1,5 +1,5 @@
-import { fromJson, newId, nowIso, toJson } from '@donna/core';
-import type { Db } from '@donna/db';
+import { fromJson, newId, nowIso, toJson } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import type { CacheService, SettingsService } from '../context.js';
 import { cacheKey } from './cache.js';
 

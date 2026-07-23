@@ -1,7 +1,7 @@
 /**
  * Approval queue + agent action history routes.
  */
-import { AGENT_ACTION_STATUSES, APPROVAL_STATUSES } from '@donna/core';
+import { AGENT_ACTION_STATUSES, APPROVAL_STATUSES } from '@jarvis/core';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { AppContext } from '../context.js';

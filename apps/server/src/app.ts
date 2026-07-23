@@ -32,16 +32,16 @@ import { registerUploadsRoutes } from './routes/uploads.js';
 export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   const app = Fastify({
     logger: {
-      level: ctx.config.env.DONNA_LOG_LEVEL,
+      level: ctx.config.env.JARVIS_LOG_LEVEL,
       redact: ['req.headers.authorization', 'req.headers.cookie'],
     },
     bodyLimit: 4 * 1024 * 1024,
-    trustProxy: ctx.config.env.DONNA_TRUST_PROXY,
+    trustProxy: ctx.config.env.JARVIS_TRUST_PROXY,
   });
 
-  await app.register(cookie, { secret: ctx.config.env.DONNA_SECRET });
+  await app.register(cookie, { secret: ctx.config.env.JARVIS_SECRET });
   await app.register(cors, {
-    origin: [ctx.config.env.DONNA_WEB_ORIGIN],
+    origin: [ctx.config.env.JARVIS_WEB_ORIGIN],
     credentials: true,
   });
   await app.register(multipart, { limits: { fileSize: 25 * 1024 * 1024, files: 1 } });
@@ -88,8 +88,8 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   registerLlmRoutes(app, ctx);
   registerAuditRoutes(app, ctx);
 
-  // Serve the built web UI in production (Docker sets DONNA_PUBLIC_DIR).
-  const publicDir = ctx.config.env.DONNA_PUBLIC_DIR;
+  // Serve the built web UI in production (Docker sets JARVIS_PUBLIC_DIR).
+  const publicDir = ctx.config.env.JARVIS_PUBLIC_DIR;
   if (publicDir && existsSync(publicDir)) {
     await app.register(fastifyStatic, { root: resolve(publicDir), wildcard: false });
     // SPA fallback for client-side routes.

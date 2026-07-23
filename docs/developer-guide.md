@@ -1,7 +1,7 @@
 # Developer guide
 
 How to set up a dev environment, find your way around the monorepo, follow
-the house conventions, and extend Donna with new connectors, LLM providers,
+the house conventions, and extend Jarvis with new connectors, LLM providers,
 routes, and services.
 
 Related: [architecture.md](./architecture.md) (system map),
@@ -19,13 +19,13 @@ pnpm install
 pnpm dev          # API server (:3001, tsx watch) + web UI (:5173, Vite)
 ```
 
-That's it. With no env vars set, Donna boots in demo mode: SQLite at
-`./data/donna.db`, a seeded demo workspace (mock email/chat/calendar/storage
+That's it. With no env vars set, Jarvis boots in demo mode: SQLite at
+`./data/jarvis.db`, a seeded demo workspace (mock email/chat/calendar/storage
 sources), local auto-login, and deterministic mock LLM responses. Copy
 `.env.example` to `.env` to configure anything beyond that.
 
 The Vite dev server proxies `/api` to `http://localhost:3001` (override with
-`DONNA_API_ORIGIN`).
+`JARVIS_API_ORIGIN`).
 
 Other root scripts (see `package.json`):
 
@@ -78,7 +78,7 @@ Dependency direction: `apps → packages`, `connectors/llm/db → core`, and
   add `0002_*.ts` and register it there.
 - **JSON-as-text.** Structured columns are JSON strings; always parse with
   `fromJson(text, fallback)` and write with `toJson(value)` from
-  `@donna/core` — never raw `JSON.parse`. Field names are camelCase in code,
+  `@jarvis/core` — never raw `JSON.parse`. Field names are camelCase in code,
   snake_case in SQL (Kysely `CamelCasePlugin`).
 - **Secrets** are referenced by env var *name* (`apiKeyEnv`,
   `SecretResolver`), or stored AES-256-GCM-encrypted when entered via the UI.
@@ -97,7 +97,7 @@ upload`) — pick whichever your provider's items most resemble.
 
 ```ts
 // packages/connectors/src/linear/linear.ts
-import type { RawSourceItem } from '@donna/core';
+import type { RawSourceItem } from '@jarvis/core';
 import type {
   Connector, ConnectorAction, ConnectorActionResult, ConnectorContext,
   ConnectorDescriptor, ConnectorHealth, SyncPage, SyncRequest,
@@ -117,7 +117,7 @@ export class LinearConnector implements Connector {
     category: 'chat',
     label: 'Linear',
     description: 'Linear issues and comments (read-only).',
-    capabilities: ['read', 'list'],      // from CONNECTOR_CAPABILITIES in @donna/core
+    capabilities: ['read', 'list'],      // from CONNECTOR_CAPABILITIES in @jarvis/core
     scopes: ['read'],                    // least-privilege provider scopes/permissions
     requiredEnv: [...LINEAR_REQUIRED_ENV],
     local: false,                        // true only for mock/no-credential connectors
@@ -256,7 +256,7 @@ auto-login in local mode); routes just read those fields.
 
 All tests are vitest, colocated next to the code (`*.test.ts`). The full
 suite (439 tests) runs with `pnpm test`; per package:
-`pnpm --filter @donna/server test`.
+`pnpm --filter @jarvis/server test`.
 
 - **DB tests** — `createTestDb()` (`apps/server/src/test/helpers.ts`) gives a
   fresh in-memory SQLite with the full schema; `seedWorkspace(db)` creates an

@@ -14,8 +14,8 @@ const ISO = new Date('2026-06-01T08:00:00Z').toISOString();
 
 const user = {
   id: 'u-1',
-  email: 'donna@example.com',
-  name: 'Donna User',
+  email: 'jarvis@example.com',
+  name: 'Jarvis User',
   hasPassword: true,
   role: 'owner',
   emailVerified: true,
@@ -27,7 +27,7 @@ const user = {
 const workspace = {
   id: 'ws-1',
   ownerUserId: 'u-1',
-  name: 'Donna',
+  name: 'Jarvis',
   createdAt: ISO,
   updatedAt: ISO,
 };
@@ -192,7 +192,7 @@ describe('SignInPage', () => {
     ]);
     renderAt('/signin');
 
-    await userEvent.type(await screen.findByLabelText('Email'), 'donna@example.com');
+    await userEvent.type(await screen.findByLabelText('Email'), 'jarvis@example.com');
     await userEvent.type(screen.getByLabelText('Password'), 'wrong-password');
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
@@ -214,7 +214,7 @@ describe('SignInPage', () => {
     ]);
     renderAt('/signin');
 
-    await userEvent.type(await screen.findByLabelText('Email'), 'donna@example.com');
+    await userEvent.type(await screen.findByLabelText('Email'), 'jarvis@example.com');
     await userEvent.type(screen.getByLabelText('Password'), 'whatever-pass');
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
@@ -245,13 +245,13 @@ describe('SignInPage', () => {
     ]);
     renderAt('/signin?returnTo=%2Ftasks');
 
-    await userEvent.type(await screen.findByLabelText('Email'), 'donna@example.com');
+    await userEvent.type(await screen.findByLabelText('Email'), 'jarvis@example.com');
     await userEvent.type(screen.getByLabelText('Password'), 'correct-horse');
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
     expect(await screen.findByTestId('protected')).toBeInTheDocument();
     const login = calls.find((c) => c.method === 'POST' && c.url === '/api/auth/login');
-    expect(login?.body).toEqual({ email: 'donna@example.com', password: 'correct-horse' });
+    expect(login?.body).toEqual({ email: 'jarvis@example.com', password: 'correct-horse' });
   });
 
   it('maps ?error=email_unverified to the link-in-settings copy', async () => {
@@ -365,7 +365,7 @@ describe('SignUpPage', () => {
     stubFetch([signedOut, methodsRoute(methods({ signupEnabled: false }))]);
     renderAt('/signup');
 
-    expect(await screen.findByText('Sign in to Donna')).toBeInTheDocument();
+    expect(await screen.findByText('Sign in to Jarvis')).toBeInTheDocument();
     expect(screen.queryByLabelText('Name')).not.toBeInTheDocument();
   });
 });
@@ -387,7 +387,7 @@ describe('RequireAuth', () => {
     stubFetch([signedOut, methodsRoute(methods({ oauthProviders: ['google'] }))]);
     renderAt('/tasks?view=week');
 
-    expect(await screen.findByText('Sign in to Donna')).toBeInTheDocument();
+    expect(await screen.findByText('Sign in to Jarvis')).toBeInTheDocument();
     expect(screen.queryByTestId('protected')).not.toBeInTheDocument();
     // The attempted location rides along into the OAuth start href too.
     expect(screen.getByRole('link', { name: /continue with google/i })).toHaveAttribute(
@@ -404,7 +404,7 @@ describe('RequireAuth', () => {
     renderAt('/tasks');
 
     expect(await screen.findByTestId('protected')).toBeInTheDocument();
-    expect(screen.queryByText('Sign in to Donna')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sign in to Jarvis')).not.toBeInTheDocument();
   });
 });
 
@@ -433,7 +433,7 @@ describe('logout (sidebar user block)', () => {
     await waitFor(() => {
       expect(calls.find((c) => c.method === 'POST' && c.url === '/api/auth/logout')).toBeTruthy();
     });
-    expect(await screen.findByText('Sign in to Donna')).toBeInTheDocument();
+    expect(await screen.findByText('Sign in to Jarvis')).toBeInTheDocument();
     expect(screen.queryByTestId('shell-content')).not.toBeInTheDocument();
   });
 

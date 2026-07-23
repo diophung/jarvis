@@ -1,4 +1,4 @@
-import type { User } from '@donna/core';
+import type { User } from '@jarvis/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Badge, Button, Input, LoadingPane } from '../../components/ui.js';
@@ -33,7 +33,7 @@ export function ProfileTab() {
     <div className="space-y-5">
       <SettingsSection
         title="Profile"
-        description="How Donna addresses you and where account-level notices go."
+        description="How Jarvis addresses you and where account-level notices go."
       >
         <div className="grid gap-4 sm:grid-cols-2 max-w-xl">
           <Field label="Name">

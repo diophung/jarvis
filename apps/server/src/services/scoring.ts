@@ -1,7 +1,7 @@
 /**
  * Scoring service: builds the workspace ScoringContext (people, projects,
  * preferences, feedback signals) and rescores recent source items into
- * task_candidates using the deterministic @donna/core engine, with optional
+ * task_candidates using the deterministic @jarvis/core engine, with optional
  * LLM-assisted refinement when a real classification provider is routed.
  */
 import {
@@ -12,7 +12,7 @@ import {
   PLANNING_CATEGORIES,
   scoreItem,
   toJson,
-} from '@donna/core';
+} from '@jarvis/core';
 import type {
   FeedbackSignal,
   LlmScoreRefinement,
@@ -25,9 +25,9 @@ import type {
   ScoringContext,
   ScoringPreferences,
   SourceCategory,
-} from '@donna/core';
-import type { Db, SourceItemsTable } from '@donna/db';
-import { generateStructured } from '@donna/llm';
+} from '@jarvis/core';
+import type { Db, SourceItemsTable } from '@jarvis/db';
+import { generateStructured } from '@jarvis/llm';
 import { z } from 'zod';
 import type { AuditService, LlmRouterService, ScoringService } from '../context.js';
 

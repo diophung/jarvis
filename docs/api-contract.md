@@ -1,4 +1,4 @@
-# Donna REST API contract (v1)
+# Jarvis REST API contract (v1)
 
 This is the binding contract between `apps/server` routes and the `apps/web`
 client. Both sides must follow it exactly. All endpoints are JSON unless
@@ -6,7 +6,7 @@ noted, all are cookie-authenticated (session cookie set automatically in
 local auth mode), and all paths are prefixed `/api`.
 
 Conventions:
-- Entities are returned in their `@donna/core` camelCase shapes with JSON
+- Entities are returned in their `@jarvis/core` camelCase shapes with JSON
   fields parsed (e.g. `signals` is an array, not a string).
 - Errors: `{ "error": { "code": string, "message": string } }` with proper status.
 - Lists return `{ items: [...] }` plus optional metadata fields.
@@ -117,7 +117,7 @@ Conventions:
 - `GET /api/actions` → `{ items: AgentAction[] }` — query `status`, `limit`
 
 ## Permissions
-- `GET /api/policies/catalog` → `{ items: CapabilityDef[] }` (from @donna/core CAPABILITY_CATALOG)
+- `GET /api/policies/catalog` → `{ items: CapabilityDef[] }` (from @jarvis/core CAPABILITY_CATALOG)
 - `GET /api/policies` → `{ items: PermissionPolicy[] }`
 - `PUT /api/policies/:capability` `{ effect: 'auto_approve'|'require_approval'|'deny' }` → `{ policy }`
   (creates or updates the user rule for that capability; capability is URL-encoded)
@@ -135,7 +135,7 @@ Conventions:
 See [self-learning.md](./self-learning.md) for the full subsystem reference.
 - `GET /api/learning` (`?category=`) → `{ preferences: LearnedPreference[], enabled: boolean, actionableConfidence: number }` (all statuses; UI marks tentative/rejected/retired)
 - `POST /api/learning/preferences` `{ statement, category?, scope? }` → `{ preference }` (explicit origin; 400 `sensitive_attribute` when the statement touches a blocked sensitive topic)
-- `GET /api/learning/preferences/:id/explain` → `{ preference, recentSignals: LearningSignal[] }` ("why Donna thinks this")
+- `GET /api/learning/preferences/:id/explain` → `{ preference, recentSignals: LearningSignal[] }` ("why Jarvis thinks this")
 - `POST /api/learning/preferences/:id/correct` `{ action: 'confirm'|'mark_wrong'|'pin'|'unpin'|'edit'|'delete', statement?, note? }` → `{ preference | null }`
 - `DELETE /api/learning/preferences/:id` → `{ ok: true }` (also deletes the evidence signals)
 - `GET /api/learning/search?q=` → `{ preferences }`

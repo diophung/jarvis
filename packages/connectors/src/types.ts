@@ -1,12 +1,12 @@
 /**
  * Connector abstraction. A connector adapts one provider (gmail, slack,
- * mock-email, s3, ...) to Donna's normalized ingestion contract.
+ * mock-email, s3, ...) to Jarvis's normalized ingestion contract.
  *
  * Secrets NEVER live in connector code or the DB — connectors resolve
  * credentials at call time through the SecretResolver (env vars or a secret
  * manager behind it).
  */
-import type { ConnectorCapability, RawSourceItem, SourceCategory } from '@donna/core';
+import type { ConnectorCapability, RawSourceItem, SourceCategory } from '@jarvis/core';
 
 export interface SecretResolver {
   /** Resolve a secret by reference (usually an env var name). */

@@ -3,7 +3,7 @@
  * maps them to snake_case columns. Conventions:
  *  - ids/timestamps: text (ISO-8601 for timestamps)
  *  - booleans: integer 0|1
- *  - JSON: text columns (string here); parse with @donna/core fromJson()
+ *  - JSON: text columns (string here); parse with @jarvis/core fromJson()
  */
 
 export interface UsersTable {

@@ -1,4 +1,4 @@
-import type { FeedbackKind, TaskCandidate } from '@donna/core';
+import type { FeedbackKind, TaskCandidate } from '@jarvis/core';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { SignalsList } from '../../components/domain.js';
@@ -31,7 +31,7 @@ export function TaskCard({
       <div className="flex items-start justify-between gap-3">
         <input
           type="checkbox"
-          className="mt-1 h-3.5 w-3.5 shrink-0 accent-donna-600"
+          className="mt-1 h-3.5 w-3.5 shrink-0 accent-jarvis-600"
           checked={selected}
           onChange={() => onToggleSelect(task.id)}
           aria-label={`Select "${task.title}"`}
@@ -41,7 +41,7 @@ export function TaskCard({
             <button
               type="button"
               onClick={() => onOpenSource(sourceItemId)}
-              className="text-left font-medium text-[15px] leading-snug hover:text-donna-700 transition-colors"
+              className="text-left font-medium text-[15px] leading-snug hover:text-jarvis-700 transition-colors"
             >
               {task.title}
             </button>
@@ -52,7 +52,7 @@ export function TaskCard({
             <p className="text-sm text-ink-muted mt-1 leading-relaxed">{task.explanation}</p>
           )}
           {task.recommendedAction && (
-            <p className="text-sm text-donna-700 mt-1.5">→ {task.recommendedAction}</p>
+            <p className="text-sm text-jarvis-700 mt-1.5">→ {task.recommendedAction}</p>
           )}
         </div>
         <span

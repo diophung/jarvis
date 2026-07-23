@@ -11,8 +11,8 @@
  * can never collide or leak across tenants. Expired records are purged by
  * the worker.
  */
-import { newId, nowIso, toJson } from '@donna/core';
-import type { Db } from '@donna/db';
+import { newId, nowIso, toJson } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import { createHash } from 'node:crypto';
 import type { IdempotencyBegin, IdempotencyService } from '../context.js';
 

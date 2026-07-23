@@ -193,7 +193,7 @@ function buildExplanation(opts: {
 }): string {
   const parts: string[] = [];
   if (opts.origin === 'explicit') {
-    parts.push('You told Donna this directly.');
+    parts.push('You told Jarvis this directly.');
   } else if (opts.origin === 'feedback') {
     parts.push(`Learned from your explicit feedback (${opts.evidenceCount} observation${opts.evidenceCount === 1 ? '' : 's'}).`);
   } else {
@@ -206,7 +206,7 @@ function buildExplanation(opts: {
     parts.push(`${opts.contradictionCount} observation${opts.contradictionCount === 1 ? '' : 's'} pointed the other way, which lowers confidence.`);
   }
   if (opts.flipped) parts.push('This preference recently flipped because newer behavior consistently pointed the other way.');
-  parts.push('Correct or delete this anytime — Donna treats it as a tendency, not a fact.');
+  parts.push('Correct or delete this anytime — Jarvis treats it as a tendency, not a fact.');
   return parts.join(' ');
 }
 
@@ -514,7 +514,7 @@ export function contradictionReport(prefs: LearnedPreference[]): ContradictionRe
     entries.push({
       kind: 'context_split',
       preferenceIds: list.map((p) => p.id),
-      description: `Behavior differs by context for "${first.key}" — Donna keeps separate preferences per context instead of averaging them.`,
+      description: `Behavior differs by context for "${first.key}" — Jarvis keeps separate preferences per context instead of averaging them.`,
     });
   }
   return entries;

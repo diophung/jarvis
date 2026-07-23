@@ -1,5 +1,5 @@
 {
-  "name": "@donna/connectors",
+  "name": "@jarvis/connectors",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.726.0",
-    "@donna/core": "workspace:*"
+    "@jarvis/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

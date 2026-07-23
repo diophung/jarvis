@@ -11,7 +11,7 @@
  * chat-message listing has limited server-side filtering, so incremental
  * syncs filter client-side on createdDateTime > cursor.
  */
-import type { RawSourceItem } from '@donna/core';
+import type { RawSourceItem } from '@jarvis/core';
 import type {
   Connector,
   ConnectorContext,
@@ -121,7 +121,7 @@ export class TeamsConnector implements Connector {
   }
 }
 
-/** Map a Graph chatMessage resource to Donna's RawSourceItem. */
+/** Map a Graph chatMessage resource to Jarvis's RawSourceItem. */
 export function mapTeamsMessage(chat: GraphChat, msg: GraphChatMessage): RawSourceItem | null {
   if (!msg.id || !chat.id) return null;
   const text =

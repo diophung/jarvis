@@ -10,7 +10,7 @@
  *                           operation stats, pool usage, cache hit/miss,
  *                           vector backend, deletion-job status
  */
-import { checkDbHealth } from '@donna/db';
+import { checkDbHealth } from '@jarvis/db';
 import type { FastifyInstance } from 'fastify';
 import type { AppContext } from '../context.js';
 
@@ -55,10 +55,10 @@ export function registerHealthRoutes(app: FastifyInstance, ctx: AppContext): voi
       dbOk: db.ok,
       vectorStore: ctx.services.vectors.kind,
       cacheBackend: ctx.services.cache.stats().backend,
-      storageDriver: ctx.config.env.DONNA_STORAGE_DRIVER,
-      authMode: ctx.config.env.DONNA_AUTH_MODE,
-      demoSeed: ctx.config.env.DONNA_DEMO_SEED,
-      dataDir: ctx.config.env.DONNA_DATA_DIR,
+      storageDriver: ctx.config.env.JARVIS_STORAGE_DRIVER,
+      authMode: ctx.config.env.JARVIS_AUTH_MODE,
+      demoSeed: ctx.config.env.JARVIS_DEMO_SEED,
+      dataDir: ctx.config.env.JARVIS_DATA_DIR,
     };
   });
 }

@@ -1,6 +1,6 @@
-import { newId, nowIso, toJson, type LlmTask } from '@donna/core';
-import { DEMO_PEOPLE, DEMO_PROJECTS } from '@donna/connectors';
-import type { Db } from '@donna/db';
+import { newId, nowIso, toJson, type LlmTask } from '@jarvis/core';
+import { DEMO_PEOPLE, DEMO_PROJECTS } from '@jarvis/connectors';
+import type { Db } from '@jarvis/db';
 import { ensureOwner } from './auth.js';
 import type { AppConfig } from './config.js';
 import type { Services } from './context.js';
@@ -114,16 +114,16 @@ export async function bootstrap(
         embeddingModel: DEFAULT_MODELS.geminiEmbedding,
       });
     }
-    if (config.env.DONNA_LOCAL_LLM_BASE_URL && config.env.DONNA_LOCAL_LLM_MODEL) {
+    if (config.env.JARVIS_LOCAL_LLM_BASE_URL && config.env.JARVIS_LOCAL_LLM_MODEL) {
       inserts.push({
         name: 'Local inference',
         kind: 'openai_compatible',
-        baseUrl: config.env.DONNA_LOCAL_LLM_BASE_URL,
-        model: config.env.DONNA_LOCAL_LLM_MODEL,
-        apiKeyEnv: config.env.DONNA_LOCAL_LLM_API_KEY_ENV ?? null,
+        baseUrl: config.env.JARVIS_LOCAL_LLM_BASE_URL,
+        model: config.env.JARVIS_LOCAL_LLM_MODEL,
+        apiKeyEnv: config.env.JARVIS_LOCAL_LLM_API_KEY_ENV ?? null,
         isLocal: 1,
-        supportsEmbeddings: config.env.DONNA_LOCAL_EMBEDDING_MODEL ? 1 : 0,
-        embeddingModel: config.env.DONNA_LOCAL_EMBEDDING_MODEL ?? null,
+        supportsEmbeddings: config.env.JARVIS_LOCAL_EMBEDDING_MODEL ? 1 : 0,
+        embeddingModel: config.env.JARVIS_LOCAL_EMBEDDING_MODEL ?? null,
       });
     }
     const ids: string[] = [];
@@ -196,7 +196,7 @@ export async function bootstrap(
 
   // ---- Demo seed (mock sources + people + projects + initial sync) ----
   let seededDemo = false;
-  if (config.env.DONNA_DEMO_SEED) {
+  if (config.env.JARVIS_DEMO_SEED) {
     const accountCount = await db
       .selectFrom('sourceAccounts')
       .select(db.fn.countAll<number>().as('n'))

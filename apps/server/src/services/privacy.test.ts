@@ -1,5 +1,5 @@
-import { newId, nowIso, toJson } from '@donna/core';
-import type { Db } from '@donna/db';
+import { newId, nowIso, toJson } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { PrivacyService, StorageService } from '../context.js';
 import { createAuditService } from './audit.js';

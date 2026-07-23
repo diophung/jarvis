@@ -3,8 +3,8 @@ import type {
   PlanningCategory,
   TaskCandidate,
   TaskCandidateStatus,
-} from '@donna/core';
-import { PLANNING_CATEGORY_LABELS } from '@donna/core';
+} from '@jarvis/core';
+import { PLANNING_CATEGORY_LABELS } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { ListTodo, RefreshCw } from 'lucide-react';
@@ -37,7 +37,7 @@ const STATUS_FILTERS: { value: TaskCandidateStatus; label: string }[] = [
 const EMPTY_COPY: Record<TaskCandidateStatus, { title: string; description: string }> = {
   open: {
     title: 'Nothing open — enjoy the calm.',
-    description: 'New priorities appear here as Donna scores your connected sources.',
+    description: 'New priorities appear here as Jarvis scores your connected sources.',
   },
   done: {
     title: 'Nothing marked done yet.',
@@ -124,7 +124,7 @@ export function TasksPage() {
     <div className="max-w-3xl mx-auto px-6 py-8">
       <PageHeader
         title="Priorities"
-        subtitle="Scored from your connected sources — tell Donna when it gets one wrong."
+        subtitle="Scored from your connected sources — tell Jarvis when it gets one wrong."
         actions={
           <Button
             variant="secondary"
@@ -147,7 +147,7 @@ export function TasksPage() {
               className={clsx(
                 'rounded-full px-3 py-1 text-[13px] border transition-colors',
                 status === f.value
-                  ? 'bg-donna-100 border-donna-200 text-donna-900 font-medium'
+                  ? 'bg-jarvis-100 border-jarvis-200 text-jarvis-900 font-medium'
                   : 'border-transparent text-ink-muted hover:bg-surface-sunken hover:text-ink',
               )}
             >

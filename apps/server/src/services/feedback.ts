@@ -4,9 +4,9 @@
  * that feed back into future scoring (important/not-important senders,
  * "more like this" topics). Every recording is audited.
  */
-import { fromJson, newId, nowIso, toJson } from '@donna/core';
-import type { FeedbackKind, PersonRef } from '@donna/core';
-import type { Db } from '@donna/db';
+import { fromJson, newId, nowIso, toJson } from '@jarvis/core';
+import type { FeedbackKind, PersonRef } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import type { AuditService, FeedbackService, LearningService } from '../context.js';
 import { extractTitleKeywords, FEEDBACK_PREF_KEYS } from './scoring.js';
 

@@ -1,5 +1,5 @@
-import type { DigestItem, FeedbackKind, TaskCandidate } from '@donna/core';
-import { DIGEST_SECTION_LABELS, DIGEST_SECTIONS } from '@donna/core';
+import type { DigestItem, FeedbackKind, TaskCandidate } from '@jarvis/core';
+import { DIGEST_SECTION_LABELS, DIGEST_SECTIONS } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Cpu, History, RefreshCw, Sparkles, Sun } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -129,7 +129,7 @@ export function DebriefPage() {
           title="Couldn't load this debrief"
           description="It may have been removed, or something went wrong while fetching it."
           action={
-            <Link to="/debrief" className="text-sm font-medium text-donna-700 hover:underline">
+            <Link to="/debrief" className="text-sm font-medium text-jarvis-700 hover:underline">
               Back to the latest debrief
             </Link>
           }
@@ -144,7 +144,7 @@ export function DebriefPage() {
         <EmptyState
           icon={<Sun />}
           title="No debrief yet"
-          description="Donna hasn't prepared a briefing for you yet. Generate one now — she'll look across everything from your connected sources and pull out what actually matters. This can take a few seconds."
+          description="Jarvis hasn't prepared a briefing for you yet. Generate one now — she'll look across everything from your connected sources and pull out what actually matters. This can take a few seconds."
           action={
             <Button
               variant="primary"
@@ -169,7 +169,7 @@ export function DebriefPage() {
         <div className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-surface-border bg-surface-sunken px-3.5 py-2.5 text-[13px] text-ink-muted">
           <History className="h-3.5 w-3.5 shrink-0" />
           <span>You're viewing a past debrief — generated {timeAgo(digest.generatedAt)}.</span>
-          <Link to="/debrief" className="font-medium text-donna-700 hover:underline">
+          <Link to="/debrief" className="font-medium text-jarvis-700 hover:underline">
             Back to the latest
           </Link>
         </div>

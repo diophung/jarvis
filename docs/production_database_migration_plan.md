@@ -1,6 +1,6 @@
 # Production database migration plan
 
-Goal: take Donna's persistence layer from "great local default" to a
+Goal: take Jarvis's persistence layer from "great local default" to a
 production-grade architecture that can serve ~10M DAU / ~20K peak TPS without
 a rewrite — while keeping the zero-config laptop experience intact.
 
@@ -83,7 +83,7 @@ adapter (HNSW) that activates by feature detection. External vector DBs
 (Qdrant/OpenSearch) can be added as adapters later; not hard-coded anywhere.
 
 **D5 — Redis-compatible cache, strictly disposable.** In-memory LRU adapter
-by default (zero config, per-process); Redis adapter when `DONNA_REDIS_URL`
+by default (zero config, per-process); Redis adapter when `JARVIS_REDIS_URL`
 is set, wrapped in a circuit breaker that fails open (cache miss) — Redis is
 never a source of truth and never on the error path.
 
@@ -121,9 +121,9 @@ never a source of truth and never on the error path.
   additive, backward-compatible migrations only; every migration has `down`.
 - **Fresh production install**: set `DATABASE_URL`, run `pnpm db:migrate`,
   optionally apply the partitioning DDL before first traffic, set
-  `DONNA_DEMO_SEED=false`.
-- **Existing local data → production**: `pnpm --filter @donna/server exec
-  tsx src/scripts/migrate-sqlite-to-postgres.ts --sqlite ./data/donna.db
+  `JARVIS_DEMO_SEED=false`.
+- **Existing local data → production**: `pnpm --filter @jarvis/server exec
+  tsx src/scripts/migrate-sqlite-to-postgres.ts --sqlite ./data/jarvis.db
   --dry-run` then without `--dry-run`. Copies all tables in FK-safe order in
   batches, skips rows that already exist (re-runnable), prints per-table
   source/target counts for verification.

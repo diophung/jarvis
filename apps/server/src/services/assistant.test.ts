@@ -4,9 +4,9 @@ import {
   toJson,
   type AgentAction,
   type MemoryEntry,
-} from '@donna/core';
-import type { Db } from '@donna/db';
-import { createMockAdapter, LlmClient } from '@donna/llm';
+} from '@jarvis/core';
+import type { Db } from '@jarvis/db';
+import { createMockAdapter, LlmClient } from '@jarvis/llm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   ActionsService,
@@ -522,7 +522,7 @@ describe('graceful degradation when personalization stores are unavailable', () 
       send: (event) => events.push(event),
     });
 
-    // Donna answered from the remaining context instead of crashing.
+    // Jarvis answered from the remaining context instead of crashing.
     expect(message.status).toBe('complete');
     expect(message.content.length).toBeGreaterThan(0);
     expect(events.some((e) => e.type === 'error')).toBe(false);

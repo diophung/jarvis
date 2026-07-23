@@ -1,6 +1,6 @@
-import { createDefaultRegistry } from '@donna/connectors';
-import { nowIso } from '@donna/core';
-import type { Db } from '@donna/db';
+import { createDefaultRegistry } from '@jarvis/connectors';
+import { nowIso } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import fastify, { type FastifyInstance } from 'fastify';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { AppConfig } from '../config.js';

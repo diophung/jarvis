@@ -1,4 +1,4 @@
-import type { Digest } from '@donna/core';
+import type { Digest } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { CalendarClock, Sun } from 'lucide-react';
@@ -73,7 +73,7 @@ export function ScheduleTab() {
             <Sun className="h-4 w-4" /> Generate one now
           </Button>
           {generated && (
-            <Link to="/debrief" className="text-sm text-donna-700 underline underline-offset-2">
+            <Link to="/debrief" className="text-sm text-jarvis-700 underline underline-offset-2">
               View your debrief →
             </Link>
           )}
@@ -164,7 +164,7 @@ function ScheduleEditor({ saved }: { saved: ScheduleValue }) {
   return (
     <SettingsSection
       title="Digest schedule"
-      description="Donna writes your daily debrief automatically on this schedule."
+      description="Jarvis writes your daily debrief automatically on this schedule."
     >
       <div className="space-y-5 max-w-xl">
         <Switch
@@ -198,7 +198,7 @@ function ScheduleEditor({ saved }: { saved: ScheduleValue }) {
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-donna-300 focus:border-donna-400"
+                className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-jarvis-300 focus:border-jarvis-400"
               />
             </Field>
           </div>
@@ -222,7 +222,7 @@ function ScheduleEditor({ saved }: { saved: ScheduleValue }) {
 
         <div className="rounded-lg border border-surface-border bg-surface-sunken/50 px-3.5 py-3">
           <div className="flex items-center gap-2 text-sm font-medium text-ink">
-            <CalendarClock className="h-4 w-4 shrink-0 text-donna-600" />
+            <CalendarClock className="h-4 w-4 shrink-0 text-jarvis-600" />
             {preview
               ? describeRecurrence(preview)
               : mode === 'custom'

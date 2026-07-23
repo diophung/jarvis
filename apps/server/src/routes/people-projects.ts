@@ -2,9 +2,9 @@
  * People & projects routes (see docs/api-contract.md "People & projects").
  * These are the priority-context entities the scoring engine reads.
  */
-import { fromJson, newId, nowIso, PERSON_IMPORTANCES, toJson } from '@donna/core';
-import type { Person, Project } from '@donna/core';
-import type { PeopleTable, ProjectsTable } from '@donna/db';
+import { fromJson, newId, nowIso, PERSON_IMPORTANCES, toJson } from '@jarvis/core';
+import type { Person, Project } from '@jarvis/core';
+import type { PeopleTable, ProjectsTable } from '@jarvis/db';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { AppContext } from '../context.js';

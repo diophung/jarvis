@@ -2,7 +2,7 @@
  * Provider factory: build an adapter from a provider kind plus init config,
  * and expose per-kind defaults used by the Settings UI and env bootstrap.
  */
-import type { LlmProviderKind } from '@donna/core';
+import type { LlmProviderKind } from '@jarvis/core';
 import {
   createAnthropicAdapter,
   DEFAULT_ANTHROPIC_BASE_URL,

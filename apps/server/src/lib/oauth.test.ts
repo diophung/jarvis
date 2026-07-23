@@ -121,7 +121,7 @@ describe('buildAuthorizeUrl', () => {
 // State cookie roundtrip
 // ---------------------------------------------------------------------------
 
-const COOKIE_NAME = 'donna_oauth_login';
+const COOKIE_NAME = 'jarvis_oauth_login';
 
 interface CookieApp {
   app: FastifyInstance;

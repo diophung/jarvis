@@ -2,7 +2,7 @@
  * Shared helpers for the governance pages (Approvals, Memory, Audit):
  * capability catalog lookup + risk badges.
  */
-import type { CapabilityDef, RiskLevel } from '@donna/core';
+import type { CapabilityDef, RiskLevel } from '@jarvis/core';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '../../components/ui.js';
 import { api } from '../../lib/api.js';

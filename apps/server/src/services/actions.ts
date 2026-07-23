@@ -18,9 +18,9 @@ import {
   type MemoryKind,
   type PolicyRule,
   type RiskLevel,
-} from '@donna/core';
-import type { ConnectorContext, ConnectorLogger, ConnectorRegistry } from '@donna/connectors';
-import type { AgentActionsTable, ApprovalRequestsTable, Db } from '@donna/db';
+} from '@jarvis/core';
+import type { ConnectorContext, ConnectorLogger, ConnectorRegistry } from '@jarvis/connectors';
+import type { AgentActionsTable, ApprovalRequestsTable, Db } from '@jarvis/db';
 import type {
   ActionsService,
   AuditService,
@@ -168,7 +168,7 @@ export function createActionsService(deps: {
     return out;
   }
 
-  /** Apply a local (in-Donna) effect; throws on failure. */
+  /** Apply a local (in-Jarvis) effect; throws on failure. */
   async function executeLocally(
     row: AgentActionsTable,
     params: Record<string, unknown>,
@@ -197,7 +197,7 @@ export function createActionsService(deps: {
             effortLevel: 'low',
             planningCategory: 'follow_up',
             signals: toJson([]),
-            explanation: 'Created by Donna via an approved agent action.',
+            explanation: 'Created by Jarvis via an approved agent action.',
             recommendedAction: null,
             projectId: null,
             peopleIds: toJson([]),

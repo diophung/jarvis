@@ -1,8 +1,8 @@
 /**
  * User preference routes (explicit preferences keyed by well-known keys).
  */
-import { fromJson, newId, nowIso, toJson, type UserPreference } from '@donna/core';
-import type { UserPreferencesTable } from '@donna/db';
+import { fromJson, newId, nowIso, toJson, type UserPreference } from '@jarvis/core';
+import type { UserPreferencesTable } from '@jarvis/db';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { AppContext } from '../context.js';

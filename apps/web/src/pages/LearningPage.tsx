@@ -1,6 +1,6 @@
 /**
  * Learned Preferences: the explainability and control surface for the
- * self-learning subsystem. Shows everything Donna has learned, why, from
+ * self-learning subsystem. Shows everything Jarvis has learned, why, from
  * what evidence, at what confidence — with confirm / pin / edit / mark wrong /
  * delete controls. The good-assistant contract: "Based on these signals, I
  * think this matters to you. Here is why. Correct me anytime."
@@ -10,7 +10,7 @@ import type {
   LearnedPreference,
   LearningSignal,
   PreferenceCategory,
-} from '@donna/core';
+} from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Check, ChevronDown, ChevronRight, GraduationCap, Pin, PinOff, Plus, RefreshCw, ThumbsDown, Trash2 } from 'lucide-react';
@@ -66,7 +66,7 @@ interface LearningResponse {
 }
 
 function OriginBadge({ pref }: { pref: LearnedPreference }) {
-  if (pref.origin === 'explicit') return <Badge tone="green">you told Donna</Badge>;
+  if (pref.origin === 'explicit') return <Badge tone="green">you told Jarvis</Badge>;
   if (pref.origin === 'feedback') return <Badge tone="amber">from your feedback</Badge>;
   return <Badge tone="blue">inferred from behavior</Badge>;
 }
@@ -112,7 +112,7 @@ function ScopeChips({ pref }: { pref: LearnedPreference }) {
   );
 }
 
-/** Lazy-loaded "why Donna thinks this" panel with the evidence trail. */
+/** Lazy-loaded "why Jarvis thinks this" panel with the evidence trail. */
 function ExplainPanel({ preferenceId }: { preferenceId: string }) {
   const { data, isLoading } = useQuery({
     queryKey: ['learning', 'explain', preferenceId],
@@ -231,7 +231,7 @@ export function LearningPage() {
     <div className="max-w-3xl mx-auto px-6 py-8">
       <PageHeader
         title="Learned Preferences"
-        subtitle="What Donna has learned about how you work — with the evidence, so you can correct it anytime."
+        subtitle="What Jarvis has learned about how you work — with the evidence, so you can correct it anytime."
         actions={
           <Button onClick={() => learnNow.mutate()} loading={learnNow.isPending} disabled={!enabled}>
             <RefreshCw className="h-4 w-4" /> Learn now
@@ -247,7 +247,7 @@ export function LearningPage() {
             <div>
               <div className="text-sm font-medium text-ink">Self-learning</div>
               <p className="text-sm text-ink-muted mt-0.5">
-                When off, Donna stops learning from your email, chats, calendar, and feedback.
+                When off, Jarvis stops learning from your email, chats, calendar, and feedback.
                 Existing preferences stay visible here but are not applied.
               </p>
             </div>
@@ -282,7 +282,7 @@ export function LearningPage() {
               }}
             >
               <Input
-                placeholder="Tell Donna a preference, e.g. “keep summaries short” or “jane@acme.com is high priority”…"
+                placeholder="Tell Jarvis a preference, e.g. “keep summaries short” or “jane@acme.com is high priority”…"
                 value={newStatement}
                 onChange={(e) => setNewStatement(e.target.value)}
                 className="flex-1"
@@ -296,7 +296,7 @@ export function LearningPage() {
               <EmptyState
                 icon={<GraduationCap />}
                 title="Nothing learned yet"
-                description="As you work — replying, giving feedback, editing drafts — Donna learns what matters to you and shows it here, with the evidence."
+                description="As you work — replying, giving feedback, editing drafts — Jarvis learns what matters to you and shows it here, with the evidence."
               />
             ) : (
               <div className="space-y-6">
@@ -312,7 +312,7 @@ export function LearningPage() {
                           <div className="flex items-start gap-3">
                             <button
                               type="button"
-                              title="Show why Donna thinks this"
+                              title="Show why Jarvis thinks this"
                               className="mt-0.5 text-ink-faint hover:text-ink"
                               onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
                             >
@@ -356,7 +356,7 @@ export function LearningPage() {
                                   type="button"
                                   title="Click to edit"
                                   className={clsx(
-                                    'text-left text-sm transition-colors hover:text-donna-700',
+                                    'text-left text-sm transition-colors hover:text-jarvis-700',
                                     p.status === 'active' ? 'text-ink' : 'text-ink-faint line-through',
                                   )}
                                   onClick={() => {
@@ -393,7 +393,7 @@ export function LearningPage() {
                               <button
                                 type="button"
                                 title={p.pinned === 1 ? 'Unpin' : 'Pin — never fade this out'}
-                                className="text-ink-faint hover:text-donna-700"
+                                className="text-ink-faint hover:text-jarvis-700"
                                 onClick={() =>
                                   correct.mutate({ id: p.id, action: p.pinned === 1 ? 'unpin' : 'pin' })
                                 }
@@ -403,7 +403,7 @@ export function LearningPage() {
                               {p.status === 'active' && (
                                 <button
                                   type="button"
-                                  title="Mark wrong — Donna stops using this and won't re-learn it"
+                                  title="Mark wrong — Jarvis stops using this and won't re-learn it"
                                   className="text-ink-faint hover:text-amber-600"
                                   onClick={() => correct.mutate({ id: p.id, action: 'mark_wrong' })}
                                 >
@@ -417,7 +417,7 @@ export function LearningPage() {
                                 onClick={() => {
                                   if (
                                     window.confirm(
-                                      'Delete this preference? Donna forgets it and the evidence behind it.',
+                                      'Delete this preference? Jarvis forgets it and the evidence behind it.',
                                     )
                                   ) {
                                     remove.mutate(p.id);
@@ -438,7 +438,7 @@ export function LearningPage() {
           </div>
 
           <p className="text-center text-xs text-ink-faint mt-10">
-            Donna learns tendencies, never labels — and only from repeated behavior or what you say
+            Jarvis learns tendencies, never labels — and only from repeated behavior or what you say
             directly. Sensitive topics are never learned.
           </p>
         </>

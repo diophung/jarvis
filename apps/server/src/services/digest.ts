@@ -1,10 +1,10 @@
 /**
- * Digest service: rescoring -> deterministic planning (@donna/core planDigest)
+ * Digest service: rescoring -> deterministic planning (@jarvis/core planDigest)
  * -> persisted digest + digest_items -> optional LLM-written narrative with a
  * guaranteed deterministic fallback. Previous digests are never mutated;
  * regeneration links via supersedesDigestId.
  */
-import { DIGEST_SECTIONS, fromJson, newId, nowIso, planDigest, toJson } from '@donna/core';
+import { DIGEST_SECTIONS, fromJson, newId, nowIso, planDigest, toJson } from '@jarvis/core';
 import type {
   Digest,
   DigestCandidate,
@@ -18,9 +18,9 @@ import type {
   PlanningCategory,
   ScoreSignal,
   SourceCategory,
-} from '@donna/core';
-import type { Db, DigestItemsTable, DigestsTable } from '@donna/db';
-import type { LlmMessage } from '@donna/llm';
+} from '@jarvis/core';
+import type { Db, DigestItemsTable, DigestsTable } from '@jarvis/db';
+import type { LlmMessage } from '@jarvis/llm';
 import type {
   AuditService,
   DigestService,
@@ -71,7 +71,7 @@ function buildNarrativeMessages(
     action: item.recommendedAction,
   }));
   const systemLines = [
-    'You are Donna, a calm, experienced chief of staff writing a daily debrief for a busy professional.',
+    'You are Jarvis, a calm, experienced chief of staff writing a daily debrief for a busy professional.',
     'Tone: composed, direct, practical. No hype, no emojis, no filler, no invented facts.',
     `Respond with two markdown parts separated by a line containing exactly ${PLAN_MARKER}.`,
     'Part 1 (SUMMARY): a short executive summary — a one-line greeting, 2-4 sentences on what matters most today and why, then up to four bullet highlights.',

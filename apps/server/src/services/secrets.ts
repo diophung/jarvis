@@ -1,4 +1,4 @@
-import type { SecretResolver } from '@donna/connectors';
+import type { SecretResolver } from '@jarvis/connectors';
 import type { SecretsService } from '../context.js';
 import { decryptSecret, encryptSecret } from '../lib/crypto.js';
 

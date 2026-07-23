@@ -22,8 +22,8 @@ describe('fnv1a64', () => {
   });
 
   it('is deterministic and produces 16-char lowercase hex', () => {
-    const h1 = fnv1a64('donna executive assistant');
-    const h2 = fnv1a64('donna executive assistant');
+    const h1 = fnv1a64('jarvis executive assistant');
+    const h2 = fnv1a64('jarvis executive assistant');
     expect(h1).toBe(h2);
     expect(h1).toMatch(/^[0-9a-f]{16}$/);
   });

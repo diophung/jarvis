@@ -3,7 +3,7 @@
  *
  * Two adapters behind one interface:
  *  - memory (default): per-process bounded map with TTL — zero config local path.
- *  - redis: shared cache when DONNA_REDIS_URL is set (ElastiCache/Valkey/
+ *  - redis: shared cache when JARVIS_REDIS_URL is set (ElastiCache/Valkey/
  *    Memorystore/Upstash compatible), wrapped in a circuit breaker.
  *
  * The cache is strictly disposable: every operation fails OPEN. A cache/
@@ -11,7 +11,7 @@
  * caller falls through to the database — Redis is never a source of truth
  * and never on the error path.
  */
-import { CircuitBreaker, CircuitOpenError } from '@donna/db';
+import { CircuitBreaker, CircuitOpenError } from '@jarvis/db';
 import { Redis } from 'ioredis';
 import type { CacheService, CacheStats } from '../context.js';
 
@@ -102,7 +102,7 @@ export function createRedisCache(opts: {
   commandTimeoutMs?: number;
 }): CacheService {
   const redis = new Redis(opts.url, {
-    keyPrefix: opts.keyPrefix ?? 'donna:',
+    keyPrefix: opts.keyPrefix ?? 'jarvis:',
     commandTimeout: opts.commandTimeoutMs ?? 250,
     connectTimeout: 2_000,
     maxRetriesPerRequest: 0,

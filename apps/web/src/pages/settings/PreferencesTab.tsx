@@ -1,5 +1,5 @@
-import type { Person, PersonImportance, Project, SourceAccount } from '@donna/core';
-import { PERSON_IMPORTANCES } from '@donna/core';
+import type { Person, PersonImportance, Project, SourceAccount } from '@jarvis/core';
+import { PERSON_IMPORTANCES } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -64,7 +64,7 @@ function PeopleSection() {
   return (
     <SettingsSection
       title="Important people"
-      description="Donna treats VIP senders as high-importance signals."
+      description="Jarvis treats VIP senders as high-importance signals."
     >
       <Field
         label="VIP email addresses"
@@ -83,7 +83,7 @@ function PeopleSection() {
           <LoadingPane label="Loading people…" />
         ) : rows.length === 0 ? (
           <p className="text-sm text-ink-muted">
-            No people yet — Donna learns who you interact with as sources sync.
+            No people yet — Jarvis learns who you interact with as sources sync.
           </p>
         ) : (
           <table className="w-full text-sm">
@@ -183,7 +183,7 @@ function ProjectsSection() {
                   />
                 </div>
               </div>
-              <Field label="Keywords" hint="Donna links items mentioning these words to this project.">
+              <Field label="Keywords" hint="Jarvis links items mentioning these words to this project.">
                 <TagEditor
                   value={proj.keywords}
                   onChange={(next) => patch.mutate({ id: proj.id, keywords: next })}
@@ -270,7 +270,7 @@ function SourcesSection() {
   return (
     <SettingsSection
       title="Sources"
-      description="Weight whole sources up or down across all of Donna's ranking."
+      description="Weight whole sources up or down across all of Jarvis's ranking."
     >
       {providers.length === 0 ? (
         <p className="text-sm text-ink-muted">
@@ -329,7 +329,7 @@ function WorkingStyleSection() {
     <>
       <SettingsSection
         title="Working hours"
-        description="Donna schedules debriefs and judges urgency around your day."
+        description="Jarvis schedules debriefs and judges urgency around your day."
       >
         <div className="flex items-end gap-3">
           <Field label="Start">
@@ -355,7 +355,7 @@ function WorkingStyleSection() {
         </div>
       </SettingsSection>
 
-      <SettingsSection title="Assistant style" description="How Donna writes and plans for you.">
+      <SettingsSection title="Assistant style" description="How Jarvis writes and plans for you.">
         <div className="space-y-4 max-w-xl">
           <Field label="Response style">
             <Select
@@ -375,7 +375,7 @@ function WorkingStyleSection() {
               rows={3}
               value={planning}
               onChange={(e) => setPlanningDraft(e.target.value)}
-              placeholder="Tell Donna how you like your day planned…"
+              placeholder="Tell Jarvis how you like your day planned…"
             />
           </Field>
           <Button

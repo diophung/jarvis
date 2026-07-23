@@ -76,7 +76,7 @@ function buildDemoReply(params: ChatParams): string {
   const snippet = compactSnippet(lastUser?.content ?? '', 140);
   const topic = compactSnippet(lastUser?.content ?? 'your request', 60);
   const lines = [
-    '[demo mode] Donna is running without a configured LLM provider, so this is a deterministic canned reply.',
+    '[demo mode] Jarvis is running without a configured LLM provider, so this is a deterministic canned reply.',
     '',
     snippet.length > 0
       ? `Quick digest of your message — "${snippet}":`

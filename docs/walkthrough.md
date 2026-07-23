@@ -1,4 +1,4 @@
-# Donna in 10 minutes
+# Jarvis in 10 minutes
 
 A hands-on tour of the product, start to finish, using only the zero-config demo setup. Every label and button below is the real UI.
 
@@ -42,7 +42,7 @@ Now click **Why this matters** on any card. It expands into the actual scoring s
  +8  Mentions a deadline
 ```
 
-This is the heart of Donna: every score is explainable, down to the rule and the weight. Click the item's title to open the underlying source — the full email or event, with sender, participants, timestamp, and provider.
+This is the heart of Jarvis: every score is explainable, down to the rule and the weight. Click the item's title to open the underlying source — the full email or event, with sender, participants, timestamp, and provider.
 
 Note the **Regenerate** button: debriefs are never overwritten. **Digest History** in the sidebar keeps every version.
 
@@ -55,13 +55,13 @@ The answer streams in, grouped by planning category, with bold item titles, scor
 Two things to try:
 
 - **Citations.** Numbered chips appear under the answer. Click one — it opens the cited source item in a modal, so every claim traces back to a real email, message, or event.
-- **Suggested actions.** Below the last answer you'll find action chips like **Mark done**, **Defer to later**, **Open the source**, and **Why this priority?**. They're real: *Mark done* updates the task, *Why this priority?* asks Donna to explain.
+- **Suggested actions.** Below the last answer you'll find action chips like **Mark done**, **Defer to later**, **Open the source**, and **Why this priority?**. They're real: *Mark done* updates the task, *Why this priority?* asks Jarvis to explain.
 
 ## 5. Give feedback and watch the rescoring
 
 Open **Priorities** in the sidebar. Tasks are grouped by planning category, most actionable first. Each card has a score, the three pills, a **Why?** disclosure, and a row of icon actions: Done, Defer, then feedback — **Important**, **Not important**, **Urgent**, **Not urgent**, **Incorrect**, **More like this**.
 
-Pick something Donna over-rated (a newsletter-ish item works well) and click **Not important** (the down arrow). You'll see *"Thanks — noted."*
+Pick something Jarvis over-rated (a newsletter-ish item works well) and click **Not important** (the down arrow). You'll see *"Thanks — noted."*
 
 Now click **Rescore** at the top right. The item's score drops, and if you open **Why?** you'll find a new negative signal:
 
@@ -75,11 +75,11 @@ The feedback also recorded the sender into a derived preference list, so *future
 
 Open **Uploaded Files**. Drag a PDF (or DOCX, TXT, MD, CSV, JSON, HTML — up to 25 MB) onto the drop zone, or click **Browse files**.
 
-The file shows **Processing**, then **Ready** with an **Indexed for search** badge. Click **View text** to see exactly what Donna extracted.
+The file shows **Processing**, then **Ready** with an **Indexed for search** badge. Click **View text** to see exactly what Jarvis extracted.
 
 Now open **Search** and type a phrase from the document. Results appear as you type, with type filters (Emails & messages, Uploaded files, Memories, Digests) and a mode badge: **keyword** in demo mode, **semantic+keyword** once you've configured an embedding-capable provider. Uploaded files are first-class sources — they're also considered in your next debrief.
 
-## 7. Ask Donna to send an email
+## 7. Ask Jarvis to send an email
 
 Back in chat, type:
 
@@ -87,9 +87,9 @@ Back in chat, type:
 Send an email to Daniel Reyes about the security review
 ```
 
-Donna composes a draft, shows it to you quoted in the reply — and does **not** send it. Instead you get an amber notice:
+Jarvis composes a draft, shows it to you quoted in the reply — and does **not** send it. Instead you get an amber notice:
 
-> Donna needs your approval for this action. **Review in Approvals**
+> Jarvis needs your approval for this action. **Review in Approvals**
 
 `email.send` is an externally visible capability, and those ask first by default. Notice the **Approvals** item in the sidebar now has a badge.
 
@@ -114,14 +114,14 @@ Open **Audit Log**. Everything you just did is here as an immutable trail: `conn
 Open **Settings** — "Your data, your models, your rules."
 
 - **Profile** — your name, email, and workspace.
-- **Preferences** — the levers behind scoring: VIP email addresses, per-person importance, projects with keywords and priority, topics to prioritize or ignore, source preferences, working hours, and Donna's response style (concise/detailed).
+- **Preferences** — the levers behind scoring: VIP email addresses, per-person importance, projects with keywords and priority, topics to prioritize or ignore, source preferences, working hours, and Jarvis's response style (concise/detailed).
 - **AI Providers** — leave demo mode here. Click **Add provider** and pick a preset: Anthropic Claude, OpenAI, Google Gemini, or local **Ollama** (`http://localhost:11434/v1`), **vLLM** (`http://localhost:8000/v1`), **SGLang** (`http://localhost:30000/v1`). Each provider card has a **Check health** button and an explicit data-location badge — *"Runs locally — data stays on your machine"* vs *"Cloud — data is sent to …"*. Below, **Task routing** lets you assign a different provider/model to chat, summarization, digest generation, classification, and embeddings.
-- **Permissions** — every capability Donna has, grouped (Reading & analysis, Local drafts & notes, External actions, Changes & deletions), each with *Allowed automatically / Ask me first / Never allow*.
+- **Permissions** — every capability Jarvis has, grouped (Reading & analysis, Local drafts & notes, External actions, Changes & deletions), each with *Allowed automatically / Ask me first / Never allow*.
 - **Digest Schedule** — when the worker writes your debrief (presets like "Every morning at 7:00" or a custom cron), plus **Generate one now**.
-- **Security** — auth mode and a prominent reminder to set a real `DONNA_SECRET` before exposing Donna beyond your machine.
+- **Security** — auth mode and a prominent reminder to set a real `JARVIS_SECRET` before exposing Jarvis beyond your machine.
 - **Deployment** — what this instance is running (database, storage driver, data directory) and an env-var reference.
 
-Finally, peek at **Memory** in the sidebar: everything Donna believes about you, each entry labeled **you told Donna**, **inferred · N% sure**, or **from your feedback** — editable, deletable, exportable as JSON, and with a master switch to turn memory off entirely. Try typing *"Remember that I prefer meetings before noon"* in chat, then watch it appear here.
+Finally, peek at **Memory** in the sidebar: everything Jarvis believes about you, each entry labeled **you told Jarvis**, **inferred · N% sure**, or **from your feedback** — editable, deletable, exportable as JSON, and with a master switch to turn memory off entirely. Try typing *"Remember that I prefer meetings before noon"* in chat, then watch it appear here.
 
 ---
 

@@ -1,5 +1,5 @@
-import { fromJson, newId, nowIso, toJson, type AuditLog } from '@donna/core';
-import type { Db } from '@donna/db';
+import { fromJson, newId, nowIso, toJson, type AuditLog } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import type { AuditEntryInput, AuditService } from '../context.js';
 
 const SECRET_KEY_PATTERN = /key|token|secret|password|credential|authorization/i;

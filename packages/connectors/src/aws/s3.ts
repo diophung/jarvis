@@ -3,16 +3,16 @@
  *
  * Untested-against-live-API hook: uses @aws-sdk/client-s3 ListObjectsV2 with
  * standard pagination (ContinuationToken). Credentials come from the default
- * AWS provider chain (env vars, shared config, or an IAM role) — Donna never
- * stores them. Required Donna env: DONNA_SOURCE_S3_BUCKET and
- * DONNA_SOURCE_S3_REGION (resolved via ctx.secrets; per-account overrides via
+ * AWS provider chain (env vars, shared config, or an IAM role) — Jarvis never
+ * stores them. Required Jarvis env: JARVIS_SOURCE_S3_BUCKET and
+ * JARVIS_SOURCE_S3_REGION (resolved via ctx.secrets; per-account overrides via
  * ctx.settings.bucket / ctx.settings.region / ctx.settings.prefix).
  *
  * Incremental model: S3 cannot filter ListObjectsV2 by modification time, so
  * pages are filtered client-side against the persisted max LastModified.
  */
 import { ListObjectsV2Command, S3Client, type _Object } from '@aws-sdk/client-s3';
-import type { RawSourceItem } from '@donna/core';
+import type { RawSourceItem } from '@jarvis/core';
 import type {
   Connector,
   ConnectorContext,
@@ -23,7 +23,7 @@ import type {
 } from '../types.js';
 import { parseJsonCursor } from '../util/parse.js';
 
-export const S3_REQUIRED_ENV = ['DONNA_SOURCE_S3_BUCKET', 'DONNA_SOURCE_S3_REGION'] as const;
+export const S3_REQUIRED_ENV = ['JARVIS_SOURCE_S3_BUCKET', 'JARVIS_SOURCE_S3_REGION'] as const;
 
 const DEFAULT_LIMIT = 50;
 
@@ -108,12 +108,12 @@ export class S3Connector implements Connector {
   private missingEnv(ctx: ConnectorContext): string[] {
     // Per-account settings can stand in for the env vars.
     const hasBucket =
-      typeof ctx.settings['bucket'] === 'string' || !!ctx.secrets.get('DONNA_SOURCE_S3_BUCKET');
+      typeof ctx.settings['bucket'] === 'string' || !!ctx.secrets.get('JARVIS_SOURCE_S3_BUCKET');
     const hasRegion =
-      typeof ctx.settings['region'] === 'string' || !!ctx.secrets.get('DONNA_SOURCE_S3_REGION');
+      typeof ctx.settings['region'] === 'string' || !!ctx.secrets.get('JARVIS_SOURCE_S3_REGION');
     const missing: string[] = [];
-    if (!hasBucket) missing.push('DONNA_SOURCE_S3_BUCKET');
-    if (!hasRegion) missing.push('DONNA_SOURCE_S3_REGION');
+    if (!hasBucket) missing.push('JARVIS_SOURCE_S3_BUCKET');
+    if (!hasRegion) missing.push('JARVIS_SOURCE_S3_REGION');
     return missing;
   }
 
@@ -129,11 +129,11 @@ export class S3Connector implements Connector {
       bucket:
         typeof settingsBucket === 'string' && settingsBucket
           ? settingsBucket
-          : (ctx.secrets.get('DONNA_SOURCE_S3_BUCKET') ?? ''),
+          : (ctx.secrets.get('JARVIS_SOURCE_S3_BUCKET') ?? ''),
       region:
         typeof settingsRegion === 'string' && settingsRegion
           ? settingsRegion
-          : (ctx.secrets.get('DONNA_SOURCE_S3_REGION') ?? ''),
+          : (ctx.secrets.get('JARVIS_SOURCE_S3_REGION') ?? ''),
       prefix: typeof settingsPrefix === 'string' && settingsPrefix ? settingsPrefix : undefined,
     };
   }
@@ -147,7 +147,7 @@ export class S3Connector implements Connector {
   }
 }
 
-/** Map an S3 object listing entry to Donna's RawSourceItem. */
+/** Map an S3 object listing entry to Jarvis's RawSourceItem. */
 export function mapS3Object(bucket: string, obj: _Object): RawSourceItem | null {
   const key = obj.Key;
   if (!key || key.endsWith('/')) return null; // skip folder placeholders

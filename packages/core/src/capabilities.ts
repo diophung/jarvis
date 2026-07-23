@@ -1,5 +1,5 @@
 /**
- * Catalog of agentic capabilities Donna can exercise, with plain-language
+ * Catalog of agentic capabilities Jarvis can exercise, with plain-language
  * labels, risk levels, and default policy effects. This single catalog drives
  * the policy engine defaults, the Settings UI, and approval previews.
  */
@@ -14,7 +14,7 @@ export interface CapabilityDef {
   group: 'read' | 'analyze' | 'create_local' | 'create_external' | 'modify' | 'destructive';
   risk: RiskLevel;
   defaultEffect: PolicyEffect;
-  /** Whether the action is visible outside Donna (other people can see it). */
+  /** Whether the action is visible outside Jarvis (other people can see it). */
   externallyVisible: boolean;
 }
 
@@ -69,7 +69,7 @@ export const CAPABILITY_CATALOG: CapabilityDef[] = [
   {
     id: 'task.create',
     label: 'Create internal tasks',
-    description: 'Create task candidates inside Donna (never visible outside).',
+    description: 'Create task candidates inside Jarvis (never visible outside).',
     group: 'create_local',
     risk: 'low',
     defaultEffect: 'auto_approve',
@@ -87,7 +87,7 @@ export const CAPABILITY_CATALOG: CapabilityDef[] = [
   {
     id: 'draft.create',
     label: 'Draft replies locally',
-    description: 'Write draft emails/messages inside Donna for your review. Nothing is sent.',
+    description: 'Write draft emails/messages inside Jarvis for your review. Nothing is sent.',
     group: 'create_local',
     risk: 'low',
     defaultEffect: 'auto_approve',
@@ -96,7 +96,7 @@ export const CAPABILITY_CATALOG: CapabilityDef[] = [
   {
     id: 'memory.write',
     label: 'Save memories',
-    description: 'Save durable preferences and facts Donna learns about you.',
+    description: 'Save durable preferences and facts Jarvis learns about you.',
     group: 'create_local',
     risk: 'low',
     defaultEffect: 'auto_approve',

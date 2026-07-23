@@ -1,5 +1,5 @@
-import type { LlmCallLog, LlmProviderKind, LlmTask } from '@donna/core';
-import { LLM_TASKS } from '@donna/core';
+import type { LlmCallLog, LlmProviderKind, LlmTask } from '@jarvis/core';
+import { LLM_TASKS } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import {
@@ -35,7 +35,7 @@ const KIND_LABELS: Record<LlmProviderKind, string> = {
 };
 
 const TASK_META: Record<LlmTask, { label: string; description: string }> = {
-  chat: { label: 'Chat', description: 'Conversations with Donna' },
+  chat: { label: 'Chat', description: 'Conversations with Jarvis' },
   summarization: { label: 'Summarization', description: 'Condensing emails, threads, and documents' },
   digest: { label: 'Digest generation', description: 'Daily debrief writing' },
   classification: { label: 'Classification', description: 'Prioritizing and categorizing items' },
@@ -197,8 +197,8 @@ function ProviderFormModal({
                   className={clsx(
                     'rounded-full border px-3 py-1 text-[13px] transition-colors',
                     preset === p.label
-                      ? 'border-donna-400 bg-donna-100 text-donna-900 font-medium'
-                      : 'border-surface-border text-ink-muted hover:border-donna-300 hover:text-ink',
+                      ? 'border-jarvis-400 bg-jarvis-100 text-jarvis-900 font-medium'
+                      : 'border-surface-border text-ink-muted hover:border-jarvis-300 hover:text-ink',
                   )}
                 >
                   {p.label}
@@ -669,7 +669,7 @@ export function ProvidersTab() {
 
       <SettingsSection
         title="Providers"
-        description="Donna works with local inference servers and cloud APIs. Local providers keep your data on your machine."
+        description="Jarvis works with local inference servers and cloud APIs. Local providers keep your data on your machine."
         actions={
           <Button variant="primary" onClick={() => setAdding(true)}>
             <Plus className="h-4 w-4" /> Add provider

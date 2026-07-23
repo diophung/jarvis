@@ -1,6 +1,6 @@
-/** Donna API server entrypoint. */
-import { createDefaultRegistry } from '@donna/connectors';
-import { createDb, createDbMetrics, migrateToLatest } from '@donna/db';
+/** Jarvis API server entrypoint. */
+import { createDefaultRegistry } from '@jarvis/connectors';
+import { createDb, createDbMetrics, migrateToLatest } from '@jarvis/db';
 import { buildApp } from './app.js';
 import { bootstrap } from './bootstrap.js';
 import { loadConfig } from './config.js';
@@ -10,7 +10,7 @@ import { createWorkerLoop } from './worker-loop.js';
 
 const config = loadConfig();
 const dbMetrics = createDbMetrics({
-  slowQueryMs: config.env.DONNA_DB_SLOW_QUERY_MS,
+  slowQueryMs: config.env.JARVIS_DB_SLOW_QUERY_MS,
   onSlowQuery: (e) =>
     console.warn(`[db] slow query ${e.durationMs}ms (${e.operation}): ${e.sql}`),
 });
@@ -19,12 +19,12 @@ const db = createDb({
   sqlitePath: config.sqlitePath,
   metrics: dbMetrics,
   pool: {
-    size: config.env.DONNA_DB_POOL_SIZE,
-    connectTimeoutMs: config.env.DONNA_DB_CONNECT_TIMEOUT_MS,
-    idleTimeoutMs: config.env.DONNA_DB_IDLE_TIMEOUT_MS,
-    statementTimeoutMs: config.env.DONNA_DB_STATEMENT_TIMEOUT_MS,
+    size: config.env.JARVIS_DB_POOL_SIZE,
+    connectTimeoutMs: config.env.JARVIS_DB_CONNECT_TIMEOUT_MS,
+    idleTimeoutMs: config.env.JARVIS_DB_IDLE_TIMEOUT_MS,
+    statementTimeoutMs: config.env.JARVIS_DB_STATEMENT_TIMEOUT_MS,
   },
-  applicationName: 'donna-api',
+  applicationName: 'jarvis-api',
 });
 await migrateToLatest(db);
 
@@ -37,18 +37,18 @@ const app = await buildApp(ctx);
 
 if (!config.isProdSecret) {
   app.log.warn(
-    'DONNA_SECRET is using the development default — set a strong secret in production.',
+    'JARVIS_SECRET is using the development default — set a strong secret in production.',
   );
 }
 if (
-  !config.env.DONNA_TOKEN_ENCRYPTION_KEY &&
+  !config.env.JARVIS_TOKEN_ENCRYPTION_KEY &&
   !config.isProdSecret &&
   (config.env.GOOGLE_CLIENT_ID || config.env.FACEBOOK_CLIENT_ID || config.env.APPLE_CLIENT_ID)
 ) {
   app.log.warn(
     'OAuth is configured but the token encryption key falls back to the development-default ' +
-      'DONNA_SECRET — stored OAuth tokens are encrypted with a PUBLICLY KNOWN key. ' +
-      'Set DONNA_TOKEN_ENCRYPTION_KEY (or a strong DONNA_SECRET) before going to production.',
+      'JARVIS_SECRET — stored OAuth tokens are encrypted with a PUBLICLY KNOWN key. ' +
+      'Set JARVIS_TOKEN_ENCRYPTION_KEY (or a strong JARVIS_SECRET) before going to production.',
   );
 }
 if (boot.seededDemo) {
@@ -56,8 +56,8 @@ if (boot.seededDemo) {
 }
 
 // Run the scheduler in-process unless a dedicated worker handles it
-// (docker-compose sets DONNA_INLINE_WORKER=false on the API service).
-const worker = config.env.DONNA_INLINE_WORKER ? createWorkerLoop(ctx) : null;
+// (docker-compose sets JARVIS_INLINE_WORKER=false on the API service).
+const worker = config.env.JARVIS_INLINE_WORKER ? createWorkerLoop(ctx) : null;
 worker?.start();
 
 const close = async () => {
@@ -71,8 +71,8 @@ process.on('SIGINT', close);
 process.on('SIGTERM', close);
 
 try {
-  await app.listen({ port: config.env.DONNA_PORT, host: config.env.DONNA_HOST });
-  app.log.info(`Donna is ready → http://localhost:${config.env.DONNA_PORT}`);
+  await app.listen({ port: config.env.JARVIS_PORT, host: config.env.JARVIS_HOST });
+  app.log.info(`Jarvis is ready → http://localhost:${config.env.JARVIS_PORT}`);
 } catch (err) {
   app.log.error(err);
   process.exit(1);

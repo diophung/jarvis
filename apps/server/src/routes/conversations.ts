@@ -15,8 +15,8 @@ import {
   type Citation,
   type Message,
   type SuggestedAction,
-} from '@donna/core';
-import type { MessagesTable } from '@donna/db';
+} from '@jarvis/core';
+import type { MessagesTable } from '@jarvis/db';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { AppContext, AssistantStreamEvent } from '../context.js';

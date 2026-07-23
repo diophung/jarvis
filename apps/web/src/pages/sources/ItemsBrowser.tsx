@@ -1,4 +1,4 @@
-import type { SourceAccount, SourceCategory, SourceItem } from '@donna/core';
+import type { SourceAccount, SourceCategory, SourceItem } from '@jarvis/core';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Inbox } from 'lucide-react';
@@ -40,7 +40,7 @@ export function ItemsBrowser({ accounts }: { accounts: SourceAccount[] }) {
     <section>
       <h2 className="text-base font-semibold mb-1">Recent items</h2>
       <p className="text-sm text-ink-muted mb-4">
-        The latest items Donna has pulled in from your sources.
+        The latest items Jarvis has pulled in from your sources.
       </p>
       <div className="flex flex-wrap gap-1.5 mb-4">
         {FILTERS.map((f) => (
@@ -50,8 +50,8 @@ export function ItemsBrowser({ accounts }: { accounts: SourceAccount[] }) {
             className={clsx(
               'rounded-full px-3 py-1 text-[13px] transition-colors',
               category === f.value
-                ? 'bg-donna-600 text-white'
-                : 'border border-surface-border text-ink-muted hover:text-ink hover:border-donna-300',
+                ? 'bg-jarvis-600 text-white'
+                : 'border border-surface-border text-ink-muted hover:text-ink hover:border-jarvis-300',
             )}
           >
             {f.label}

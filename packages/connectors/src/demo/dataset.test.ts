@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RawSourceItem } from '@donna/core';
+import type { RawSourceItem } from '@jarvis/core';
 import { createDemoDataset, DEMO_PEOPLE, DEMO_PROJECTS, DEMO_SELF } from './dataset.js';
 
 const NOW = new Date('2026-06-09T10:30:00.000Z');

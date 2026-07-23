@@ -10,10 +10,10 @@ export function AuthShell({ title, children }: { title?: string; children: React
     <div className="min-h-screen flex items-center justify-center bg-surface px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="flex items-center justify-center gap-2 mb-6">
-          <div className="h-8 w-8 rounded-lg bg-donna-600 text-white flex items-center justify-center font-semibold">
+          <div className="h-8 w-8 rounded-lg bg-jarvis-600 text-white flex items-center justify-center font-semibold">
             D
           </div>
-          <span className="text-lg font-semibold tracking-tight">Donna</span>
+          <span className="text-lg font-semibold tracking-tight">Jarvis</span>
         </div>
         <Card className="p-6">
           {title && <h1 className="text-lg font-semibold mb-4 text-center">{title}</h1>}
@@ -83,7 +83,7 @@ function ProviderGlyph({ provider }: { provider: OauthLoginProvider }) {
   );
 }
 
-/** All login providers Donna supports, in display order. */
+/** All login providers Jarvis supports, in display order. */
 const ALL_PROVIDERS: OauthLoginProvider[] = ['google', 'facebook', 'apple'];
 
 /**

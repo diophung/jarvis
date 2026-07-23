@@ -1,6 +1,6 @@
 # Self-learning: psychology & behavioral-science foundation
 
-This note grounds Donna's self-learning subsystem in established, mainstream
+This note grounds Jarvis's self-learning subsystem in established, mainstream
 psychology and behavioral-science research. Every concept below maps to a
 concrete mechanism in the implementation (`packages/core/src/learning/*` and
 `apps/server/src/services/learning.ts` / `personalization.ts`). Where a
@@ -11,13 +11,13 @@ Two ground rules shape everything:
 
 1. **Soft signals, never labels.** Psychological constructs are treated as
    probabilistic *behavioral tendencies* with confidence scores, provenance,
-   and decay — never as fixed personality labels. Donna stores "tends to
+   and decay — never as fixed personality labels. Jarvis stores "tends to
    prefer concise replies to leadership (confidence 0.72, 14 observations)",
    not "user is an introvert".
-2. **Explainable and correctable.** Every inference carries a "why Donna
+2. **Explainable and correctable.** Every inference carries a "why Jarvis
    thinks this" explanation and can be confirmed, edited, pinned, marked
    wrong, or deleted by the user. The user is the authority on themselves;
-   Donna's model is always subordinate to explicit user statements.
+   Jarvis's model is always subordinate to explicit user statements.
 
 ---
 
@@ -32,7 +32,7 @@ behavior across situations*, observed reliably only through repeated
 measurement — single observations are weak evidence (Fleeson's density
 distribution work on within-person variability).
 
-**How Donna uses it.** Donna does **not** score the user on the Big Five and
+**How Jarvis uses it.** Jarvis does **not** score the user on the Big Five and
 never stores trait labels. The model is used only as a *design vocabulary*
 for which behavioral tendencies are worth tracking as preferences:
 
@@ -59,7 +59,7 @@ constraints is stronger evidence of preference than what they *say* in the
 abstract — though stated and revealed preferences must be reconciled, not
 either ignored.
 
-**How Donna uses it.** This is the core of passive learning:
+**How Jarvis uses it.** This is the core of passive learning:
 
 - Replies vs. ignores, approve vs. deny on agent actions, accept vs. rewrite
   of drafts, done vs. dismissed on tasks, attended vs. declined meetings are
@@ -83,7 +83,7 @@ sharply limited; extraneous load degrades performance; well-structured,
 chunked information reduces load. Related HCI findings: under time pressure
 people satisfice and skim (information-foraging research, Pirolli & Card).
 
-**How Donna uses it.**
+**How Jarvis uses it.**
 
 - Personalization defaults bias toward *concise, structured, scannable*
   output (summaries first, bullets, tables only for comparisons) unless
@@ -102,7 +102,7 @@ rule), `extract.ts` (calendar-density signal).
 drive performance; goal conflict and blocked goals are distinct, detectable
 states that change behavior and stress.
 
-**How Donna uses it.**
+**How Jarvis uses it.**
 
 - Explicit goals ("ship Atlas by the 18th", "hire two engineers this
   quarter") are extracted as `goal` signals with deadlines where present.
@@ -121,11 +121,11 @@ basic psychological needs; supporting autonomy (choice, rationale,
 non-controlling language) sustains intrinsic motivation; surveillance and
 control undermine it.
 
-**How Donna uses it.** SDT primarily shapes the *product behavior* of the
+**How Jarvis uses it.** SDT primarily shapes the *product behavior* of the
 learning system rather than a specific score:
 
 - **Autonomy:** every learned preference is user-controllable (confirm /
-  edit / pin / mark wrong / delete); Donna phrases inferences as offers
+  edit / pin / mark wrong / delete); Jarvis phrases inferences as offers
   ("Based on these signals, I think… correct me anytime"), never as
   verdicts. Learning can be disabled globally.
 - **Competence:** explanations show *why* a recommendation was made so the
@@ -144,12 +144,12 @@ learning system rather than a specific score:
 gains (loss aversion); people are risk-averse for gains and risk-seeking for
 losses; framing matters.
 
-**How Donna uses it.**
+**How Jarvis uses it.**
 
 - Risk/loss/deadline/reputation language ("we could lose the account",
   "churn risk", "penalty", "miss the deadline", "escalating to") is
   extracted as loss-framed urgency signals and, when the user consistently
-  *responds faster* to loss-framed items, Donna learns a preference like
+  *responds faster* to loss-framed items, Jarvis learns a preference like
   "prioritizes risk/loss items over upside opportunities" — with evidence.
 - The digest's "Risks & Blockers" section ranking is boosted when this
   preference is active.
@@ -166,11 +166,11 @@ converge toward interlocutors' styles to build rapport and diverge to assert
 identity. Together they predict that one person legitimately uses *different
 registers for different audiences*.
 
-**How Donna uses it.** This is why **audience scope** is first-class:
+**How Jarvis uses it.** This is why **audience scope** is first-class:
 
 - Writing-style signals are always extracted *per audience bucket*
   (leadership, direct team, external client, vendor, personal) rather than
-  globally — Donna never assumes the style used with a friend applies to a
+  globally — Jarvis never assumes the style used with a friend applies to a
   board member.
 - Draft personalization returns audience-scoped style configs (formality,
   directness, greeting/sign-off conventions) with the matched scope shown.
@@ -186,7 +186,7 @@ detection is noisy and context-dependent; the field's own best practice is
 to report uncertainty and avoid overclaiming (also reflected in sentiment
 analysis literature: lexical methods capture valence/arousal coarsely).
 
-**How Donna uses it.**
+**How Jarvis uses it.**
 
 - Only coarse, lexically grounded markers: positive/negative valence,
   urgency, frustration markers, enthusiasm markers, hedging/uncertainty
@@ -211,7 +211,7 @@ consistency across situations is the empirical basis for inferring stable
 dispositions (consistent with Mischel's situationism critique: consistency
 must be demonstrated, not assumed).
 
-**How Donna uses it.** This is the backbone of confidence scoring:
+**How Jarvis uses it.** This is the backbone of confidence scoring:
 
 - A preference's confidence increases only with *repeated* evidence, via a
   saturating curve — stable preference inference must rest on repeated
@@ -232,14 +232,14 @@ half-life policy), `MIN_ACTIONABLE_CONFIDENCE` in `types.ts`.
 global cross-situational constants. People genuinely differ between work,
 family, finance, and health contexts.
 
-**How Donna uses it.**
+**How Jarvis uses it.**
 
 - Every signal and preference carries a `scope` (domain such as work /
   personal / finance, plus optional audience, project, channel). Preferences
   are matched by scope at personalization time; a global preference is only
   formed when evidence spans contexts.
 - Contradiction handling prefers *splitting by context* over averaging:
-  if the user writes tersely to the team but warmly to clients, Donna learns
+  if the user writes tersely to the team but warmly to clients, Jarvis learns
   two scoped preferences rather than one muddy global one. Only when
   contradictory evidence occurs *within the same scope* does confidence
   drop.

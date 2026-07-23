@@ -11,7 +11,7 @@
  * complete; the persisted cursor is whichever link Graph hands back, so
  * incremental syncs resume exactly where the last run finished.
  */
-import type { RawSourceItem } from '@donna/core';
+import type { RawSourceItem } from '@jarvis/core';
 import type {
   Connector,
   ConnectorContext,
@@ -103,10 +103,10 @@ export class OneDriveConnector implements Connector {
   }
 }
 
-/** Map a Graph driveItem (files only) to Donna's RawSourceItem. */
+/** Map a Graph driveItem (files only) to Jarvis's RawSourceItem. */
 export function mapOneDriveItem(entry: GraphDriveItem): RawSourceItem | null {
   if (!entry.id || !entry.name) return null;
-  // Skip folders and deletions — Donna ingests file metadata only.
+  // Skip folders and deletions — Jarvis ingests file metadata only.
   if (entry.folder !== undefined || entry.deleted !== undefined || entry.file === undefined) {
     return null;
   }

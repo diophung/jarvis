@@ -1,5 +1,5 @@
-import { newId, nowIso, toJson } from '@donna/core';
-import type { Db } from '@donna/db';
+import { newId, nowIso, toJson } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AppConfig } from '../config.js';
 import { decryptSecret, encryptSecret } from '../lib/crypto.js';
@@ -16,7 +16,7 @@ function testConfig(): AppConfig {
       GOOGLE_CLIENT_SECRET: 'test-client-secret',
     } as AppConfig['env'],
     isProdSecret: false,
-    uploadsDir: '/tmp/donna-test-uploads',
+    uploadsDir: '/tmp/jarvis-test-uploads',
     sqlitePath: ':memory:',
     publicUrl: 'http://api.test',
     tokenEncryptionKey: KEY,

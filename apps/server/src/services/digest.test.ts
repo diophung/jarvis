@@ -1,6 +1,6 @@
-import { fromJson, newId, nowIso, toJson } from '@donna/core';
-import type { Db, SourceItemsTable } from '@donna/db';
-import { createMockAdapter, LlmClient } from '@donna/llm';
+import { fromJson, newId, nowIso, toJson } from '@jarvis/core';
+import type { Db, SourceItemsTable } from '@jarvis/db';
+import { createMockAdapter, LlmClient } from '@jarvis/llm';
 import { describe, expect, it } from 'vitest';
 import type { LlmRouterService, RoutedLlm } from '../context.js';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';

@@ -1,4 +1,4 @@
-import type { AgentAction, ApprovalRequest, ApprovalStatus, SourceAccount } from '@donna/core';
+import type { AgentAction, ApprovalRequest, ApprovalStatus, SourceAccount } from '@jarvis/core';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { AlertTriangle, CheckCircle2, ShieldCheck, XCircle } from 'lucide-react';
@@ -168,7 +168,7 @@ function PendingCard({
             type="checkbox"
             checked={alwaysAllow}
             onChange={(e) => setAlwaysAllow(e.target.checked)}
-            className="h-4 w-4 rounded border-surface-border accent-donna-600"
+            className="h-4 w-4 rounded border-surface-border accent-jarvis-600"
           />
           Always allow this
         </label>
@@ -245,7 +245,7 @@ export function ApprovalsPage() {
     <div className="max-w-3xl mx-auto px-6 py-8">
       <PageHeader
         title="Approvals"
-        subtitle="Review what Donna wants to do on your behalf before anything leaves your hands."
+        subtitle="Review what Jarvis wants to do on your behalf before anything leaves your hands."
       />
 
       <div className="flex gap-1 border-b border-surface-border mb-5">
@@ -257,7 +257,7 @@ export function ApprovalsPage() {
             className={clsx(
               'px-3 py-2 text-sm -mb-px border-b-2 transition-colors',
               tab === t
-                ? 'border-donna-600 text-ink font-medium'
+                ? 'border-jarvis-600 text-ink font-medium'
                 : 'border-transparent text-ink-muted hover:text-ink',
             )}
           >
@@ -284,7 +284,7 @@ export function ApprovalsPage() {
               <EmptyState
                 icon={<ShieldCheck />}
                 title="Nothing waiting on you."
-                description="Donna asks before any external action."
+                description="Jarvis asks before any external action."
               />
             ) : (
               pendingItems.map((approval) => (

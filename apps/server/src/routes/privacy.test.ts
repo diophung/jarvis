@@ -1,5 +1,5 @@
-import { createDefaultRegistry } from '@donna/connectors';
-import { createDbMetrics, type Db } from '@donna/db';
+import { createDefaultRegistry } from '@jarvis/connectors';
+import { createDbMetrics, type Db } from '@jarvis/db';
 import fastify, { type FastifyInstance } from 'fastify';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { AppConfig } from '../config.js';
@@ -38,7 +38,7 @@ beforeEach(async () => {
   const privacy = createPrivacyService({ db, audit, storage: storageStub, vectors });
   const memory = createMemoryService({ db, settings, audit });
   const ctx: AppContext = {
-    config: { env: { DONNA_STORAGE_DRIVER: 'local', DONNA_AUTH_MODE: 'local', DONNA_DEMO_SEED: false, DONNA_DATA_DIR: './data' } } as unknown as AppConfig,
+    config: { env: { JARVIS_STORAGE_DRIVER: 'local', JARVIS_AUTH_MODE: 'local', JARVIS_DEMO_SEED: false, JARVIS_DATA_DIR: './data' } } as unknown as AppConfig,
     db,
     connectors: createDefaultRegistry(),
     services: { audit, settings, privacy, memory, vectors, cache } as Partial<Services> as Services,
@@ -73,7 +73,7 @@ describe('privacy routes', () => {
     });
     const res = await app.inject({ method: 'GET', url: '/api/account/export' });
     expect(res.statusCode).toBe(200);
-    expect(res.headers['content-disposition']).toContain('donna-account-export.json');
+    expect(res.headers['content-disposition']).toContain('jarvis-account-export.json');
     const body = res.json();
     expect(body.tables.memoryEntries.rows).toHaveLength(1);
   });

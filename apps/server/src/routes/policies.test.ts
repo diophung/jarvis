@@ -1,6 +1,6 @@
-import { CAPABILITY_CATALOG } from '@donna/core';
-import { createDefaultRegistry } from '@donna/connectors';
-import type { Db } from '@donna/db';
+import { CAPABILITY_CATALOG } from '@jarvis/core';
+import { createDefaultRegistry } from '@jarvis/connectors';
+import type { Db } from '@jarvis/db';
 import fastify, { type FastifyInstance } from 'fastify';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { AppConfig } from '../config.js';

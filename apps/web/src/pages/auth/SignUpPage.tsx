@@ -123,7 +123,7 @@ export function SignUpPage() {
             disabled={submitting}
             checked={agreed}
             onChange={(e) => setAgreed(e.target.checked)}
-            className="mt-0.5 accent-donna-600"
+            className="mt-0.5 accent-jarvis-600"
           />
           <span>{t('auth.signup.terms')}</span>
         </label>
@@ -142,7 +142,7 @@ export function SignUpPage() {
 
       <p className="mt-5 text-center text-sm text-ink-muted">
         {t('auth.signup.haveAccount')}{' '}
-        <Link to="/signin" className="text-donna-700 underline underline-offset-2">
+        <Link to="/signin" className="text-jarvis-700 underline underline-offset-2">
           {t('auth.signup.signIn')}
         </Link>
       </p>

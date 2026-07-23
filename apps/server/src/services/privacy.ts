@@ -12,8 +12,8 @@
  * sessions, and audit_logs (the legal/audit record of what happened —
  * including the deletion itself). Everything content-bearing goes.
  */
-import { fromJson, newId, nowIso, toJson } from '@donna/core';
-import type { Db } from '@donna/db';
+import { fromJson, newId, nowIso, toJson } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import type {
   AuditService,
   PrivacyService,

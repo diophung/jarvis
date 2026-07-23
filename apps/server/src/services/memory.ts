@@ -3,8 +3,8 @@
  * edit, export, and disable entirely. Every mutation is audited; relevance
  * lookup is a cheap token-overlap ranking (no LLM required).
  */
-import { fromJson, newId, nowIso, toJson, type MemoryEntry } from '@donna/core';
-import type { Db, MemoryEntriesTable } from '@donna/db';
+import { fromJson, newId, nowIso, toJson, type MemoryEntry } from '@jarvis/core';
+import type { Db, MemoryEntriesTable } from '@jarvis/db';
 import { SETTING_KEYS, type AuditService, type MemoryService, type SettingsService } from '../context.js';
 import { notFound } from '../lib/http-errors.js';
 

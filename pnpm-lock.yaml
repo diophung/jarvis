@@ -29,18 +29,6 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.726.0
         version: 3.1065.0
-      '@donna/connectors':
-        specifier: workspace:*
-        version: link:../../packages/connectors
-      '@donna/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@donna/db':
-        specifier: workspace:*
-        version: link:../../packages/db
-      '@donna/llm':
-        specifier: workspace:*
-        version: link:../../packages/llm
       '@fastify/cookie':
         specifier: ^11.0.1
         version: 11.0.2
@@ -53,6 +41,18 @@ importers:
       '@fastify/static':
         specifier: ^8.0.4
         version: 8.3.0
+      '@jarvis/connectors':
+        specifier: workspace:*
+        version: link:../../packages/connectors
+      '@jarvis/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@jarvis/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@jarvis/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
@@ -99,7 +99,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@donna/core':
+      '@jarvis/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@tanstack/react-query':
@@ -184,7 +184,7 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.726.0
         version: 3.1065.0
-      '@donna/core':
+      '@jarvis/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -216,7 +216,7 @@ importers:
 
   packages/db:
     dependencies:
-      '@donna/core':
+      '@jarvis/core':
         specifier: workspace:*
         version: link:../core
       better-sqlite3:
@@ -247,7 +247,7 @@ importers:
 
   packages/llm:
     dependencies:
-      '@donna/core':
+      '@jarvis/core':
         specifier: workspace:*
         version: link:../core
       zod:

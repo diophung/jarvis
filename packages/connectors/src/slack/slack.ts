@@ -18,7 +18,7 @@
  * descriptor). The token value is read via ctx.secrets at call time and never
  * logged.
  */
-import type { PersonRef, RawSourceItem } from '@donna/core';
+import type { PersonRef, RawSourceItem } from '@jarvis/core';
 import type {
   Connector,
   ConnectorAction,
@@ -230,7 +230,7 @@ export class SlackConnector implements Connector {
   }
 }
 
-/** Map a Slack message to Donna's RawSourceItem. */
+/** Map a Slack message to Jarvis's RawSourceItem. */
 export function mapSlackMessage(
   channel: SlackChannel,
   msg: SlackMessage,

@@ -1,7 +1,7 @@
 /**
  * Small parsing helpers shared by the real connector hooks.
  */
-import type { PersonRef } from '@donna/core';
+import type { PersonRef } from '@jarvis/core';
 
 /** Parse an RFC 5322-style address ("Jin Park <jin@x.com>" or "jin@x.com"). */
 export function parseEmailAddress(value: string): PersonRef {

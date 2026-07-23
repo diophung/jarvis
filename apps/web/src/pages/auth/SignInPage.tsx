@@ -118,14 +118,14 @@ export function SignInPage() {
       <div className="mt-5 space-y-1 text-center text-sm text-ink-muted">
         {methods?.signupEnabled && (
           <p>
-            {t('auth.signin.newToDonna')}{' '}
-            <Link to="/signup" className="text-donna-700 underline underline-offset-2">
+            {t('auth.signin.newToJarvis')}{' '}
+            <Link to="/signup" className="text-jarvis-700 underline underline-offset-2">
               {t('auth.signin.createAccount')}
             </Link>
           </p>
         )}
         <p>
-          <Link to="/forgot-password" className="text-donna-700 underline underline-offset-2">
+          <Link to="/forgot-password" className="text-jarvis-700 underline underline-offset-2">
             {t('auth.signin.forgotPassword')}
           </Link>
         </p>

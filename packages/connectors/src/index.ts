@@ -1,5 +1,5 @@
 /**
- * @donna/connectors — pluggable source connectors for email, chat, calendar,
+ * @jarvis/connectors — pluggable source connectors for email, chat, calendar,
  * and cloud storage, plus the demo dataset that powers credential-free demos.
  */
 export * from './types.js';

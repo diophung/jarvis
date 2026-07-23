@@ -6,7 +6,7 @@
  * credentials are resolved lazily at call time via ctx.secrets, so the
  * default registry is safe to build in any environment.
  */
-import type { SourceCategory } from '@donna/core';
+import type { SourceCategory } from '@jarvis/core';
 import type { Connector } from './types.js';
 import { MockEmailConnector } from './mock/mock-email.js';
 import { MockChatConnector } from './mock/mock-chat.js';

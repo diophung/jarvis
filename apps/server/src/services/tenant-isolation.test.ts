@@ -3,8 +3,8 @@
  * caller's workspace. These tests seed two tenants with look-alike data and
  * assert no read or mutation crosses the boundary.
  */
-import { nowIso } from '@donna/core';
-import type { Db } from '@donna/db';
+import { nowIso } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createAuditService } from './audit.js';
 import { createLearningService } from './learning.js';

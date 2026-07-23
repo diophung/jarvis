@@ -1,5 +1,5 @@
 {
-  "name": "@donna/server",
+  "name": "@jarvis/server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,10 +15,10 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.726.0",
-    "@donna/connectors": "workspace:*",
-    "@donna/core": "workspace:*",
-    "@donna/db": "workspace:*",
-    "@donna/llm": "workspace:*",
+    "@jarvis/connectors": "workspace:*",
+    "@jarvis/core": "workspace:*",
+    "@jarvis/db": "workspace:*",
+    "@jarvis/llm": "workspace:*",
     "@fastify/cookie": "^11.0.1",
     "@fastify/cors": "^10.0.2",
     "@fastify/multipart": "^9.0.2",

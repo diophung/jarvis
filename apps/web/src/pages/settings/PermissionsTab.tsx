@@ -1,4 +1,4 @@
-import type { CapabilityDef, PermissionPolicy, PolicyEffect, RiskLevel } from '@donna/core';
+import type { CapabilityDef, PermissionPolicy, PolicyEffect, RiskLevel } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
@@ -74,7 +74,7 @@ export function PermissionsTab() {
   return (
     <div className="space-y-5">
       <div className="flex items-start gap-2.5 rounded-xl border border-surface-border bg-surface-raised px-4 py-3 text-sm">
-        <ShieldCheck className="h-4 w-4 mt-0.5 text-donna-600 shrink-0" />
+        <ShieldCheck className="h-4 w-4 mt-0.5 text-jarvis-600 shrink-0" />
         <p>
           You are in control. Safe read-only analysis is automatic; anything visible to others asks
           first by default.
@@ -134,7 +134,7 @@ export function PermissionsTab() {
         {confirming && (
           <>
             <p className="text-sm">
-              Donna will be able to {lc(confirming.label)} without asking. You can change this
+              Jarvis will be able to {lc(confirming.label)} without asking. You can change this
               anytime.
             </p>
             <div className="mt-5 flex justify-end gap-2">

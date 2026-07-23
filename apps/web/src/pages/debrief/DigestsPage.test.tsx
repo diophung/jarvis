@@ -1,4 +1,4 @@
-import type { Digest } from '@donna/core';
+import type { Digest } from '@jarvis/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';

@@ -1,6 +1,6 @@
-# Donna architecture
+# Jarvis architecture
 
-Donna is a digital executive assistant: it syncs email, chat, calendar, and
+Jarvis is a digital executive assistant: it syncs email, chat, calendar, and
 cloud storage into one normalized model, scores what matters, writes a daily
 debrief, answers questions over your real data, and takes approval-gated
 actions on your behalf. This document maps the system: subsystems, data flows,
@@ -11,7 +11,7 @@ Companion docs:
 - [api-contract.md](./api-contract.md) — the binding REST contract between server and web client
 - [connectors.md](./connectors.md) — per-provider connector reference
 - [developer-guide.md](./developer-guide.md) — conventions and how to extend the system
-- [deployment.md](./deployment.md) — running Donna locally, in Docker, and in the cloud
+- [deployment.md](./deployment.md) — running Jarvis locally, in Docker, and in the cloud
 
 ## Subsystem map
 
@@ -168,7 +168,7 @@ identically on SQLite and Postgres: `packages/db/src/migrations/0001_init.ts`
 - timestamps are ISO-8601 text
 - booleans are integer `0 | 1`
 - structured fields are JSON stored as `TEXT`, parsed with
-  `fromJson()` / serialized with `toJson()` from `@donna/core`
+  `fromJson()` / serialized with `toJson()` from `@jarvis/core`
 - columns are snake_case in SQL, camelCase in code (Kysely `CamelCasePlugin`)
 
 The 35 tables, grouped:
@@ -184,7 +184,7 @@ The 35 tables, grouped:
 | Self-learning | `learning_signals`, `learned_preferences` | privacy-guarded learning observations and the evidence-backed, decaying preference model ([self-learning.md](./self-learning.md)) |
 | Permissions & actions | `permission_policies`, `approval_requests`, `agent_actions` | the policy/approval state machine described above |
 | Conversations | `conversations`, `messages` | messages store citations and suggested actions as JSON |
-| LLM | `llm_provider_configs`, `llm_task_routes`, `llm_call_logs` | provider configs hold `api_key_env` (env var *name*) or `api_key_encrypted` (AES-256-GCM, key derived from `DONNA_SECRET`); call logs record counts/latency only — never message content |
+| LLM | `llm_provider_configs`, `llm_task_routes`, `llm_call_logs` | provider configs hold `api_key_env` (env var *name*) or `api_key_encrypted` (AES-256-GCM, key derived from `JARVIS_SECRET`); call logs record counts/latency only — never message content |
 | Retrieval | `retrieval_chunks`, `embedding_records` | chunk text + JSON metadata; vectors stored as JSON number arrays |
 | Audit & settings | `audit_logs`, `app_settings` | audit metadata is redacted before write; settings are workspace-scoped JSON values |
 | Production ops | `idempotency_keys`, `data_deletion_requests` | write replay protection and durable account-deletion jobs ([production-database.md](./production-database.md)) |
@@ -217,14 +217,14 @@ function (`createXService(deps)`) returning a plain object implementing its
 `context.ts` interface, so tests can substitute any dependency with a stub.
 The v1.1 `tokens` service (`services/tokens.ts`) owns per-source Google
 OAuth grants: AES-256-GCM storage keyed by `config.tokenEncryptionKey`
-(`DONNA_TOKEN_ENCRYPTION_KEY`, falling back to `DONNA_SECRET`), single-flight
+(`JARVIS_TOKEN_ENCRYPTION_KEY`, falling back to `JARVIS_SECRET`), single-flight
 access-token refresh handed to the connector layer during syncs, and
 revocation on disconnect — raw tokens never reach logs, audits, or errors.
 
 Route modules (`apps/server/src/routes/*.ts`) each export
 `registerXRoutes(app, ctx)` and are assembled in `buildApp`
 (`apps/server/src/app.ts`), which also installs cookie/CORS/multipart
-plugins, the error handler, session auth, and (when `DONNA_PUBLIC_DIR` is
+plugins, the error handler, session auth, and (when `JARVIS_PUBLIC_DIR` is
 set) static serving of the built web UI with an SPA fallback.
 
 ### Auth & sessions (v1.1)
@@ -234,13 +234,13 @@ in `buildApp`:
 
 - **`src/auth.ts` (`registerAuth`)** — the `onRequest` session hook plus
   login / register / logout / session management under `/api/auth/*`.
-  Sessions are DB rows (`sessions` table): the signed `donna_session` cookie
+  Sessions are DB rows (`sessions` table): the signed `jarvis_session` cookie
   carries an opaque random token, only its sha256 hash is stored (a DB leak
   cannot be replayed), and expiry slides — 30 days, renewed once less than
-  half remains. Two auth modes (`DONNA_AUTH_MODE`): `local` (default)
+  half remains. Two auth modes (`JARVIS_AUTH_MODE`): `local` (default)
   auto-provisions the owner and creates a session on first request;
   `password` requires bcrypt login (rate-limited) and optionally signup
-  (`DONNA_ALLOW_SIGNUP`).
+  (`JARVIS_ALLOW_SIGNUP`).
 - **`routes/auth-oauth.ts` (`registerAuthOauthRoutes`)** — OAuth **login**
   (google / facebook / apple): browser-redirect flows with signed state
   cookies; verified identities land in `auth_accounts` (login, signup, or
@@ -252,7 +252,7 @@ in `buildApp`:
   the linked `source_accounts` row.
 
 Two entrypoints share this container: `src/index.ts` (API server, plus the
-in-process worker unless `DONNA_INLINE_WORKER=false`) and `src/worker.ts`
+in-process worker unless `JARVIS_INLINE_WORKER=false`) and `src/worker.ts`
 (standalone worker).
 
 ## LLM routing
@@ -276,7 +276,7 @@ content-free usage event per call into `llm_call_logs` + the audit log.
 
 ## Demo mode
 
-Donna is fully functional with zero credentials. Two pieces make that work:
+Jarvis is fully functional with zero credentials. Two pieces make that work:
 
 1. **Mock connectors + demo dataset** — `createDemoDataset(now)`
    (`packages/connectors/src/demo/dataset.ts`) is a pure function generating a
@@ -286,7 +286,7 @@ Donna is fully functional with zero credentials. Two pieces make that work:
    Four mock connectors (email, chat, calendar, storage) serve this dataset
    with real cursor semantics — the first incremental sync after a full sync
    yields a couple of "newly arrived" items, the next yields nothing. On first
-   boot (`DONNA_DEMO_SEED=true`, the default), `bootstrap`
+   boot (`JARVIS_DEMO_SEED=true`, the default), `bootstrap`
    (`apps/server/src/bootstrap.ts`) seeds people, projects, and the four mock
    accounts, runs a full sync, and rescores the workspace.
 2. **Deterministic mock LLM + demo answerer** — when no provider is
@@ -315,7 +315,7 @@ failure never blocks the others:
    whose `last_sync_at` is older than the `sync.intervalMinutes` setting
    (default 15) gets an incremental sync. OAuth-backed Google sources refresh
    their access tokens through the `tokens` service as part of the sync, so a
-   split worker needs `DONNA_TOKEN_ENCRYPTION_KEY` (when set) and the Google
+   split worker needs `JARVIS_TOKEN_ENCRYPTION_KEY` (when set) and the Google
    client credentials (see [deployment.md](./deployment.md)).
 3. **Approval expiry** — pending `approval_requests` past `expires_at` (set 7
    days from creation) become `expired`, audited as `approval.expired`.
@@ -327,5 +327,5 @@ failure never blocks the others:
    unreinforced preferences (see [self-learning.md](./self-learning.md)).
 
 The loop runs in-process with the API by default; set
-`DONNA_INLINE_WORKER=false` and run `pnpm --filter @donna/server worker` to
+`JARVIS_INLINE_WORKER=false` and run `pnpm --filter @jarvis/server worker` to
 split it into its own process (see [deployment.md](./deployment.md)).

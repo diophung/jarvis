@@ -92,7 +92,7 @@ const railItemClass = (active: boolean) =>
   clsx(
     'flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13.5px] transition-colors w-full',
     active
-      ? 'bg-donna-100 text-donna-900 font-medium'
+      ? 'bg-jarvis-100 text-jarvis-900 font-medium'
       : 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
   );
 

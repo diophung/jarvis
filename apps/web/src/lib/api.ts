@@ -1,4 +1,4 @@
-/** Typed fetch client for the Donna API (see docs/api-contract.md). */
+/** Typed fetch client for the Jarvis API (see docs/api-contract.md). */
 
 export class ApiError extends Error {
   constructor(

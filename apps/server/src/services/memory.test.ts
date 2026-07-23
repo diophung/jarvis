@@ -1,4 +1,4 @@
-import type { Db } from '@donna/db';
+import type { Db } from '@jarvis/db';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SETTING_KEYS, type MemoryService, type SettingsService } from '../context.js';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';

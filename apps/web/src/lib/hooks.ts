@@ -1,4 +1,4 @@
-import type { LlmTask, User, Workspace } from '@donna/core';
+import type { LlmTask, User, Workspace } from '@jarvis/core';
 import { useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
 

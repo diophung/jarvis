@@ -1,4 +1,4 @@
-import type { AuditLog } from '@donna/core';
+import type { AuditLog } from '@jarvis/core';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuditPage } from '../AuditPage.js';

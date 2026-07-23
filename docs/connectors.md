@@ -1,7 +1,7 @@
 # Connectors
 
 A connector adapts one provider (Gmail, Slack, S3, the local mocks, …) to
-Donna's normalized ingestion contract. This page documents every connector in
+Jarvis's normalized ingestion contract. This page documents every connector in
 the default registry: what it reads, the exact env vars it needs, the
 least-privilege scopes it requests, how syncs stay incremental, and which
 write actions it can execute through the approval flow.
@@ -30,7 +30,7 @@ a new connector, [api-contract.md](./api-contract.md) for the Sources API.
   configured. Accounts whose env is missing are created with status
   `needs_auth`.
 - **Incremental sync**: each connector returns an opaque cursor with every
-  page; Donna persists it per account and passes it back on the next run.
+  page; Jarvis persists it per account and passes it back on the next run.
   Cursor semantics are provider-specific (documented per connector below).
 - **Writes only run through the approval flow.** `connector.execute` is only
   called by the actions service after a policy check / user approval — see
@@ -62,7 +62,7 @@ same caveat in its header comment.
 | `teams` | chat | Microsoft Teams | same Microsoft quad | — (read-only) |
 | `onedrive` | storage | OneDrive | same Microsoft quad | — (read-only) |
 | `slack` | chat | Slack | `SLACK_BOT_TOKEN` | `post_message` |
-| `s3` | storage | AWS S3 | `DONNA_SOURCE_S3_BUCKET`, `DONNA_SOURCE_S3_REGION` (+ AWS credential chain) | — (read-only) |
+| `s3` | storage | AWS S3 | `JARVIS_SOURCE_S3_BUCKET`, `JARVIS_SOURCE_S3_REGION` (+ AWS credential chain) | — (read-only) |
 
 ## Mock connectors (demo mode)
 
@@ -110,7 +110,7 @@ Two ways to authorize, sharing one Google OAuth client
 
 **Primary path — OAuth connect (v1.1).** With the client configured, each
 Google source shows a **Connect with Google** button in Settings → Connected
-Sources. Donna runs a per-source consent flow (PKCE, state-bound to your
+Sources. Jarvis runs a per-source consent flow (PKCE, state-bound to your
 session), stores the tokens AES-256-GCM-encrypted in `oauth_tokens`,
 refreshes access tokens automatically (single-flight, with `needs_reauth` +
 a Reconnect button when Google rejects the grant), and revokes + deletes the
@@ -248,8 +248,8 @@ Only plain user messages are ingested (no subtypes like joins/edits).
 ## AWS S3 (source bucket)
 
 ```
-DONNA_SOURCE_S3_BUCKET=
-DONNA_SOURCE_S3_REGION=
+JARVIS_SOURCE_S3_BUCKET=
+JARVIS_SOURCE_S3_REGION=
 ```
 
 Per-account overrides are also supported via account settings `bucket`,
@@ -257,8 +257,8 @@ Per-account overrides are also supported via account settings `bucket`,
 
 **Credentials** come from the standard AWS default provider chain
 (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` env vars, shared config files,
-or an attached IAM role) — Donna never stores them. Least-privilege IAM
-policy for the identity Donna runs as:
+or an attached IAM role) — Jarvis never stores them. Least-privilege IAM
+policy for the identity Jarvis runs as:
 
 ```json
 {

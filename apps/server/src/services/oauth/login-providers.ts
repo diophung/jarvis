@@ -4,8 +4,8 @@ import {
   nowIso,
   OAUTH_LOGIN_PROVIDERS,
   type OauthLoginProvider,
-} from '@donna/core';
-import type { Db } from '@donna/db';
+} from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import {
   createRemoteJWKSet,
   importPKCS8,
@@ -29,7 +29,7 @@ import { provisionUser } from '../users.js';
  * never data access. One config-driven module: each provider declares its
  * authorize/token endpoints, scopes, and a profile() normalizer that maps the
  * provider response onto a common OauthProfile. resolveOauthLogin() then maps
- * a profile onto Donna users/authAccounts with account-takeover protections.
+ * a profile onto Jarvis users/authAccounts with account-takeover protections.
  *
  * Security invariants:
  *  - id_tokens are ALWAYS verified with jose against the provider JWKS
@@ -380,7 +380,7 @@ export async function exchangeLoginCode(
 }
 
 // ---------------------------------------------------------------------------
-// Profile -> Donna user resolution
+// Profile -> Jarvis user resolution
 // ---------------------------------------------------------------------------
 
 export interface ResolveOauthCtx {
@@ -485,7 +485,7 @@ async function touchUserLogin(
 }
 
 /**
- * Map a verified provider profile onto Donna users/authAccounts.
+ * Map a verified provider profile onto Jarvis users/authAccounts.
  *
  * 'link': attach the identity to ctx.userId (already-linked-elsewhere fails).
  * 'login': existing authAccount wins; otherwise link by VERIFIED email match,
@@ -583,7 +583,7 @@ export async function resolveOauthLogin(
   try {
     provisioned = await provisionUser(db, {
       email,
-      name: profile.displayName ?? email.split('@')[0] ?? 'Donna User',
+      name: profile.displayName ?? email.split('@')[0] ?? 'Jarvis User',
       emailVerified: profile.emailVerified,
       avatarUrl: profile.avatarUrl,
     });

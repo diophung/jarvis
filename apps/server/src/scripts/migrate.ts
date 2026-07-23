@@ -1,5 +1,5 @@
-/** Run DB migrations and exit. Usage: pnpm --filter @donna/server db:migrate */
-import { createDb, migrateToLatest } from '@donna/db';
+/** Run DB migrations and exit. Usage: pnpm --filter @jarvis/server db:migrate */
+import { createDb, migrateToLatest } from '@jarvis/db';
 import { loadConfig } from '../config.js';
 
 const config = loadConfig();

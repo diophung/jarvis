@@ -1,8 +1,8 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { createDefaultRegistry } from '@donna/connectors';
-import type { Db } from '@donna/db';
+import { createDefaultRegistry } from '@jarvis/connectors';
+import type { Db } from '@jarvis/db';
 import multipart from '@fastify/multipart';
 import fastify, { type FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -17,7 +17,7 @@ import { createSqlScanVectorStore } from '../services/vector-store.js';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';
 import { registerUploadsRoutes } from './uploads.js';
 
-const BOUNDARY = 'X-DONNA-TEST-BOUNDARY';
+const BOUNDARY = 'X-JARVIS-TEST-BOUNDARY';
 
 function multipartPayload(filename: string, contentType: string, body: string): string {
   return [
@@ -37,8 +37,8 @@ let db: Db;
 let app: FastifyInstance;
 
 beforeAll(async () => {
-  dir = await mkdtemp(path.join(tmpdir(), 'donna-uploads-route-'));
-  config = loadConfig({ DONNA_DATA_DIR: dir, DONNA_STORAGE_DRIVER: 'local' });
+  dir = await mkdtemp(path.join(tmpdir(), 'jarvis-uploads-route-'));
+  config = loadConfig({ JARVIS_DATA_DIR: dir, JARVIS_STORAGE_DRIVER: 'local' });
 });
 
 afterAll(async () => {
@@ -86,7 +86,7 @@ describe('uploads routes', () => {
     const created = await app.inject({
       method: 'POST',
       url: '/api/uploads',
-      payload: multipartPayload('hello.txt', 'text/plain', 'hello donna upload'),
+      payload: multipartPayload('hello.txt', 'text/plain', 'hello jarvis upload'),
       headers: { 'content-type': `multipart/form-data; boundary=${BOUNDARY}` },
     });
     expect(created.statusCode).toBe(200);
@@ -108,7 +108,7 @@ describe('uploads routes', () => {
 
     const text = await app.inject({ method: 'GET', url: `/api/uploads/${file.id}/text` });
     expect(text.statusCode).toBe(200);
-    expect(text.json().text).toBe('hello donna upload');
+    expect(text.json().text).toBe('hello jarvis upload');
 
     const del = await app.inject({ method: 'DELETE', url: `/api/uploads/${file.id}` });
     expect(del.statusCode).toBe(200);

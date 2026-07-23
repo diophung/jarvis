@@ -1,6 +1,6 @@
 # Production database architecture
 
-How Donna's persistence layer is built to grow from one user on a laptop to
+How Jarvis's persistence layer is built to grow from one user on a laptop to
 ~10M DAU without a rewrite. Companion docs:
 [production_database_migration_plan.md](./production_database_migration_plan.md)
 (decision record + work plan), [deployment.md](./deployment.md),
@@ -16,8 +16,8 @@ database that fails least badly at scale.
 | Relational, transactional state (users, tenants, identities, settings, preferences, tasks, calendar objects, connector metadata, memory metadata, approvals/audit) | **PostgreSQL** (Aurora / AlloyDB / Cloud SQL / Neon via `DATABASE_URL`) | Correctness, constraints, transactions, mature operations |
 | High-volume append-only events (learning_signals, item_feedback, audit_logs, llm_call_logs) | **Partitioned PostgreSQL tables** (see Partitioning) | One operational surface; isolated behind services so a wide-column adapter (DynamoDB-style) can replace individual tables if sustained event writes outgrow Postgres (~50K rows/s) — the explicit tradeoff is documented in the migration plan (D2) |
 | Semantic memory / RAG vectors | **`VectorStore` interface**: pgvector adapter on Postgres (in-database cosine, HNSW-indexable), SQL-scan adapter everywhere else; Qdrant/OpenSearch pluggable later | Vector DBs are retrieval engines, not profile stores; embedding_records stays the system of record |
-| Hot reads (settings, preference lookups) | **Cache interface**: in-memory LRU per process (default) or Redis/Valkey (`DONNA_REDIS_URL` — ElastiCache, Memorystore, Upstash) | Disposable by contract: every cache path fails open to the database |
-| Blobs (uploads) | local disk or S3 (existing `DONNA_STORAGE_DRIVER`) | unchanged |
+| Hot reads (settings, preference lookups) | **Cache interface**: in-memory LRU per process (default) or Redis/Valkey (`JARVIS_REDIS_URL` — ElastiCache, Memorystore, Upstash) | Disposable by contract: every cache path fails open to the database |
+| Blobs (uploads) | local disk or S3 (existing `JARVIS_STORAGE_DRIVER`) | unchanged |
 | Local development | **SQLite (WAL)** — the zero-config default | identical schema via Kysely's portable SQL subset |
 
 ## Access patterns (and how each is served)
@@ -37,7 +37,7 @@ database that fails least badly at scale.
 
 Unbounded queries are prevented structurally: list endpoints take limits with
 server-side caps, scans carry hard candidate limits, and Postgres enforces
-`statement_timeout` (default 10s, `DONNA_DB_STATEMENT_TIMEOUT_MS`) on every
+`statement_timeout` (default 10s, `JARVIS_DB_STATEMENT_TIMEOUT_MS`) on every
 query as the last line of defense.
 
 ## Scale math for 20K peak TPS / 10M DAU (assumptions, stated)
@@ -53,7 +53,7 @@ query as the last line of defense.
   audit). Partitioned heap inserts with small composite indexes sustain
   >10K rows/s on Aurora r6g.2xl-class hardware; ingestion (connector sync)
   is worker-side and naturally batched.
-- **Connections:** replicas × `DONNA_DB_POOL_SIZE` must stay below the
+- **Connections:** replicas × `JARVIS_DB_POOL_SIZE` must stay below the
   server limit — at 40 API replicas × 10 connections = 400, use RDS
   Proxy/pgbouncer (transaction pooling) beyond that.
 - **The local benchmark** (`bench-db.ts`) exists to catch regressions and
@@ -146,7 +146,7 @@ CREATE INDEX idx_embedding_vectors_hnsw ON embedding_vectors
 ## High availability & disaster recovery (deployment posture)
 
 - Run managed Postgres with multi-AZ synchronous standby (Aurora/Cloud SQL
-  HA); failover appears to Donna as transient connection errors, which the
+  HA); failover appears to Jarvis as transient connection errors, which the
   retry classifier and pool replacement absorb.
 - PITR (continuous WAL archiving) with ≥7-day window; daily snapshots
   retained ≥30 days. RPO ≈ seconds (managed PITR), RTO = managed failover
@@ -166,8 +166,8 @@ CREATE INDEX idx_embedding_vectors_hnsw ON embedding_vectors
 - **Encryption at rest:** assumed from the managed platform (Aurora/Cloud
   SQL/ElastiCache encrypt volumes + snapshots). Field-level encryption hooks
   already exist for the most sensitive material — OAuth tokens and UI-entered
-  API keys are AES-256-GCM encrypted by the app (`DONNA_TOKEN_ENCRYPTION_KEY`
-  / `DONNA_SECRET`) before they reach the database; new sensitive fields
+  API keys are AES-256-GCM encrypted by the app (`JARVIS_TOKEN_ENCRYPTION_KEY`
+  / `JARVIS_SECRET`) before they reach the database; new sensitive fields
   should use the same `SecretsService.encrypt` path.
 - **No sensitive data in logs/metrics:** slow-query logs record
   parameterized SQL only (placeholders, never values); audit metadata is
@@ -191,7 +191,7 @@ CREATE INDEX idx_embedding_vectors_hnsw ON embedding_vectors
 - cache backend, hit/miss/error counts, breaker state
 - active vector backend, open deletion-job count
 
-Wire this into your scraper of choice; the JSON is stable and flat. Donna
+Wire this into your scraper of choice; the JSON is stable and flat. Jarvis
 has no distributed tracing today — when one is added, the Kysely log hook in
 `packages/db/src/client.ts` is the single place to attach spans.
 
@@ -200,20 +200,20 @@ has no distributed tracing today — when one is added, the Kysely log hook in
 | Env | Default | Purpose |
 |---|---|---|
 | `DATABASE_URL` | unset (SQLite) | `postgres://` enables Postgres |
-| `DONNA_DB_POOL_SIZE` | 10 | pool max per process |
-| `DONNA_DB_CONNECT_TIMEOUT_MS` | 5000 | connection acquisition deadline |
-| `DONNA_DB_IDLE_TIMEOUT_MS` | 30000 | idle connection recycling |
-| `DONNA_DB_STATEMENT_TIMEOUT_MS` | 10000 | server-side query deadline |
-| `DONNA_DB_SLOW_QUERY_MS` | 250 | slow-query log threshold |
-| `DONNA_REDIS_URL` | unset (memory) | shared cache backend |
-| `DONNA_CACHE_TTL_SECONDS` | 60 | default hot-read TTL |
+| `JARVIS_DB_POOL_SIZE` | 10 | pool max per process |
+| `JARVIS_DB_CONNECT_TIMEOUT_MS` | 5000 | connection acquisition deadline |
+| `JARVIS_DB_IDLE_TIMEOUT_MS` | 30000 | idle connection recycling |
+| `JARVIS_DB_STATEMENT_TIMEOUT_MS` | 10000 | server-side query deadline |
+| `JARVIS_DB_SLOW_QUERY_MS` | 250 | slow-query log threshold |
+| `JARVIS_REDIS_URL` | unset (memory) | shared cache backend |
+| `JARVIS_CACHE_TTL_SECONDS` | 60 | default hot-read TTL |
 
 Local development needs none of these — SQLite + in-memory cache + SQL-scan
 vectors boot with zero configuration, exactly as before.
 
 ## Runbooks
 
-- **Adopt Postgres from a laptop install:** stop Donna → `--dry-run` the
+- **Adopt Postgres from a laptop install:** stop Jarvis → `--dry-run` the
   backfill → run `src/scripts/migrate-sqlite-to-postgres.ts` → set
   `DATABASE_URL` → start → check `/api/health/ready`.
 - **Botched backfill:** the tool never touches the source; drop/recreate the

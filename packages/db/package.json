@@ -1,5 +1,5 @@
 {
-  "name": "@donna/db",
+  "name": "@jarvis/db",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@donna/core": "workspace:*",
+    "@jarvis/core": "workspace:*",
     "better-sqlite3": "^12.10.0",
     "kysely": "^0.27.5",
     "pg": "^8.13.1"

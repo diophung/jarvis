@@ -5,7 +5,7 @@
  * mode) and GET /api/auth/methods (public — drives the sign-in/up pages).
  * A 401 from /api/me in password mode means "signed out", not an error.
  */
-import type { User, Workspace } from '@donna/core';
+import type { User, Workspace } from '@jarvis/core';
 import {
   createContext,
   useCallback,

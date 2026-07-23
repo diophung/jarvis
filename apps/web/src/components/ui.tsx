@@ -1,5 +1,5 @@
-import type { Level, PlanningCategory } from '@donna/core';
-import { PLANNING_CATEGORY_LABELS } from '@donna/core';
+import type { Level, PlanningCategory } from '@jarvis/core';
+import { PLANNING_CATEGORY_LABELS } from '@jarvis/core';
 import clsx from 'clsx';
 import { Loader2, X } from 'lucide-react';
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react';
@@ -26,9 +26,9 @@ export function Button({
     <button
       className={clsx(
         'inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors',
-        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-donna-400 disabled:opacity-50 disabled:cursor-not-allowed',
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-jarvis-400 disabled:opacity-50 disabled:cursor-not-allowed',
         size === 'sm' ? 'text-[13px] px-2.5 py-1.5' : 'text-sm px-3.5 py-2',
-        variant === 'primary' && 'bg-donna-600 text-white hover:bg-donna-700',
+        variant === 'primary' && 'bg-jarvis-600 text-white hover:bg-jarvis-700',
         variant === 'secondary' &&
           'bg-surface-raised border border-surface-border text-ink hover:bg-surface-sunken',
         variant === 'ghost' && 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
@@ -59,7 +59,7 @@ export function Card({
       onClick={onClick}
       className={clsx(
         'bg-surface-raised border border-surface-border rounded-xl',
-        onClick && 'cursor-pointer hover:border-donna-300 transition-colors',
+        onClick && 'cursor-pointer hover:border-jarvis-300 transition-colors',
         className,
       )}
     >
@@ -136,7 +136,7 @@ export function Badge({
       className={clsx(
         'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium',
         tone === 'neutral' && 'bg-surface-sunken text-ink-muted',
-        tone === 'accent' && 'bg-donna-100 text-donna-800',
+        tone === 'accent' && 'bg-jarvis-100 text-jarvis-800',
         tone === 'green' && 'bg-emerald-100 text-emerald-800',
         tone === 'amber' && 'bg-amber-100 text-amber-800',
         tone === 'red' && 'bg-red-100 text-red-700',
@@ -195,7 +195,7 @@ export function Input({
     <input
       className={clsx(
         'w-full rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-sm',
-        'placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-donna-300 focus:border-donna-400',
+        'placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-jarvis-300 focus:border-jarvis-400',
         className,
       )}
       {...rest}
@@ -211,7 +211,7 @@ export function Textarea({
     <textarea
       className={clsx(
         'w-full rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-sm',
-        'placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-donna-300 focus:border-donna-400',
+        'placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-jarvis-300 focus:border-jarvis-400',
         className,
       )}
       {...rest}
@@ -236,7 +236,7 @@ export function Select({
       onChange={(e) => onChange(e.target.value)}
       className={clsx(
         'rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-sm',
-        'focus:outline-none focus:ring-2 focus:ring-donna-300',
+        'focus:outline-none focus:ring-2 focus:ring-jarvis-300',
         className,
       )}
     >
@@ -270,7 +270,7 @@ export function Switch({
         onClick={() => onChange(!checked)}
         className={clsx(
           'relative h-5 w-9 rounded-full transition-colors',
-          checked ? 'bg-donna-600' : 'bg-surface-border',
+          checked ? 'bg-jarvis-600' : 'bg-surface-border',
         )}
       >
         <span
@@ -328,7 +328,7 @@ export function Modal({
 // ---------- Markdown ----------
 export function Markdown({ children }: { children: string }) {
   return (
-    <div className="prose-donna">
+    <div className="prose-jarvis">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>
     </div>
   );

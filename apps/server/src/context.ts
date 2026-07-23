@@ -34,11 +34,11 @@ import type {
   SourceCategory,
   SuggestedAction,
   UploadedFile,
-} from '@donna/core';
-import type { ConnectorRegistry, SecretResolver } from '@donna/connectors';
-import type { Db, DbMetrics } from '@donna/db';
-import type { DataDeletionRequestsTable } from '@donna/db';
-import type { LlmClient, LlmHealth } from '@donna/llm';
+} from '@jarvis/core';
+import type { ConnectorRegistry, SecretResolver } from '@jarvis/connectors';
+import type { Db, DbMetrics } from '@jarvis/db';
+import type { DataDeletionRequestsTable } from '@jarvis/db';
+import type { LlmClient, LlmHealth } from '@jarvis/llm';
 import type { AppConfig } from './config.js';
 
 // ---------- Audit ----------
@@ -423,7 +423,7 @@ export interface LearningService {
     opts?: { includeInactive?: boolean; category?: PreferenceCategory },
   ): Promise<LearnedPreference[]>;
   get(workspaceId: string, id: string): Promise<LearnedPreference | null>;
-  /** "Why Donna thinks this": preference + the recent signals behind it. */
+  /** "Why Jarvis thinks this": preference + the recent signals behind it. */
   explain(
     workspaceId: string,
     id: string,

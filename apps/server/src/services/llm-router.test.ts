@@ -1,14 +1,14 @@
-import { newId, nowIso, toJson } from '@donna/core';
-import type { Db } from '@donna/db';
-import { createAdapter } from '@donna/llm';
+import { newId, nowIso, toJson } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
+import { createAdapter } from '@jarvis/llm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';
 import { createAuditService } from './audit.js';
 import { createLlmRouterService } from './llm-router.js';
 import { createSecretsService } from './secrets.js';
 
-vi.mock('@donna/llm', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@donna/llm')>();
+vi.mock('@jarvis/llm', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@jarvis/llm')>();
   return { ...actual, createAdapter: vi.fn(actual.createAdapter) };
 });
 
@@ -111,7 +111,7 @@ describe('llm-router service', () => {
 
   afterEach(async () => {
     await db.destroy();
-    delete process.env.DONNA_TEST_LLM_KEY;
+    delete process.env.JARVIS_TEST_LLM_KEY;
   });
 
   it('falls back to the mock adapter when nothing is configured', async () => {
@@ -148,10 +148,10 @@ describe('llm-router service', () => {
   });
 
   it('resolves the env-named key in preference to the stored encrypted key', async () => {
-    process.env.DONNA_TEST_LLM_KEY = 'env-key-value';
+    process.env.JARVIS_TEST_LLM_KEY = 'env-key-value';
     const id = await insertProvider(db, workspaceId, {
       kind: 'openai',
-      apiKeyEnv: 'DONNA_TEST_LLM_KEY',
+      apiKeyEnv: 'JARVIS_TEST_LLM_KEY',
       apiKeyEncrypted: secrets.encrypt('stored-key-value'),
     });
     const routed = await service.clientForTask(workspaceId, 'chat');

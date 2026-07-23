@@ -1,5 +1,5 @@
 {
-  "name": "@donna/web",
+  "name": "@jarvis/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@donna/core": "workspace:*",
+    "@jarvis/core": "workspace:*",
     "@tanstack/react-query": "^5.64.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

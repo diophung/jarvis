@@ -1,5 +1,5 @@
 /**
- * File storage: local filesystem by default, S3 when DONNA_STORAGE_DRIVER=s3.
+ * File storage: local filesystem by default, S3 when JARVIS_STORAGE_DRIVER=s3.
  *
  * storagePath values are self-describing — 's3://bucket/key' for S3 objects,
  * a filesystem path otherwise — so read()/remove() dispatch on the prefix
@@ -43,15 +43,15 @@ function parseS3Path(storagePath: string): { bucket: string; key: string } {
 export function createStorageService(deps: { config: AppConfig }): StorageService {
   const { config } = deps;
   const env = config.env;
-  const useS3 = env.DONNA_STORAGE_DRIVER === 's3';
+  const useS3 = env.JARVIS_STORAGE_DRIVER === 's3';
 
   let s3Client: S3Client | null = null;
   function s3(): S3Client {
     if (s3Client === null) {
       s3Client = new S3Client({
-        region: env.DONNA_S3_REGION ?? 'us-east-1',
-        ...(env.DONNA_S3_ENDPOINT !== undefined && env.DONNA_S3_ENDPOINT !== ''
-          ? { endpoint: env.DONNA_S3_ENDPOINT, forcePathStyle: true }
+        region: env.JARVIS_S3_REGION ?? 'us-east-1',
+        ...(env.JARVIS_S3_ENDPOINT !== undefined && env.JARVIS_S3_ENDPOINT !== ''
+          ? { endpoint: env.JARVIS_S3_ENDPOINT, forcePathStyle: true }
           : {}),
       });
     }
@@ -59,9 +59,9 @@ export function createStorageService(deps: { config: AppConfig }): StorageServic
   }
 
   function s3Bucket(): string {
-    const bucket = env.DONNA_S3_BUCKET;
+    const bucket = env.JARVIS_S3_BUCKET;
     if (bucket === undefined || bucket === '') {
-      throw new Error('DONNA_S3_BUCKET must be set when DONNA_STORAGE_DRIVER=s3');
+      throw new Error('JARVIS_S3_BUCKET must be set when JARVIS_STORAGE_DRIVER=s3');
     }
     return bucket;
   }

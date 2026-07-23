@@ -1,5 +1,5 @@
-import type { AgentAction, ApprovalRequest } from '@donna/core';
-import { CAPABILITY_CATALOG } from '@donna/core';
+import type { AgentAction, ApprovalRequest } from '@jarvis/core';
+import { CAPABILITY_CATALOG } from '@jarvis/core';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApprovalsPage } from '../ApprovalsPage.js';
@@ -19,7 +19,7 @@ const approval: ApprovalRequest = {
   targetAccountId: 'acc_1',
   targetRef: { to: 'sam@example.com' },
   riskLevel: 'high',
-  reason: 'You asked Donna to reply to Sam about the Q3 deck.',
+  reason: 'You asked Jarvis to reply to Sam about the Q3 deck.',
   preview: {
     summary: 'Reply to Sam about the Q3 deck',
     body: 'Hi Sam,\n\nThe updated deck is attached.\n\nBest,\nCuong',
@@ -72,7 +72,7 @@ describe('ApprovalsPage', () => {
     // Plain-language label from the catalog, not the raw capability id.
     expect(await screen.findByText('Send emails')).toBeInTheDocument();
     expect(screen.getByText('high risk')).toBeInTheDocument();
-    expect(screen.getByText(/You asked Donna to reply to Sam/)).toBeInTheDocument();
+    expect(screen.getByText(/You asked Jarvis to reply to Sam/)).toBeInTheDocument();
     expect(screen.getByText('Reply to Sam about the Q3 deck')).toBeInTheDocument();
     expect(screen.getByText(/The updated deck is attached/)).toBeInTheDocument();
     expect(screen.getByText('Re: Q3 deck')).toBeInTheDocument();
@@ -122,6 +122,6 @@ describe('ApprovalsPage', () => {
     renderWithProviders(<ApprovalsPage />);
 
     expect(await screen.findByText('Nothing waiting on you.')).toBeInTheDocument();
-    expect(screen.getByText('Donna asks before any external action.')).toBeInTheDocument();
+    expect(screen.getByText('Jarvis asks before any external action.')).toBeInTheDocument();
   });
 });

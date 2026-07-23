@@ -1,5 +1,5 @@
-import type { SessionRecord } from '@donna/core';
-import type { Db } from '@donna/db';
+import type { SessionRecord } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { AppConfig } from '../config.js';
 import type { AuditService } from '../context.js';
@@ -32,8 +32,8 @@ import { SESSION_TTL_DAYS, type SessionsService } from '../services/sessions.js'
  * Authorization codes / tokens are never logged or echoed anywhere.
  */
 
-const STATE_COOKIE = 'donna_oauth_login';
-const SESSION_COOKIE = 'donna_session';
+const STATE_COOKIE = 'jarvis_oauth_login';
+const SESSION_COOKIE = 'jarvis_session';
 
 export interface AuthOauthDeps {
   db: Db;
@@ -43,10 +43,10 @@ export interface AuthOauthDeps {
 }
 
 /** Web-app redirect target: same-origin path when the API serves the web
- * build (DONNA_PUBLIC_DIR), the web origin otherwise (dev split origins). */
+ * build (JARVIS_PUBLIC_DIR), the web origin otherwise (dev split origins). */
 export function webRedirect(config: AppConfig, path: string): string {
-  if (config.env.DONNA_PUBLIC_DIR) return path;
-  return `${config.env.DONNA_WEB_ORIGIN.replace(/\/$/, '')}${path}`;
+  if (config.env.JARVIS_PUBLIC_DIR) return path;
+  return `${config.env.JARVIS_WEB_ORIGIN.replace(/\/$/, '')}${path}`;
 }
 
 export function registerAuthOauthRoutes(app: FastifyInstance, deps: AuthOauthDeps): void {
@@ -105,7 +105,7 @@ export function registerAuthOauthRoutes(app: FastifyInstance, deps: AuthOauthDep
       // Apple's form_post callback is a cross-site POST: Lax cookies are
       // dropped there, so the state cookie must be SameSite=None.
       sameSite: provider === 'apple' ? 'none' : 'lax',
-      secure: config.env.DONNA_COOKIE_SECURE,
+      secure: config.env.JARVIS_COOKIE_SECURE,
     });
     return reply.redirect(buildStartRedirect(provider, config, payload));
   });
@@ -147,8 +147,8 @@ export function registerAuthOauthRoutes(app: FastifyInstance, deps: AuthOauthDep
     const resolveCtx = {
       // Local mode is single-user: self-service signup is never enabled there
       // (same derivation as /api/auth/methods in auth.ts).
-      signupEnabled: config.env.DONNA_AUTH_MODE === 'password' && config.env.DONNA_ALLOW_SIGNUP,
-      authMode: config.env.DONNA_AUTH_MODE,
+      signupEnabled: config.env.JARVIS_AUTH_MODE === 'password' && config.env.JARVIS_ALLOW_SIGNUP,
+      authMode: config.env.JARVIS_AUTH_MODE,
     };
 
     if (state.intent === 'link') {
@@ -215,7 +215,7 @@ export function registerAuthOauthRoutes(app: FastifyInstance, deps: AuthOauthDep
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
-      secure: config.env.DONNA_COOKIE_SECURE,
+      secure: config.env.JARVIS_COOKIE_SECURE,
       signed: true,
       maxAge: SESSION_TTL_DAYS * 24 * 60 * 60,
     });

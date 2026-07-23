@@ -1,5 +1,5 @@
-import { newId, nowIso } from '@donna/core';
-import { createDb, migrateToLatest, type Db } from '@donna/db';
+import { newId, nowIso } from '@jarvis/core';
+import { createDb, migrateToLatest, type Db } from '@jarvis/db';
 
 /** Fresh in-memory SQLite db with the full schema. */
 export async function createTestDb(): Promise<Db> {

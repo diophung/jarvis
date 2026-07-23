@@ -1,5 +1,5 @@
-import type { MemoryEntry, MemoryKind } from '@donna/core';
-import { MEMORY_KINDS } from '@donna/core';
+import type { MemoryEntry, MemoryKind } from '@jarvis/core';
+import { MEMORY_KINDS } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Brain, Download, Plus, Trash2 } from 'lucide-react';
@@ -45,7 +45,7 @@ function OriginChip({ entry }: { entry: MemoryEntry }) {
   if (entry.origin === 'feedback') {
     return <Badge tone="amber">from your feedback</Badge>;
   }
-  return <Badge tone="green">you told Donna</Badge>;
+  return <Badge tone="green">you told Jarvis</Badge>;
 }
 
 export function MemoryPage() {
@@ -103,7 +103,7 @@ export function MemoryPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'donna-memory.json';
+    a.download = 'jarvis-memory.json';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -119,7 +119,7 @@ export function MemoryPage() {
     <div className="max-w-3xl mx-auto px-6 py-8">
       <PageHeader
         title="Memory"
-        subtitle="What Donna believes about you — always visible, always editable."
+        subtitle="What Jarvis believes about you — always visible, always editable."
         actions={
           <Button onClick={() => void onExport()}>
             <Download className="h-4 w-4" /> Export memory
@@ -135,7 +135,7 @@ export function MemoryPage() {
             <div>
               <div className="text-sm font-medium text-ink">Memory</div>
               <p className="text-sm text-ink-muted mt-0.5">
-                When off, Donna stores and uses nothing new about you.
+                When off, Jarvis stores and uses nothing new about you.
               </p>
             </div>
             <Switch checked={enabled} onChange={(v) => setEnabled.mutate(v)} />
@@ -161,7 +161,7 @@ export function MemoryPage() {
                 options={MEMORY_KINDS.map((k) => ({ value: k, label: KIND_LABELS[k] }))}
               />
               <Input
-                placeholder="Tell Donna something to remember…"
+                placeholder="Tell Jarvis something to remember…"
                 value={newContent}
                 onChange={(e) => setNewContent(e.target.value)}
                 className="flex-1"
@@ -175,7 +175,7 @@ export function MemoryPage() {
               <EmptyState
                 icon={<Brain />}
                 title="Nothing saved yet"
-                description="Add something above, or let Donna save useful preferences and facts as you work together."
+                description="Add something above, or let Jarvis save useful preferences and facts as you work together."
               />
             ) : (
               <div className="space-y-6">
@@ -224,7 +224,7 @@ export function MemoryPage() {
                               <button
                                 type="button"
                                 title="Click to edit"
-                                className="text-left text-sm text-ink hover:text-donna-700 transition-colors"
+                                className="text-left text-sm text-ink hover:text-jarvis-700 transition-colors"
                                 onClick={() => {
                                   setEditingId(m.id);
                                   setDraft(m.content);
@@ -251,7 +251,7 @@ export function MemoryPage() {
                             title="Delete memory"
                             className="text-ink-faint hover:text-red-600 mt-0.5"
                             onClick={() => {
-                              if (window.confirm('Delete this memory? Donna will forget it.')) {
+                              if (window.confirm('Delete this memory? Jarvis will forget it.')) {
                                 remove.mutate(m.id);
                               }
                             }}
@@ -268,7 +268,7 @@ export function MemoryPage() {
           </div>
 
           <p className="text-center text-xs text-ink-faint mt-10">
-            Donna shows you exactly what it believes. Correct or delete anything.
+            Jarvis shows you exactly what it believes. Correct or delete anything.
           </p>
         </>
       )}

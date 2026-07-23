@@ -3,7 +3,7 @@
  * #leadership, #vendor-migration) and demonstrates the approval flow:
  * `post_message` "succeeds" with a fake external reference.
  */
-import type { RawSourceItem } from '@donna/core';
+import type { RawSourceItem } from '@jarvis/core';
 import type {
   Connector,
   ConnectorAction,

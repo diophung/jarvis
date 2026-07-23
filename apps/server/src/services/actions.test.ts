@@ -1,6 +1,6 @@
-import { fromJson, newId, nowIso, toJson } from '@donna/core';
-import { createDefaultRegistry } from '@donna/connectors';
-import type { Db } from '@donna/db';
+import { fromJson, newId, nowIso, toJson } from '@jarvis/core';
+import { createDefaultRegistry } from '@jarvis/connectors';
+import type { Db } from '@jarvis/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActionsService, MemoryService, ProposeActionInput } from '../context.js';
 import { HttpError } from '../lib/http-errors.js';

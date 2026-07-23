@@ -44,7 +44,7 @@
     },
     "language": {
       "title": "Langue",
-      "description": "Choisissez la langue de l'interface de Donna. Les traductions sont ajoutées au fil du temps ; le texte non traduit s'affiche en anglais.",
+      "description": "Choisissez la langue de l'interface de Jarvis. Les traductions sont ajoutées au fil du temps ; le texte non traduit s'affiche en anglais.",
       "label": "Langue d'affichage",
       "hint": "Enregistrée sur votre compte et mémorisée sur cet appareil."
     }
@@ -57,13 +57,13 @@
       "notConfigured": "La connexion via {{provider}} n'est pas encore configurée sur ce serveur — consultez docs/auth.md pour la configuration."
     },
     "signin": {
-      "title": "Se connecter à Donna",
+      "title": "Se connecter à Jarvis",
       "submit": "Se connecter",
-      "localModeRedirect": "Donna fonctionne en mode local mono-utilisateur — connexion en cours…",
+      "localModeRedirect": "Jarvis fonctionne en mode local mono-utilisateur — connexion en cours…",
       "invalidCredentials": "E-mail ou mot de passe incorrect.",
       "tooManyAttempts": "Trop de tentatives — réessayez dans quelques minutes.",
       "failed": "Échec de la connexion — veuillez réessayer.",
-      "newToDonna": "Nouveau sur Donna ?",
+      "newToJarvis": "Nouveau sur Jarvis ?",
       "createAccount": "Créer un compte",
       "forgotPassword": "Mot de passe oublié ?",
       "errors": {
@@ -78,7 +78,7 @@
       }
     },
     "signup": {
-      "title": "Créez votre compte Donna",
+      "title": "Créez votre compte Jarvis",
       "name": "Nom",
       "confirmPassword": "Confirmer le mot de passe",
       "terms": "J'accepte les Conditions d'utilisation et la Politique de confidentialité.",
@@ -90,8 +90,8 @@
     },
     "forgot": {
       "title": "Réinitialiser votre mot de passe",
-      "intro1": "Donna est auto-hébergé et n'envoie pas d'e-mails ; il n'y a donc aucun lien de réinitialisation que nous puissions vous envoyer.",
-      "intro2": "À la place, la personne qui gère votre serveur Donna (peut-être vous !) peut définir un nouveau mot de passe depuis la machine du serveur :",
+      "intro1": "Jarvis est auto-hébergé et n'envoie pas d'e-mails ; il n'y a donc aucun lien de réinitialisation que nous puissions vous envoyer.",
+      "intro2": "À la place, la personne qui gère votre serveur Jarvis (peut-être vous !) peut définir un nouveau mot de passe depuis la machine du serveur :",
       "intro3": "Une fois cela fait, revenez et connectez-vous avec le nouveau mot de passe.",
       "backToSignIn": "Retour à la connexion"
     }

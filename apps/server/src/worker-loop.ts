@@ -15,7 +15,7 @@
  *  6. Privacy: pending data_deletion_requests are claimed and purged.
  *  7. Idempotency: expired idempotency_keys rows are garbage-collected.
  */
-import { nowIso } from '@donna/core';
+import { nowIso } from '@jarvis/core';
 import { Cron } from 'croner';
 import type { AppContext } from './context.js';
 import { SETTING_KEYS } from './context.js';

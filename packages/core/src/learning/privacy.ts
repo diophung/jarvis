@@ -1,7 +1,7 @@
 /**
  * Privacy guard for the learning pipeline.
  *
- * Donna must never infer or store sensitive attributes (protected classes,
+ * Jarvis must never infer or store sensitive attributes (protected classes,
  * health, politics, religion, sexuality, immigration status, union
  * membership, criminal history). Text-based inference of these is both
  * ethically off-limits and scientifically unreliable, so the guard errs on
@@ -9,7 +9,7 @@
  *
  * Scope: this filters only what the LEARNING subsystem persists (signals and
  * preference statements). It does not censor the user's own data or chat —
- * Donna can still help with a medical email; it just won't learn from it.
+ * Jarvis can still help with a medical email; it just won't learn from it.
  */
 
 export const SENSITIVE_CATEGORIES = [

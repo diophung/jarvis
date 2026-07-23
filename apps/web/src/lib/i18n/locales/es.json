@@ -44,7 +44,7 @@
     },
     "language": {
       "title": "Idioma",
-      "description": "Elige el idioma que usa la interfaz de Donna. Las traducciones se añaden con el tiempo; el texto sin traducir se muestra en inglés.",
+      "description": "Elige el idioma que usa la interfaz de Jarvis. Las traducciones se añaden con el tiempo; el texto sin traducir se muestra en inglés.",
       "label": "Idioma de la interfaz",
       "hint": "Se guarda en tu cuenta y se recuerda en este dispositivo."
     }
@@ -57,13 +57,13 @@
       "notConfigured": "El inicio de sesión con {{provider}} aún no está configurado en este servidor; consulta docs/auth.md para la configuración."
     },
     "signin": {
-      "title": "Inicia sesión en Donna",
+      "title": "Inicia sesión en Jarvis",
       "submit": "Iniciar sesión",
-      "localModeRedirect": "Donna se está ejecutando en modo local de un solo usuario: iniciando tu sesión…",
+      "localModeRedirect": "Jarvis se está ejecutando en modo local de un solo usuario: iniciando tu sesión…",
       "invalidCredentials": "Correo electrónico o contraseña no válidos.",
       "tooManyAttempts": "Demasiados intentos: vuelve a intentarlo en unos minutos.",
       "failed": "Error al iniciar sesión; inténtalo de nuevo.",
-      "newToDonna": "¿Nuevo en Donna?",
+      "newToJarvis": "¿Nuevo en Jarvis?",
       "createAccount": "Crear una cuenta",
       "forgotPassword": "¿Olvidaste tu contraseña?",
       "errors": {
@@ -78,7 +78,7 @@
       }
     },
     "signup": {
-      "title": "Crea tu cuenta de Donna",
+      "title": "Crea tu cuenta de Jarvis",
       "name": "Nombre",
       "confirmPassword": "Confirmar contraseña",
       "terms": "Acepto las Condiciones del servicio y la Política de privacidad.",
@@ -90,8 +90,8 @@
     },
     "forgot": {
       "title": "Restablece tu contraseña",
-      "intro1": "Donna es autoalojada y no envía correos electrónicos, así que no hay ningún enlace de restablecimiento que podamos enviarte.",
-      "intro2": "En su lugar, quien administre tu servidor de Donna (¡quizá tú!) puede establecer una nueva contraseña desde la máquina del servidor:",
+      "intro1": "Jarvis es autoalojada y no envía correos electrónicos, así que no hay ningún enlace de restablecimiento que podamos enviarte.",
+      "intro2": "En su lugar, quien administre tu servidor de Jarvis (¡quizá tú!) puede establecer una nueva contraseña desde la máquina del servidor:",
       "intro3": "Una vez hecho esto, vuelve e inicia sesión con la nueva contraseña.",
       "backToSignIn": "Volver al inicio de sesión"
     }

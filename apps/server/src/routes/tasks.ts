@@ -8,9 +8,9 @@ import {
   nowIso,
   PLANNING_CATEGORIES,
   TASK_CANDIDATE_STATUSES,
-} from '@donna/core';
-import type { Level, PlanningCategory, ScoreSignal, TaskCandidate } from '@donna/core';
-import type { TaskCandidatesTable } from '@donna/db';
+} from '@jarvis/core';
+import type { Level, PlanningCategory, ScoreSignal, TaskCandidate } from '@jarvis/core';
+import type { TaskCandidatesTable } from '@jarvis/db';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { AppContext } from '../context.js';

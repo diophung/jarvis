@@ -1,4 +1,4 @@
-import type { CapabilityDef } from '@donna/core';
+import type { CapabilityDef } from '@jarvis/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -12,8 +12,8 @@ const ISO = new Date('2026-06-01T08:00:00Z').toISOString();
 const me = {
   user: {
     id: 'u-1',
-    email: 'donna@example.com',
-    name: 'Donna User',
+    email: 'jarvis@example.com',
+    name: 'Jarvis User',
     hasPassword: true,
     role: 'owner',
     emailVerified: false,
@@ -22,7 +22,7 @@ const me = {
     createdAt: ISO,
     updatedAt: ISO,
   },
-  workspace: { id: 'ws-1', ownerUserId: 'u-1', name: 'Donna', createdAt: ISO, updatedAt: ISO },
+  workspace: { id: 'ws-1', ownerUserId: 'u-1', name: 'Jarvis', createdAt: ISO, updatedAt: ISO },
   authMode: 'local',
 };
 
@@ -31,9 +31,9 @@ const authAccount = {
   userId: 'u-1',
   provider: 'google',
   providerAccountId: 'google-sub-1',
-  email: 'donna@gmail.com',
+  email: 'jarvis@gmail.com',
   emailVerified: true,
-  displayName: 'Donna G',
+  displayName: 'Jarvis G',
   avatarUrl: null,
   lastLoginAt: ISO,
   createdAt: ISO,
@@ -216,7 +216,7 @@ describe('SettingsPage', () => {
   it('shows the tab rail and navigates to the AI Providers tab', async () => {
     renderAt('/settings');
     // Defaults to the Profile tab.
-    expect(await screen.findByLabelText('Name')).toHaveValue('Donna User');
+    expect(await screen.findByLabelText('Name')).toHaveValue('Jarvis User');
     await userEvent.click(screen.getByRole('link', { name: 'AI Providers' }));
     expect(await screen.findByText('Task routing')).toBeInTheDocument();
     expect(screen.getByText(/Demo mode/)).toBeInTheDocument();
@@ -317,7 +317,7 @@ describe('SettingsPage', () => {
 
     // Confirm modal first — no PUT yet.
     expect(
-      await screen.findByText(/Donna will be able to send emails on your behalf without asking/),
+      await screen.findByText(/Jarvis will be able to send emails on your behalf without asking/),
     ).toBeInTheDocument();
     expect(calls.find((c) => c.method === 'PUT')).toBeUndefined();
 
@@ -405,8 +405,8 @@ describe('SettingsPage', () => {
 
   it('renders linked accounts with link buttons for the remaining providers', async () => {
     renderAt('/settings/security');
-    expect(await screen.findByText('donna@gmail.com')).toBeInTheDocument();
-    expect(screen.getByText(/Donna G/)).toBeInTheDocument();
+    expect(await screen.findByText('jarvis@gmail.com')).toBeInTheDocument();
+    expect(screen.getByText(/Jarvis G/)).toBeInTheDocument();
     // Google is already linked, so only Facebook and Apple are offered.
     expect(screen.queryByRole('link', { name: 'Link Google' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Link Facebook' })).toHaveAttribute(

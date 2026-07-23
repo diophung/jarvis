@@ -44,7 +44,7 @@
     },
     "language": {
       "title": "Ngôn ngữ",
-      "description": "Chọn ngôn ngữ cho giao diện của Donna. Bản dịch được bổ sung dần theo thời gian; phần chưa dịch sẽ hiển thị bằng tiếng Anh.",
+      "description": "Chọn ngôn ngữ cho giao diện của Jarvis. Bản dịch được bổ sung dần theo thời gian; phần chưa dịch sẽ hiển thị bằng tiếng Anh.",
       "label": "Ngôn ngữ hiển thị",
       "hint": "Được lưu vào tài khoản của bạn và ghi nhớ trên thiết bị này."
     }
@@ -57,13 +57,13 @@
       "notConfigured": "Đăng nhập bằng {{provider}} chưa được cấu hình trên máy chủ này — xem docs/auth.md để thiết lập."
     },
     "signin": {
-      "title": "Đăng nhập vào Donna",
+      "title": "Đăng nhập vào Jarvis",
       "submit": "Đăng nhập",
-      "localModeRedirect": "Donna đang chạy ở chế độ cục bộ một người dùng — đang đăng nhập cho bạn…",
+      "localModeRedirect": "Jarvis đang chạy ở chế độ cục bộ một người dùng — đang đăng nhập cho bạn…",
       "invalidCredentials": "Email hoặc mật khẩu không đúng.",
       "tooManyAttempts": "Quá nhiều lần thử — vui lòng thử lại sau vài phút.",
       "failed": "Đăng nhập thất bại — vui lòng thử lại.",
-      "newToDonna": "Mới biết đến Donna?",
+      "newToJarvis": "Mới biết đến Jarvis?",
       "createAccount": "Tạo tài khoản",
       "forgotPassword": "Quên mật khẩu?",
       "errors": {
@@ -78,7 +78,7 @@
       }
     },
     "signup": {
-      "title": "Tạo tài khoản Donna của bạn",
+      "title": "Tạo tài khoản Jarvis của bạn",
       "name": "Tên",
       "confirmPassword": "Xác nhận mật khẩu",
       "terms": "Tôi đồng ý với Điều khoản dịch vụ và Chính sách bảo mật.",
@@ -90,8 +90,8 @@
     },
     "forgot": {
       "title": "Đặt lại mật khẩu",
-      "intro1": "Donna tự lưu trữ và không gửi email, nên chúng tôi không thể gửi cho bạn liên kết đặt lại.",
-      "intro2": "Thay vào đó, người vận hành máy chủ Donna của bạn (có thể là chính bạn!) có thể đặt mật khẩu mới ngay trên máy chủ:",
+      "intro1": "Jarvis tự lưu trữ và không gửi email, nên chúng tôi không thể gửi cho bạn liên kết đặt lại.",
+      "intro2": "Thay vào đó, người vận hành máy chủ Jarvis của bạn (có thể là chính bạn!) có thể đặt mật khẩu mới ngay trên máy chủ:",
       "intro3": "Sau khi hoàn tất, hãy quay lại và đăng nhập bằng mật khẩu mới.",
       "backToSignIn": "Quay lại đăng nhập"
     }

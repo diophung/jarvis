@@ -24,9 +24,9 @@ import {
   type PlanningCategory,
   type ScoreSignal,
   type SuggestedAction,
-} from '@donna/core';
-import type { Db } from '@donna/db';
-import type { LlmMessage } from '@donna/llm';
+} from '@jarvis/core';
+import type { Db } from '@jarvis/db';
+import type { LlmMessage } from '@jarvis/llm';
 import {
   SETTING_KEYS,
   type ActionsService,
@@ -268,7 +268,7 @@ async function loadUpcomingCalendar(
 
 /**
  * Graceful degradation: each context source falls back independently. A
- * failing memory/retrieval/digest lookup must never turn into a 500 — Donna
+ * failing memory/retrieval/digest lookup must never turn into a 500 — Jarvis
  * answers from whatever context IS available (the failure is logged, never
  * shown as a crash).
  */
@@ -561,7 +561,7 @@ function buildSystemPrompt(userName: string, responseStyle: string, now: Date): 
     // keep UTC
   }
   return [
-    `You are Donna, ${userName}'s executive assistant — sharp, warm, and concise.`,
+    `You are Jarvis, ${userName}'s executive assistant — sharp, warm, and concise.`,
     '',
     'Guidelines:',
     '- Lead with what matters most. Keep answers structured: short sections, bold key items, brief why-lines, concrete next steps.',
@@ -575,7 +575,7 @@ function buildSystemPrompt(userName: string, responseStyle: string, now: Date): 
 
 function buildContextBlock(ctx: AssembledContext): string {
   const lines: string[] = [
-    'CONTEXT — data Donna retrieved for this question. Cite snippets as [n].',
+    'CONTEXT — data Jarvis retrieved for this question. Cite snippets as [n].',
     '',
     'Numbered snippets:',
   ];

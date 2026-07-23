@@ -1,4 +1,4 @@
-import type { ConnectorRun, ConnectorRunStatus, SourceAccount, SourceAccountStatus } from '@donna/core';
+import type { ConnectorRun, ConnectorRunStatus, SourceAccount, SourceAccountStatus } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import type { LucideIcon } from 'lucide-react';
@@ -148,8 +148,8 @@ export function AccountCard({ account }: { account: SourceAccountView }) {
   const grantedScopes = account.grantedScopes ?? [];
   const disconnectMessage =
     googleSource || account.authKind === 'oauth'
-      ? `Disconnect ${account.displayName}? Donna will stop syncing this source. Its stored Google access tokens will be revoked and removed.`
-      : `Disconnect ${account.displayName}? Donna will stop syncing this source.`;
+      ? `Disconnect ${account.displayName}? Jarvis will stop syncing this source. Its stored Google access tokens will be revoked and removed.`
+      : `Disconnect ${account.displayName}? Jarvis will stop syncing this source.`;
 
   return (
     <Card className="p-4 flex flex-col gap-3">

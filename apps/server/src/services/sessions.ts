@@ -1,5 +1,5 @@
-import { newId, nowIso, type SessionRecord } from '@donna/core';
-import type { Db } from '@donna/db';
+import { newId, nowIso, type SessionRecord } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import { randomToken, sha256Base64Url } from '../lib/oauth.js';
 
 /**

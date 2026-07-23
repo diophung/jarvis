@@ -1,4 +1,4 @@
-import type { Conversation } from '@donna/core';
+import type { Conversation } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import {
@@ -45,7 +45,7 @@ function NavItem({
         clsx(
           'flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13.5px] transition-colors',
           isActive
-            ? 'bg-donna-100 text-donna-900 font-medium'
+            ? 'bg-jarvis-100 text-jarvis-900 font-medium'
             : 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
         )
       }
@@ -53,7 +53,7 @@ function NavItem({
       <span className="[&>svg]:h-4 [&>svg]:w-4 shrink-0">{icon}</span>
       <span className="truncate flex-1">{label}</span>
       {badge != null && badge > 0 && (
-        <span className="bg-donna-600 text-white text-[10px] font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+        <span className="bg-jarvis-600 text-white text-[10px] font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
           {badge}
         </span>
       )}
@@ -186,7 +186,7 @@ function AccountMenu({
             ) : (
               <div
                 className="px-3 py-2 text-[11px] text-ink-faint border-t border-surface-border"
-                title="Set DONNA_AUTH_MODE=password to enable the sign-in screen and logout."
+                title="Set JARVIS_AUTH_MODE=password to enable the sign-in screen and logout."
               >
                 {t('nav.localModeExplain')}
               </div>
@@ -241,17 +241,17 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside className="w-64 shrink-0 border-r border-surface-border bg-surface flex flex-col">
         <div className="px-4 pt-4 pb-3 flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-donna-600 text-white flex items-center justify-center font-semibold text-sm">
+          <div className="h-7 w-7 rounded-lg bg-jarvis-600 text-white flex items-center justify-center font-semibold text-sm">
             D
           </div>
-          <span className="font-semibold tracking-tight">Donna</span>
+          <span className="font-semibold tracking-tight">Jarvis</span>
         </div>
         <div className="px-3">
           <button
             onClick={newChat}
-            className="w-full flex items-center gap-2 rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-sm font-medium hover:border-donna-300 transition-colors"
+            className="w-full flex items-center gap-2 rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-sm font-medium hover:border-jarvis-300 transition-colors"
           >
-            <Plus className="h-4 w-4 text-donna-600" /> {t('nav.newChat')}
+            <Plus className="h-4 w-4 text-jarvis-600" /> {t('nav.newChat')}
           </button>
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">

@@ -2,24 +2,24 @@
  * Re-encrypt stored secrets after rotating the encryption keys.
  *
  * Usage:
- *   DONNA_OLD_KEY=<previous key> pnpm --filter @donna/server exec tsx src/scripts/rotate-token-key.ts
+ *   JARVIS_OLD_KEY=<previous key> pnpm --filter @jarvis/server exec tsx src/scripts/rotate-token-key.ts
  *
  * Re-encrypts:
  *  - oauth_tokens.access_token_encrypted / refresh_token_encrypted
  *    (old key -> current config.tokenEncryptionKey)
  *  - llm_provider_configs.api_key_encrypted
- *    (old key -> current DONNA_SECRET)
+ *    (old key -> current JARVIS_SECRET)
  *
- * Rows whose ciphertext does not decrypt with DONNA_OLD_KEY are skipped and
+ * Rows whose ciphertext does not decrypt with JARVIS_OLD_KEY are skipped and
  * counted. Output is counts only — secret material is never printed.
  */
-import { createDb } from '@donna/db';
+import { createDb } from '@jarvis/db';
 import { loadConfig } from '../config.js';
 import { decryptSecret, encryptSecret } from '../lib/crypto.js';
 
-const oldKey = process.env.DONNA_OLD_KEY;
+const oldKey = process.env.JARVIS_OLD_KEY;
 if (!oldKey) {
-  console.error('DONNA_OLD_KEY is required (the key the stored secrets are currently encrypted with).');
+  console.error('JARVIS_OLD_KEY is required (the key the stored secrets are currently encrypted with).');
   process.exit(1);
 }
 
@@ -86,7 +86,7 @@ async function rotateLlmApiKeys(): Promise<RotationResult> {
     .where('apiKeyEncrypted', 'is not', null)
     .execute();
   for (const row of rows) {
-    const out = reencryptRow([row.apiKeyEncrypted], config.env.DONNA_SECRET);
+    const out = reencryptRow([row.apiKeyEncrypted], config.env.JARVIS_SECRET);
     if (!out.ok) {
       result.skipped += 1;
       continue;
@@ -107,7 +107,7 @@ try {
   console.log(`oauth_tokens: re-encrypted ${oauth.rotated} row(s), skipped ${oauth.skipped} undecryptable row(s)`);
   console.log(`llm_provider_configs: re-encrypted ${llm.rotated} row(s), skipped ${llm.skipped} undecryptable row(s)`);
   if (oauth.skipped > 0 || llm.skipped > 0) {
-    console.log('Skipped rows were NOT modified — check that DONNA_OLD_KEY matches the previous key.');
+    console.log('Skipped rows were NOT modified — check that JARVIS_OLD_KEY matches the previous key.');
     process.exitCode = 1;
   }
 } finally {

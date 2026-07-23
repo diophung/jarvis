@@ -1,5 +1,5 @@
-import { newId, nowIso } from '@donna/core';
-import type { Db } from '@donna/db';
+import { newId, nowIso } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { VectorStore } from '../context.js';
 import { createSqlScanVectorStore, createVectorStore } from './vector-store.js';

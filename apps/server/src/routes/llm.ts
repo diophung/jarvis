@@ -18,9 +18,9 @@ import {
   type LlmProviderKind,
   type LlmTask,
   type LlmTaskRoute,
-} from '@donna/core';
-import type { LlmProviderConfigsTable, LlmTaskRoutesTable } from '@donna/db';
-import { KIND_DEFAULTS } from '@donna/llm';
+} from '@jarvis/core';
+import type { LlmProviderConfigsTable, LlmTaskRoutesTable } from '@jarvis/db';
+import { KIND_DEFAULTS } from '@jarvis/llm';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { AppContext } from '../context.js';

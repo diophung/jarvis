@@ -1,7 +1,7 @@
 /**
  * Memory routes: view/edit/export memories and the global memory toggle.
  */
-import { MEMORY_KINDS } from '@donna/core';
+import { MEMORY_KINDS } from '@jarvis/core';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { SETTING_KEYS, type AppContext } from '../context.js';

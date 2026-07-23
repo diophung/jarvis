@@ -4,8 +4,8 @@
  * for retrieval. Parse failures mark the row 'error' but never throw out of
  * handleUpload; storage failures may throw.
  */
-import { newId, normalizeRawItem, nowIso, toJson, type UploadedFile } from '@donna/core';
-import type { Db, UploadedFilesTable } from '@donna/db';
+import { newId, normalizeRawItem, nowIso, toJson, type UploadedFile } from '@jarvis/core';
+import type { Db, UploadedFilesTable } from '@jarvis/db';
 import mammoth from 'mammoth';
 import type {
   AuditService,

@@ -1,4 +1,4 @@
-import type { DigestItem, FeedbackKind } from '@donna/core';
+import type { DigestItem, FeedbackKind } from '@jarvis/core';
 import clsx from 'clsx';
 import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
@@ -39,7 +39,7 @@ export function DigestItemRow({
       <div className="flex items-start justify-between gap-3">
         <input
           type="checkbox"
-          className="mt-1 h-3.5 w-3.5 shrink-0 accent-donna-600"
+          className="mt-1 h-3.5 w-3.5 shrink-0 accent-jarvis-600"
           checked={selected}
           onChange={() => onToggleSelect(item.id)}
           aria-label={`Select "${item.title}"`}
@@ -49,7 +49,7 @@ export function DigestItemRow({
             <button
               type="button"
               onClick={() => onOpenSource(sourceItemId)}
-              className="text-left text-[15px] font-medium leading-snug text-ink hover:text-donna-700 transition-colors"
+              className="text-left text-[15px] font-medium leading-snug text-ink hover:text-jarvis-700 transition-colors"
             >
               {item.title}
             </button>
@@ -79,7 +79,7 @@ export function DigestItemRow({
       </div>
 
       {item.recommendedAction && (
-        <p className="mt-3 text-sm font-medium text-donna-700">→ {item.recommendedAction}</p>
+        <p className="mt-3 text-sm font-medium text-jarvis-700">→ {item.recommendedAction}</p>
       )}
       {item.explanation && (
         <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{item.explanation}</p>

@@ -115,7 +115,7 @@ export function evaluatePolicy(input: ProposedActionInput, rules: PolicyRule[]):
       effect: 'require_approval',
       riskLevel: 'high',
       matchedPolicyId: null,
-      reason: `Unknown capability "${input.capability}" — Donna asks for approval by default.`,
+      reason: `Unknown capability "${input.capability}" — Jarvis asks for approval by default.`,
       unknownCapability: true,
     };
   }

@@ -25,7 +25,7 @@ export interface DbConfig {
   pool?: DbPoolConfig;
   /** Query observability sink (latency, errors, slow queries). */
   metrics?: DbMetrics;
-  /** Identifies this process in pg_stat_activity. Default 'donna'. */
+  /** Identifies this process in pg_stat_activity. Default 'jarvis'. */
   applicationName?: string;
 }
 
@@ -98,7 +98,7 @@ export function createDb(config: DbConfig = {}): Db {
       connectionTimeoutMillis: poolCfg.connectTimeoutMs ?? 5_000,
       idleTimeoutMillis: poolCfg.idleTimeoutMs ?? 30_000,
       statement_timeout: poolCfg.statementTimeoutMs ?? 10_000,
-      application_name: config.applicationName ?? 'donna',
+      application_name: config.applicationName ?? 'jarvis',
     });
     // An idle client losing its connection (failover, LB rotation) emits
     // 'error' on the pool; without a handler that is a process crash.
@@ -122,7 +122,7 @@ export function createDb(config: DbConfig = {}): Db {
     return db;
   }
 
-  const file = url ?? config.sqlitePath ?? process.env.DONNA_SQLITE_PATH ?? './data/donna.db';
+  const file = url ?? config.sqlitePath ?? process.env.JARVIS_SQLITE_PATH ?? './data/jarvis.db';
   if (file !== ':memory:') {
     mkdirSync(dirname(resolve(file)), { recursive: true });
   }

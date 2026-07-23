@@ -1,6 +1,6 @@
-import { newId, nowIso, toJson } from '@donna/core';
-import { createDefaultRegistry } from '@donna/connectors';
-import type { Db } from '@donna/db';
+import { newId, nowIso, toJson } from '@jarvis/core';
+import { createDefaultRegistry } from '@jarvis/connectors';
+import type { Db } from '@jarvis/db';
 import fastify, { type FastifyInstance } from 'fastify';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { AppConfig } from '../config.js';
@@ -95,7 +95,7 @@ async function proposeEmailSend(accountId: string) {
     actionType: 'send_email',
     params: { to: 'jin@example.com', subject: 'Budget', body: 'Numbers attached.' },
     target: { provider: 'mock-email', accountId },
-    reason: 'User asked Donna to send the budget',
+    reason: 'User asked Jarvis to send the budget',
     preview: { summary: 'Send budget email to Jin' },
   });
 }

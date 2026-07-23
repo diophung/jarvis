@@ -2,8 +2,8 @@
  * Backfill tool: copy a local SQLite database into a production Postgres.
  *
  * Usage:
- *   pnpm --filter @donna/server exec tsx src/scripts/migrate-sqlite-to-postgres.ts \
- *     --sqlite ./data/donna.db --target postgres://user:pass@host:5432/donna [--dry-run] [--batch 500]
+ *   pnpm --filter @jarvis/server exec tsx src/scripts/migrate-sqlite-to-postgres.ts \
+ *     --sqlite ./data/jarvis.db --target postgres://user:pass@host:5432/jarvis [--dry-run] [--batch 500]
  *
  * Properties:
  *  - Dry-run mode reads + reports only; no writes are issued.
@@ -18,7 +18,7 @@
  * dry-run). Stop API/worker processes that write to the SQLite file during
  * the copy, or re-run the tool afterwards to pick up stragglers.
  */
-import { createDb, isPostgresUrl, migrateToLatest, type DB, type Db } from '@donna/db';
+import { createDb, isPostgresUrl, migrateToLatest, type DB, type Db } from '@jarvis/db';
 import process from 'node:process';
 
 /** Copy order: referenced entities before referencing ones. */
@@ -69,7 +69,7 @@ interface Args {
 
 function parseArgs(argv: string[]): Args {
   const args: Args = {
-    sqlite: './data/donna.db',
+    sqlite: './data/jarvis.db',
     target: process.env.DATABASE_URL,
     dryRun: false,
     batch: 500,
@@ -168,7 +168,7 @@ async function main(): Promise<void> {
         console.error(`${mismatches} table(s) have fewer target rows than source — re-run the tool.`);
         process.exit(2);
       }
-      console.log('Backfill complete. Point DATABASE_URL at the target and restart Donna.');
+      console.log('Backfill complete. Point DATABASE_URL at the target and restart Jarvis.');
     }
   } finally {
     await source.destroy();

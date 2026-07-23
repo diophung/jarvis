@@ -9,8 +9,8 @@ import {
   GOOGLE_SOURCE_TYPES,
   SOURCE_CATEGORIES,
   type SourceAccount,
-} from '@donna/core';
-import type { SourceAccountsTable } from '@donna/db';
+} from '@jarvis/core';
+import type { SourceAccountsTable } from '@jarvis/db';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { AppContext } from '../context.js';

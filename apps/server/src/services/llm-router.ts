@@ -21,9 +21,9 @@ import {
   toJson,
   type LlmProviderKind,
   type LlmTask,
-} from '@donna/core';
-import type { Db, LlmProviderConfigsTable } from '@donna/db';
-import { createAdapter, LlmClient, type LlmHealth, type LlmUsageEvent } from '@donna/llm';
+} from '@jarvis/core';
+import type { Db, LlmProviderConfigsTable } from '@jarvis/db';
+import { createAdapter, LlmClient, type LlmHealth, type LlmUsageEvent } from '@jarvis/llm';
 import type { AppConfig } from '../config.js';
 import type { AuditService, LlmRouterService, LlmTaskStatus, RoutedLlm, SecretsService } from '../context.js';
 import { notFound } from '../lib/http-errors.js';

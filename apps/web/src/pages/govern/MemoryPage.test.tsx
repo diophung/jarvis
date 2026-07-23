@@ -1,4 +1,4 @@
-import type { MemoryEntry } from '@donna/core';
+import type { MemoryEntry } from '@jarvis/core';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryPage } from '../MemoryPage.js';
@@ -64,10 +64,10 @@ describe('MemoryPage', () => {
     renderWithProviders(<MemoryPage />);
 
     expect(await screen.findByText('Prefers short replies')).toBeInTheDocument();
-    expect(screen.getByText('you told Donna')).toBeInTheDocument();
+    expect(screen.getByText('you told Jarvis')).toBeInTheDocument();
     expect(screen.getByText('inferred · 72% sure')).toBeInTheDocument();
     expect(
-      screen.getByText('When off, Donna stores and uses nothing new about you.'),
+      screen.getByText('When off, Jarvis stores and uses nothing new about you.'),
     ).toBeInTheDocument();
 
     // First switch is the master memory toggle.
@@ -145,9 +145,9 @@ describe('MemoryPage', () => {
     });
   });
 
-  it('exports memory as a downloadable donna-memory.json blob', async () => {
+  it('exports memory as a downloadable jarvis-memory.json blob', async () => {
     const { calls } = stubMemoryRoutes();
-    const createObjectURL = vi.fn(() => 'blob:donna-memory');
+    const createObjectURL = vi.fn(() => 'blob:jarvis-memory');
     const revokeObjectURL = vi.fn();
     URL.createObjectURL = createObjectURL;
     URL.revokeObjectURL = revokeObjectURL;
@@ -167,7 +167,7 @@ describe('MemoryPage', () => {
     expect(calls.some((c) => c.url.includes('/api/memory/export') && c.method === 'GET')).toBe(
       true,
     );
-    expect(downloadName).toBe('donna-memory.json');
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:donna-memory');
+    expect(downloadName).toBe('jarvis-memory.json');
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:jarvis-memory');
   });
 });

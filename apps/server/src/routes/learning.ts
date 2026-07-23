@@ -1,6 +1,6 @@
 /**
  * Self-learning routes: the explainability and control surface. Everything
- * Donna has learned is listable, explainable (evidence + reasons), and
+ * Jarvis has learned is listable, explainable (evidence + reasons), and
  * correctable (confirm / edit / pin / mark wrong / delete). Learning can be
  * disabled entirely, and a manual learning pass can be triggered.
  */
@@ -10,7 +10,7 @@ import {
   MIN_ACTIONABLE_CONFIDENCE,
   PREFERENCE_CATEGORIES,
   SOURCE_CATEGORIES,
-} from '@donna/core';
+} from '@jarvis/core';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { SETTING_KEYS, type AppContext } from '../context.js';

@@ -11,8 +11,8 @@ import {
   toJson,
   type PermissionPolicy,
   type PolicyEffect,
-} from '@donna/core';
-import type { PermissionPoliciesTable } from '@donna/db';
+} from '@jarvis/core';
+import type { PermissionPoliciesTable } from '@jarvis/db';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { AppContext } from '../context.js';
@@ -60,7 +60,7 @@ export function registerPolicyRoutes(app: FastifyInstance, ctx: AppContext): voi
     const effect = body.data.effect;
     if (effect === 'auto_approve' && getCapabilityDef(capability)?.risk === 'critical') {
       throw badRequest(
-        `'${capability}' can cause irreversible damage, so Donna will always ask before doing it. It cannot be set to run automatically.`,
+        `'${capability}' can cause irreversible damage, so Jarvis will always ask before doing it. It cannot be set to run automatically.`,
         'critical_capability',
       );
     }

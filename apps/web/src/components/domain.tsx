@@ -4,7 +4,7 @@ import type {
   SourceAttachment,
   SourceCategory,
   SourceItem,
-} from '@donna/core';
+} from '@jarvis/core';
 import { useQuery } from '@tanstack/react-query';
 import { Calendar, File, FileUp, HardDrive, Inbox, Mail, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -132,7 +132,7 @@ export function SourceItemModal({
               href={data.item.url}
               target="_blank"
               rel="noreferrer"
-              className="inline-block text-sm text-donna-700 underline"
+              className="inline-block text-sm text-jarvis-700 underline"
             >
               Open in {data.item.provider} ↗
             </a>
@@ -169,7 +169,7 @@ export function CitationChips({ citations }: { citations: Citation[] }) {
           const onOpen = openCitation(c);
           const inner = (
             <>
-              <span className="text-donna-600 font-semibold">{i + 1}</span>
+              <span className="text-jarvis-600 font-semibold">{i + 1}</span>
               <span className="max-w-[180px] truncate">{c.title}</span>
               {c.sourceLabel && <span className="text-ink-faint">· {c.sourceLabel}</span>}
             </>
@@ -188,7 +188,7 @@ export function CitationChips({ citations }: { citations: Citation[] }) {
               key={`${c.refId}-${i}`}
               onClick={onOpen}
               title={c.snippet ?? c.title}
-              className={`${baseClass} hover:border-donna-300 hover:text-ink transition-colors`}
+              className={`${baseClass} hover:border-jarvis-300 hover:text-ink transition-colors`}
             >
               {inner}
             </button>

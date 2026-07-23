@@ -1,4 +1,4 @@
-import type { Db } from '@donna/db';
+import type { Db } from '@jarvis/db';
 import fastify, { type FastifyInstance } from 'fastify';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { IdempotencyService } from '../context.js';

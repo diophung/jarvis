@@ -3,7 +3,7 @@
  * (decks, contracts, runbooks, the long strategy doc). Read-only — file
  * uploads/sharing are not part of the demo surface.
  */
-import type { RawSourceItem } from '@donna/core';
+import type { RawSourceItem } from '@jarvis/core';
 import type {
   AttachmentContent,
   Connector,

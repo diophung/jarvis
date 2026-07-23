@@ -1,34 +1,34 @@
 # Local deployment: `docker compose up --build`
 # Web UI + API on http://localhost:3001 (SQLite + local file storage in the
-# donna-data volume; demo workspace seeded on first boot).
+# jarvis-data volume; demo workspace seeded on first boot).
 #
 # Optional profiles:
 #   --profile postgres   run against Postgres instead of SQLite
 #   --profile ollama     run a local Ollama for local LLM inference
 services:
-  donna:
+  jarvis:
     build: .
     ports:
       - "3001:3001"
     environment:
-      DONNA_DATA_DIR: /data
+      JARVIS_DATA_DIR: /data
       # The dedicated worker container handles scheduling — keep it off here.
-      DONNA_INLINE_WORKER: "false"
-      DONNA_SECRET: ${DONNA_SECRET:-change-me-in-production}
-      DONNA_AUTH_MODE: ${DONNA_AUTH_MODE:-local}
-      DONNA_DEMO_SEED: ${DONNA_DEMO_SEED:-true}
+      JARVIS_INLINE_WORKER: "false"
+      JARVIS_SECRET: ${JARVIS_SECRET:-change-me-in-production}
+      JARVIS_AUTH_MODE: ${JARVIS_AUTH_MODE:-local}
+      JARVIS_DEMO_SEED: ${JARVIS_DEMO_SEED:-true}
       # Auth / OAuth (docs/deployment.md + docs/auth.md). Defaults mirror the
       # server's own (apps/server/src/config.ts) so an empty shell var never
       # changes behavior.
-      DONNA_PUBLIC_URL: ${DONNA_PUBLIC_URL:-http://localhost:3001}
-      DONNA_COOKIE_SECURE: ${DONNA_COOKIE_SECURE:-false}
-      DONNA_TRUST_PROXY: ${DONNA_TRUST_PROXY:-false}
-      DONNA_ALLOW_SIGNUP: ${DONNA_ALLOW_SIGNUP:-true}
-      DONNA_TOKEN_ENCRYPTION_KEY: ${DONNA_TOKEN_ENCRYPTION_KEY:-${DONNA_SECRET:-change-me-in-production}}
-      DONNA_OWNER_EMAIL: ${DONNA_OWNER_EMAIL:-you@example.com}
-      DONNA_OWNER_NAME: ${DONNA_OWNER_NAME:-Donna User}
-      DONNA_OWNER_PASSWORD: ${DONNA_OWNER_PASSWORD:-}
-      DONNA_WEB_ORIGIN: ${DONNA_WEB_ORIGIN:-http://localhost:5173}
+      JARVIS_PUBLIC_URL: ${JARVIS_PUBLIC_URL:-http://localhost:3001}
+      JARVIS_COOKIE_SECURE: ${JARVIS_COOKIE_SECURE:-false}
+      JARVIS_TRUST_PROXY: ${JARVIS_TRUST_PROXY:-false}
+      JARVIS_ALLOW_SIGNUP: ${JARVIS_ALLOW_SIGNUP:-true}
+      JARVIS_TOKEN_ENCRYPTION_KEY: ${JARVIS_TOKEN_ENCRYPTION_KEY:-${JARVIS_SECRET:-change-me-in-production}}
+      JARVIS_OWNER_EMAIL: ${JARVIS_OWNER_EMAIL:-you@example.com}
+      JARVIS_OWNER_NAME: ${JARVIS_OWNER_NAME:-Jarvis User}
+      JARVIS_OWNER_PASSWORD: ${JARVIS_OWNER_PASSWORD:-}
+      JARVIS_WEB_ORIGIN: ${JARVIS_WEB_ORIGIN:-http://localhost:5173}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-}
@@ -41,44 +41,44 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      DONNA_LOCAL_LLM_BASE_URL: ${DONNA_LOCAL_LLM_BASE_URL:-}
-      DONNA_LOCAL_LLM_MODEL: ${DONNA_LOCAL_LLM_MODEL:-}
+      JARVIS_LOCAL_LLM_BASE_URL: ${JARVIS_LOCAL_LLM_BASE_URL:-}
+      JARVIS_LOCAL_LLM_MODEL: ${JARVIS_LOCAL_LLM_MODEL:-}
     volumes:
-      - donna-data:/data
+      - jarvis-data:/data
     restart: unless-stopped
 
   worker:
     build: .
-    command: ["pnpm", "--filter", "@donna/server", "worker"]
+    command: ["pnpm", "--filter", "@jarvis/server", "worker"]
     environment:
-      DONNA_DATA_DIR: /data
-      DONNA_SECRET: ${DONNA_SECRET:-change-me-in-production}
+      JARVIS_DATA_DIR: /data
+      JARVIS_SECRET: ${JARVIS_SECRET:-change-me-in-production}
       # The worker refreshes Google source tokens during scheduled syncs, so
       # it needs the token key + Google client credentials too.
-      DONNA_TOKEN_ENCRYPTION_KEY: ${DONNA_TOKEN_ENCRYPTION_KEY:-${DONNA_SECRET:-change-me-in-production}}
+      JARVIS_TOKEN_ENCRYPTION_KEY: ${JARVIS_TOKEN_ENCRYPTION_KEY:-${JARVIS_SECRET:-change-me-in-production}}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       DATABASE_URL: ${DATABASE_URL:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      DONNA_LOCAL_LLM_BASE_URL: ${DONNA_LOCAL_LLM_BASE_URL:-}
-      DONNA_LOCAL_LLM_MODEL: ${DONNA_LOCAL_LLM_MODEL:-}
+      JARVIS_LOCAL_LLM_BASE_URL: ${JARVIS_LOCAL_LLM_BASE_URL:-}
+      JARVIS_LOCAL_LLM_MODEL: ${JARVIS_LOCAL_LLM_MODEL:-}
     volumes:
-      - donna-data:/data
+      - jarvis-data:/data
     restart: unless-stopped
     depends_on:
-      - donna
+      - jarvis
 
   postgres:
     image: postgres:16-alpine
     profiles: ["postgres"]
     environment:
-      POSTGRES_DB: donna
-      POSTGRES_USER: donna
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-donna}
+      POSTGRES_DB: jarvis
+      POSTGRES_USER: jarvis
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jarvis}
     volumes:
-      - donna-pg:/var/lib/postgresql/data
+      - jarvis-pg:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
@@ -86,11 +86,11 @@ services:
     image: ollama/ollama:latest
     profiles: ["ollama"]
     volumes:
-      - donna-ollama:/root/.ollama
+      - jarvis-ollama:/root/.ollama
     ports:
       - "11434:11434"
 
 volumes:
-  donna-data:
-  donna-pg:
-  donna-ollama:
+  jarvis-data:
+  jarvis-pg:
+  jarvis-ollama:

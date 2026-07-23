@@ -1,10 +1,10 @@
 # Self-learning subsystem
 
-Donna's self-learning subsystem turns the user's real activity — email, chat,
+Jarvis's self-learning subsystem turns the user's real activity — email, chat,
 calendar, feedback, draft edits, approval decisions, explicit commands — into
 **learned preferences**: inspectable, correctable, decaying statements about
-how the user works, each with provenance, confidence, and a "why Donna thinks
-this" explanation. Those preferences then personalize Donna's outputs (chat
+how the user works, each with provenance, confidence, and a "why Jarvis thinks
+this" explanation. Those preferences then personalize Jarvis's outputs (chat
 replies, drafts, the daily debrief, prioritization) and every personalization
 decision is returned with its reasons.
 
@@ -210,7 +210,7 @@ messages from daniel@northwind.io" with its evidence (two unanswered
 threads). Alex clicks *mark wrong* → status `rejected`, confidence 0, and
 future ignored-thread signals for Daniel are discarded instead of re-learned.
 
-**Draft edit.** Donna drafts a hedge-heavy email; Alex rewrites it tersely
+**Draft edit.** Jarvis drafts a hedge-heavy email; Alex rewrites it tersely
 and the UI posts both versions to `draft-feedback` → strong (0.7) signals for
 `style.length=concise` and `style.directness=direct` scoped to that audience.
 

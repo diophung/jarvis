@@ -1,6 +1,6 @@
 import cookie from '@fastify/cookie';
-import { newId, nowIso, toJson, type ConnectorRun } from '@donna/core';
-import type { Db } from '@donna/db';
+import { newId, nowIso, toJson, type ConnectorRun } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import fastify, { type FastifyInstance } from 'fastify';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -25,12 +25,12 @@ function testConfig(env: Record<string, unknown> = {}): AppConfig {
     env: {
       GOOGLE_CLIENT_ID: CLIENT_ID,
       GOOGLE_CLIENT_SECRET: 'test-google-secret',
-      DONNA_WEB_ORIGIN: 'http://web.test',
-      DONNA_COOKIE_SECURE: false,
+      JARVIS_WEB_ORIGIN: 'http://web.test',
+      JARVIS_COOKIE_SECURE: false,
       ...env,
     } as unknown as AppConfig['env'],
     isProdSecret: false,
-    uploadsDir: '/tmp/donna-test-uploads',
+    uploadsDir: '/tmp/jarvis-test-uploads',
     sqlitePath: ':memory:',
     publicUrl: 'http://api.test',
     tokenEncryptionKey: KEY,
@@ -221,25 +221,25 @@ describe('source oauth start', () => {
   });
 
   it('refuses with weak_token_key when prod indicators meet the dev-default key', async () => {
-    // Secure cookies (HTTPS deployment) + no DONNA_TOKEN_ENCRYPTION_KEY + the
-    // dev-default DONNA_SECRET: tokens would be encrypted with a public key.
-    const { app } = await buildApp(testConfig({ DONNA_COOKIE_SECURE: true }));
+    // Secure cookies (HTTPS deployment) + no JARVIS_TOKEN_ENCRYPTION_KEY + the
+    // dev-default JARVIS_SECRET: tokens would be encrypted with a public key.
+    const { app } = await buildApp(testConfig({ JARVIS_COOKIE_SECURE: true }));
     const res = await app.inject({ method: 'GET', url: '/api/sources/oauth/google/gmail/start' });
     expect(res.statusCode).toBe(400);
     expect(res.json().error.code).toBe('weak_token_key');
   });
 
-  it('starts normally in production once DONNA_TOKEN_ENCRYPTION_KEY is set', async () => {
+  it('starts normally in production once JARVIS_TOKEN_ENCRYPTION_KEY is set', async () => {
     const { app } = await buildApp(
-      testConfig({ DONNA_COOKIE_SECURE: true, DONNA_TOKEN_ENCRYPTION_KEY: KEY }),
+      testConfig({ JARVIS_COOKIE_SECURE: true, JARVIS_TOKEN_ENCRYPTION_KEY: KEY }),
     );
     const res = await app.inject({ method: 'GET', url: '/api/sources/oauth/google/gmail/start' });
     expect(res.statusCode).toBe(302);
   });
 
-  it('starts normally in production with a strong (non-default) DONNA_SECRET', async () => {
+  it('starts normally in production with a strong (non-default) JARVIS_SECRET', async () => {
     const { app } = await buildApp({
-      ...testConfig({ DONNA_COOKIE_SECURE: true }),
+      ...testConfig({ JARVIS_COOKIE_SECURE: true }),
       isProdSecret: true,
     });
     const res = await app.inject({ method: 'GET', url: '/api/sources/oauth/google/gmail/start' });
@@ -564,7 +564,7 @@ describe('source oauth callback', () => {
   });
 
   it('uses relative redirects when the web app is served from the same origin', async () => {
-    const { app } = await buildApp(testConfig({ DONNA_PUBLIC_DIR: '/srv/public' }));
+    const { app } = await buildApp(testConfig({ JARVIS_PUBLIC_DIR: '/srv/public' }));
     const { state, cookie: stateCookie } = await startFlow(app);
     mockGoogle();
 

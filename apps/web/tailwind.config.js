@@ -5,7 +5,7 @@ export default {
     extend: {
       colors: {
         // Warm copper accent — calm, Claude-inspired
-        donna: {
+        jarvis: {
           50: '#fdf6f3',
           100: '#fbeae3',
           200: '#f6d2c2',

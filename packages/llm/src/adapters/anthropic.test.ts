@@ -44,7 +44,7 @@ describe('anthropic adapter: chat', () => {
     const result = await adapter.chat({
       model: 'test-model',
       messages: [
-        { role: 'system', content: 'You are Donna.' },
+        { role: 'system', content: 'You are Jarvis.' },
         { role: 'user', content: 'hi' },
         { role: 'assistant', content: 'hello' },
         { role: 'user', content: 'again' },
@@ -62,7 +62,7 @@ describe('anthropic adapter: chat', () => {
     expect(headers['anthropic-version']).toBe(ANTHROPIC_VERSION);
 
     const body = JSON.parse(String(init.body)) as Record<string, unknown>;
-    expect(body['system']).toBe('You are Donna.');
+    expect(body['system']).toBe('You are Jarvis.');
     expect(body['messages']).toEqual([
       { role: 'user', content: 'hi' },
       { role: 'assistant', content: 'hello' },

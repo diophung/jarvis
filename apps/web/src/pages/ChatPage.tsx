@@ -5,8 +5,8 @@ import type {
   Message,
   SuggestedAction,
   UserPreference,
-} from '@donna/core';
-import { FEEDBACK_KINDS } from '@donna/core';
+} from '@jarvis/core';
+import { FEEDBACK_KINDS } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import type { LucideIcon } from 'lucide-react';
@@ -111,7 +111,7 @@ function Hero() {
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-y-auto flex items-center justify-center px-4">
         <div className="max-w-chat w-full text-center py-10">
-          <div className="mx-auto h-12 w-12 rounded-2xl bg-donna-600 text-white flex items-center justify-center font-semibold text-xl shadow-sm">
+          <div className="mx-auto h-12 w-12 rounded-2xl bg-jarvis-600 text-white flex items-center justify-center font-semibold text-xl shadow-sm">
             D
           </div>
           <h1 className="mt-5 text-2xl font-semibold tracking-tight">
@@ -128,10 +128,10 @@ function Hero() {
                 className={clsx(
                   'flex items-center gap-2.5 rounded-xl border border-surface-border bg-surface-raised px-3.5 py-2.5',
                   'text-[13.5px] text-ink-muted text-left transition-colors',
-                  'hover:border-donna-300 hover:text-ink disabled:opacity-50 disabled:cursor-not-allowed',
+                  'hover:border-jarvis-300 hover:text-ink disabled:opacity-50 disabled:cursor-not-allowed',
                 )}
               >
-                <Icon className="h-4 w-4 text-donna-500 shrink-0" />
+                <Icon className="h-4 w-4 text-jarvis-500 shrink-0" />
                 {prompt}
               </button>
             ))}
@@ -419,7 +419,7 @@ function ConversationView({ conversationId }: { conversationId: string }) {
             digestItemId,
             note: str(p.note) ?? 'Ignore similar items',
           });
-          return 'Donna will deprioritize similar items';
+          return 'Jarvis will deprioritize similar items';
         default:
           // create_task, create_draft, schedule_follow_up — recorded as feedback.
           await api.post('/api/feedback', {
@@ -429,7 +429,7 @@ function ConversationView({ conversationId }: { conversationId: string }) {
             digestItemId,
             note: `${action.label}${title ? `: ${title}` : ''}`,
           });
-          return 'Noted — Donna will follow up';
+          return 'Noted — Jarvis will follow up';
       }
     },
     onSuccess: (confirmation) => {
@@ -500,10 +500,10 @@ function ConversationView({ conversationId }: { conversationId: string }) {
                           className={clsx(
                             'inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-raised',
                             'px-3 py-1.5 text-[12.5px] text-ink-muted transition-colors',
-                            'hover:border-donna-300 hover:text-ink disabled:opacity-50 disabled:cursor-not-allowed',
+                            'hover:border-jarvis-300 hover:text-ink disabled:opacity-50 disabled:cursor-not-allowed',
                           )}
                         >
-                          <Icon className="h-3.5 w-3.5 text-donna-600" />
+                          <Icon className="h-3.5 w-3.5 text-jarvis-600" />
                           {a.label}
                         </button>
                       );
@@ -521,7 +521,7 @@ function ConversationView({ conversationId }: { conversationId: string }) {
                   <Markdown>{streamText}</Markdown>
                   <span
                     aria-hidden
-                    className="ml-0.5 inline-block h-4 w-[7px] rounded-[2px] bg-donna-400 animate-pulse align-middle"
+                    className="ml-0.5 inline-block h-4 w-[7px] rounded-[2px] bg-jarvis-400 animate-pulse align-middle"
                   />
                 </div>
               ) : (
@@ -571,7 +571,7 @@ function ApprovalNotice() {
     <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
       <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" />
       <div>
-        Donna needs your approval for this action.{' '}
+        Jarvis needs your approval for this action.{' '}
         <Link to="/approvals" className="underline font-medium hover:text-amber-950">
           Review in Approvals
         </Link>
@@ -606,7 +606,7 @@ function Composer({
 
   return (
     <div>
-      <div className="flex items-end gap-2 rounded-2xl border border-surface-border bg-surface-raised px-3 py-2 shadow-sm transition-colors focus-within:border-donna-400">
+      <div className="flex items-end gap-2 rounded-2xl border border-surface-border bg-surface-raised px-3 py-2 shadow-sm transition-colors focus-within:border-jarvis-400">
         <textarea
           rows={rows}
           value={value}
@@ -618,8 +618,8 @@ function Composer({
               submit();
             }
           }}
-          placeholder="Message Donna…"
-          aria-label="Message Donna"
+          placeholder="Message Jarvis…"
+          aria-label="Message Jarvis"
           className="flex-1 resize-none bg-transparent text-[15px] leading-6 py-1 placeholder:text-ink-faint focus:outline-none max-h-48 overflow-y-auto"
         />
         {streaming ? (
@@ -637,14 +637,14 @@ function Composer({
             disabled={!canSend}
             title="Send"
             aria-label="Send message"
-            className="h-8 w-8 shrink-0 rounded-full bg-donna-600 text-white flex items-center justify-center hover:bg-donna-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-8 w-8 shrink-0 rounded-full bg-jarvis-600 text-white flex items-center justify-center hover:bg-jarvis-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ArrowUp className="h-4 w-4" />
           </button>
         )}
       </div>
       <p className="text-center text-[11.5px] text-ink-faint mt-2">
-        Donna can read your connected sources. External actions always ask first.
+        Jarvis can read your connected sources. External actions always ask first.
       </p>
     </div>
   );

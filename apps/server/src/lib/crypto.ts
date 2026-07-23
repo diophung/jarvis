@@ -2,11 +2,11 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 
 /**
  * Symmetric encryption for secrets the user enters via the UI (e.g. LLM API
- * keys), encrypted at rest with a key derived from DONNA_SECRET.
+ * keys), encrypted at rest with a key derived from JARVIS_SECRET.
  * Format: v1:<iv b64>:<tag b64>:<ciphertext b64>
  */
 function deriveKey(secret: string): Buffer {
-  return createHash('sha256').update(`donna-keywrap:${secret}`).digest();
+  return createHash('sha256').update(`jarvis-keywrap:${secret}`).digest();
 }
 
 export function encryptSecret(plaintext: string, appSecret: string): string {

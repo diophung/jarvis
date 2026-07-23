@@ -1,4 +1,4 @@
-import type { Db } from '@donna/db';
+import type { Db } from '@jarvis/db';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppContext, Services } from '../context.js';
@@ -61,7 +61,7 @@ describe('llm routes', () => {
   afterEach(async () => {
     await h.app.close();
     await h.db.destroy();
-    delete process.env.DONNA_ROUTE_TEST_KEY;
+    delete process.env.JARVIS_ROUTE_TEST_KEY;
   });
 
   async function createProvider(
@@ -116,8 +116,8 @@ describe('llm routes', () => {
   });
 
   it('masks the env var value when apiKeyEnv is set', async () => {
-    process.env.DONNA_ROUTE_TEST_KEY = 'env-value-123456';
-    const provider = await createProvider({ apiKeyEnv: 'DONNA_ROUTE_TEST_KEY' });
+    process.env.JARVIS_ROUTE_TEST_KEY = 'env-value-123456';
+    const provider = await createProvider({ apiKeyEnv: 'JARVIS_ROUTE_TEST_KEY' });
     expect(provider.hasStoredKey).toBe(false);
     expect(provider.apiKeyMasked).toBe(maskSecret('env-value-123456'));
   });

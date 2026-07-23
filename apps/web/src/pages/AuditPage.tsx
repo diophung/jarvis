@@ -1,5 +1,5 @@
-import type { ActorType, AuditEventType, AuditLog } from '@donna/core';
-import { ACTOR_TYPES } from '@donna/core';
+import type { ActorType, AuditEventType, AuditLog } from '@jarvis/core';
+import { ACTOR_TYPES } from '@jarvis/core';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { ChevronDown, ChevronRight, ScrollText } from 'lucide-react';
@@ -127,7 +127,7 @@ export function AuditPage() {
         <EmptyState
           icon={<ScrollText />}
           title="No audit events"
-          description="Activity will appear here as Donna syncs, thinks, and acts."
+          description="Activity will appear here as Jarvis syncs, thinks, and acts."
         />
       ) : (
         <>

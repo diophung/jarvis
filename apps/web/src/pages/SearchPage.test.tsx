@@ -54,7 +54,7 @@ describe('SearchPage', () => {
   it('shows an inviting empty state and does not fetch without a query', () => {
     const fetchMock = stubSearch();
     renderPage();
-    expect(screen.getByText('Search everything Donna knows')).toBeInTheDocument();
+    expect(screen.getByText('Search everything Jarvis knows')).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -80,7 +80,7 @@ describe('SearchPage', () => {
     const marks = container.querySelectorAll('mark');
     expect(marks.length).toBeGreaterThan(0);
     expect(marks[0]?.textContent?.toLowerCase()).toBe('plan');
-    expect(marks[0]?.className).toContain('bg-donna-100');
+    expect(marks[0]?.className).toContain('bg-jarvis-100');
   });
 
   it('shows the keyword mode chip with the semantic-search tooltip', async () => {

@@ -1,5 +1,5 @@
-import { newId, nowIso } from '@donna/core';
-import type { Db, UsersTable, WorkspacesTable } from '@donna/db';
+import { newId, nowIso } from '@jarvis/core';
+import type { Db, UsersTable, WorkspacesTable } from '@jarvis/db';
 
 /**
  * User provisioning shared by email/password registration and OAuth login:

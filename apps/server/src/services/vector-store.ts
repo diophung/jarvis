@@ -16,8 +16,8 @@
  * Other engines (Qdrant, OpenSearch vector, Pinecone) plug in as adapters —
  * nothing outside this file knows which backend ranks vectors.
  */
-import { fromJson, newId, nowIso, toJson } from '@donna/core';
-import { getDbRuntime, sql, type Db } from '@donna/db';
+import { fromJson, newId, nowIso, toJson } from '@jarvis/core';
+import { getDbRuntime, sql, type Db } from '@jarvis/db';
 import type { VectorSearchHit, VectorStore, VectorUpsertRecord } from '../context.js';
 import { cosineSimilarity } from './retrieval.js';
 

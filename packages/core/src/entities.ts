@@ -493,7 +493,7 @@ export interface LlmProviderConfig {
   model: string;
   /** Name of env var holding the key (preferred), if any. */
   apiKeyEnv: string | null;
-  /** Key entered via UI, encrypted at rest with DONNA_SECRET. Masked in API responses. */
+  /** Key entered via UI, encrypted at rest with JARVIS_SECRET. Masked in API responses. */
   apiKeyEncrypted: string | null;
   temperature: number | null;
   maxTokens: number | null;

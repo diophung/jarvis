@@ -1,4 +1,4 @@
-import type { ConnectorCapability, SourceAccount, SourceCategory } from '@donna/core';
+import type { ConnectorCapability, SourceAccount, SourceCategory } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plug } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
@@ -13,8 +13,8 @@ import {
 
 /**
  * Shape of `GET /api/sources/catalog` entries: the connector descriptor from
- * `@donna/connectors` plus whether its required env is configured. Mirrored
- * here because the web app only depends on `@donna/core`.
+ * `@jarvis/connectors` plus whether its required env is configured. Mirrored
+ * here because the web app only depends on `@jarvis/core`.
  */
 export interface CatalogConnector {
   provider: string;

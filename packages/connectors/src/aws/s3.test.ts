@@ -17,8 +17,8 @@ const { S3Connector, mapS3Object } = await import('./s3.js');
 const { makeCtx } = await import('../test-helpers.js');
 
 const S3_ENV = {
-  DONNA_SOURCE_S3_BUCKET: 'meridian-docs',
-  DONNA_SOURCE_S3_REGION: 'us-east-1',
+  JARVIS_SOURCE_S3_BUCKET: 'meridian-docs',
+  JARVIS_SOURCE_S3_REGION: 'us-east-1',
 };
 
 beforeEach(() => {
@@ -31,7 +31,7 @@ describe('S3Connector healthCheck', () => {
     const health = await connector.healthCheck(makeCtx());
     expect(health.ok).toBe(false);
     expect(health.message).toBe(
-      'not configured: missing env DONNA_SOURCE_S3_BUCKET, DONNA_SOURCE_S3_REGION',
+      'not configured: missing env JARVIS_SOURCE_S3_BUCKET, JARVIS_SOURCE_S3_REGION',
     );
   });
 

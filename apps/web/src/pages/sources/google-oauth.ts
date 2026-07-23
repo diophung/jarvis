@@ -6,7 +6,7 @@
  * built with `apiUrl` (lib/auth.tsx), addressing the API the same way the
  * XHR client in `lib/api.ts` does.
  */
-import { GOOGLE_SOURCE_TYPES, type GoogleSourceType } from '@donna/core';
+import { GOOGLE_SOURCE_TYPES, type GoogleSourceType } from '@jarvis/core';
 import { apiUrl } from '../../lib/auth.js';
 
 export function isGoogleSourceType(provider: string): provider is GoogleSourceType {
@@ -29,14 +29,14 @@ export const GOOGLE_SOURCE_LABELS: Record<GoogleSourceType, string> = {
   'google-calendar': 'Google Calendar',
 };
 
-/** One-line, plain-language explanation of what each grant lets Donna do. */
+/** One-line, plain-language explanation of what each grant lets Jarvis do. */
 export const GOOGLE_SOURCE_ACCESS: Record<GoogleSourceType, string> = {
   gmail:
-    'Donna can read message subjects, senders, and snippets — it cannot send email without your approval.',
+    'Jarvis can read message subjects, senders, and snippets — it cannot send email without your approval.',
   'google-drive':
-    'Donna can see file names, owners, and activity (metadata only) — it cannot open or download file contents.',
+    'Jarvis can see file names, owners, and activity (metadata only) — it cannot open or download file contents.',
   'google-calendar':
-    'Donna can read your calendar events (read-only) — it cannot create or change events.',
+    'Jarvis can read your calendar events (read-only) — it cannot create or change events.',
 };
 
 const SCOPE_PREFIX = 'https://www.googleapis.com/auth/';
@@ -50,7 +50,7 @@ export function scopeLabel(scope: string): string {
 export function sourceErrorMessage(code: string): string {
   switch (code) {
     case 'scope_denied':
-      return 'Donna needs the requested read-only permission to connect this source.';
+      return 'Jarvis needs the requested read-only permission to connect this source.';
     case 'wrong_account':
       return 'Reconnect with the SAME Google account this source was originally connected with.';
     case 'oauth_denied':
@@ -69,5 +69,5 @@ export function sourceConnectedMessage(sourceType: string): string {
 /** Anchor styled like the primary Button (for browser-navigation flows). */
 export const oauthPrimaryLinkClass =
   'inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors ' +
-  'text-[13px] px-2.5 py-1.5 bg-donna-600 text-white hover:bg-donna-700 ' +
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-donna-400';
+  'text-[13px] px-2.5 py-1.5 bg-jarvis-600 text-white hover:bg-jarvis-700 ' +
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-jarvis-400';

@@ -1,4 +1,4 @@
-import type { LearnedPreference, LearningSignal } from '@donna/core';
+import type { LearnedPreference, LearningSignal } from '@jarvis/core';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LearningPage } from '../LearningPage.js';
@@ -126,18 +126,18 @@ describe('LearningPage', () => {
       await screen.findByText('Tends to prefer concise messages when writing to leadership'),
     ).toBeInTheDocument();
     expect(screen.getAllByText('inferred from behavior').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText('you told Donna')).toBeInTheDocument();
+    expect(screen.getByText('you told Jarvis')).toBeInTheDocument();
     expect(screen.getByText('tentative — not used yet')).toBeInTheDocument();
     expect(screen.getByText('audience: leadership')).toBeInTheDocument();
     expect(screen.getByTitle('Confidence 62%')).toBeInTheDocument();
   });
 
-  it('expands "why Donna thinks this" and shows the evidence trail', async () => {
+  it('expands "why Jarvis thinks this" and shows the evidence trail', async () => {
     stubLearningRoutes();
     renderWithProviders(<LearningPage />);
     await screen.findByText('Tends to prefer concise messages when writing to leadership');
 
-    fireEvent.click(screen.getAllByTitle('Show why Donna thinks this')[0]!);
+    fireEvent.click(screen.getAllByTitle('Show why Jarvis thinks this')[0]!);
     expect(
       await screen.findByText(/Wrote a concise message \(42 words\)/),
     ).toBeInTheDocument();
@@ -162,7 +162,7 @@ describe('LearningPage', () => {
     renderWithProviders(<LearningPage />);
     await screen.findByText('Tends to prefer concise messages when writing to leadership');
 
-    fireEvent.change(screen.getByPlaceholderText(/Tell Donna a preference/), {
+    fireEvent.change(screen.getByPlaceholderText(/Tell Jarvis a preference/), {
       target: { value: 'keep summaries short' },
     });
     fireEvent.click(screen.getByRole('button', { name: /Add/ }));

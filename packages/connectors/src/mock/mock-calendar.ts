@@ -3,7 +3,7 @@
  * +7 days, regenerated relative to now) and demonstrates the approval flow:
  * `create_event` / `update_event` "succeed" with fake external references.
  */
-import type { RawSourceItem } from '@donna/core';
+import type { RawSourceItem } from '@jarvis/core';
 import type {
   Connector,
   ConnectorAction,

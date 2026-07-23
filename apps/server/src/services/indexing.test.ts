@@ -1,4 +1,4 @@
-import { LlmClient, MOCK_EMBEDDING_DIMS, createMockAdapter } from '@donna/llm';
+import { LlmClient, MOCK_EMBEDDING_DIMS, createMockAdapter } from '@jarvis/llm';
 import { describe, expect, it } from 'vitest';
 import type { LlmRouterService, RoutedLlm } from '../context.js';
 import { createTestDb, seedWorkspace } from '../test/helpers.js';

@@ -9,7 +9,7 @@
  * Sync strategy: files.list ordered by modifiedTime; incremental syncs filter
  * with `modifiedTime > '<cursor>'` using the persisted max modifiedTime.
  */
-import type { RawSourceItem } from '@donna/core';
+import type { RawSourceItem } from '@jarvis/core';
 import type {
   Connector,
   ConnectorContext,
@@ -144,7 +144,7 @@ export class GoogleDriveConnector implements Connector {
   }
 }
 
-/** Map a Drive API file resource to Donna's RawSourceItem. */
+/** Map a Drive API file resource to Jarvis's RawSourceItem. */
 export function mapGoogleDriveFile(file: GoogleDriveFile): RawSourceItem | null {
   if (!file.id || !file.name) return null;
   const item: RawSourceItem = {

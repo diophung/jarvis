@@ -16,7 +16,7 @@
  * Write side (only via the approval flow): `send_email` builds an RFC 822
  * message, base64url-encodes it, and POSTs to /users/me/messages/send.
  */
-import type { RawSourceItem } from '@donna/core';
+import type { RawSourceItem } from '@jarvis/core';
 import type {
   Connector,
   ConnectorAction,
@@ -203,7 +203,7 @@ export class GmailConnector implements Connector {
   }
 }
 
-/** Map a Gmail metadata-format message to Donna's RawSourceItem. */
+/** Map a Gmail metadata-format message to Jarvis's RawSourceItem. */
 export function mapGmailMessage(msg: GmailMessage): RawSourceItem | null {
   if (!msg.id) return null;
   const header = (name: string): string | undefined =>

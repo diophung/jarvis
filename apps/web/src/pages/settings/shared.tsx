@@ -1,5 +1,5 @@
 /** Shared building blocks for the Settings tabs. */
-import type { LlmProviderConfig, UserPreference } from '@donna/core';
+import type { LlmProviderConfig, UserPreference } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Check, Copy, X } from 'lucide-react';
@@ -141,7 +141,7 @@ export function TagEditor({
     onChange([...value, v]);
   };
   return (
-    <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-surface-border bg-surface-raised px-2 py-1.5 focus-within:ring-2 focus-within:ring-donna-300">
+    <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-surface-border bg-surface-raised px-2 py-1.5 focus-within:ring-2 focus-within:ring-jarvis-300">
       {value.map((tag) => (
         <span
           key={tag}
@@ -202,8 +202,8 @@ export function ToggleChips({
             className={clsx(
               'rounded-full border px-3 py-1 text-[13px] transition-colors',
               active
-                ? 'border-donna-400 bg-donna-100 text-donna-900 font-medium'
-                : 'border-surface-border bg-surface-raised text-ink-muted hover:border-donna-300 hover:text-ink',
+                ? 'border-jarvis-400 bg-jarvis-100 text-jarvis-900 font-medium'
+                : 'border-surface-border bg-surface-raised text-ink-muted hover:border-jarvis-300 hover:text-ink',
             )}
           >
             {o.label}

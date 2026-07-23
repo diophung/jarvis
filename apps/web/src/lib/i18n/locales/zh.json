@@ -44,7 +44,7 @@
     },
     "language": {
       "title": "语言",
-      "description": "选择 Donna 界面使用的语言。译文会逐步完善；尚未翻译的内容将显示英文。",
+      "description": "选择 Jarvis 界面使用的语言。译文会逐步完善；尚未翻译的内容将显示英文。",
       "label": "显示语言",
       "hint": "已保存到你的账户，并在本设备上记住。"
     }
@@ -57,13 +57,13 @@
       "notConfigured": "本服务器尚未配置 {{provider}} 登录 —— 请参阅 docs/auth.md 进行设置。"
     },
     "signin": {
-      "title": "登录 Donna",
+      "title": "登录 Jarvis",
       "submit": "登录",
-      "localModeRedirect": "Donna 正在本地单用户模式下运行 —— 正在为你登录…",
+      "localModeRedirect": "Jarvis 正在本地单用户模式下运行 —— 正在为你登录…",
       "invalidCredentials": "邮箱或密码有误。",
       "tooManyAttempts": "尝试次数过多 —— 请几分钟后重试。",
       "failed": "登录失败 —— 请重试。",
-      "newToDonna": "初次使用 Donna？",
+      "newToJarvis": "初次使用 Jarvis？",
       "createAccount": "创建账户",
       "forgotPassword": "忘记密码？",
       "errors": {
@@ -78,7 +78,7 @@
       }
     },
     "signup": {
-      "title": "创建你的 Donna 账户",
+      "title": "创建你的 Jarvis 账户",
       "name": "姓名",
       "confirmPassword": "确认密码",
       "terms": "我已知悉并同意服务条款和隐私政策。",
@@ -90,8 +90,8 @@
     },
     "forgot": {
       "title": "重置密码",
-      "intro1": "Donna 为自托管应用，不会发送邮件，因此无法向你发送重置链接。",
-      "intro2": "你可以让运行 Donna 服务器的人（也许就是你！）在服务器上设置新密码：",
+      "intro1": "Jarvis 为自托管应用，不会发送邮件，因此无法向你发送重置链接。",
+      "intro2": "你可以让运行 Jarvis 服务器的人（也许就是你！）在服务器上设置新密码：",
       "intro3": "完成后，请返回并使用新密码登录。",
       "backToSignIn": "返回登录"
     }

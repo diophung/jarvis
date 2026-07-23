@@ -1,4 +1,4 @@
-import type { UploadedFile } from '@donna/core';
+import type { UploadedFile } from '@jarvis/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { AlertCircle, FileText, Loader2, Trash2, UploadCloud, X } from 'lucide-react';
@@ -112,7 +112,7 @@ export function FilesPage() {
   };
 
   const onDelete = (file: UploadedFile) => {
-    if (window.confirm(`Delete ${file.filename}? Donna will forget its contents.`)) {
+    if (window.confirm(`Delete ${file.filename}? Jarvis will forget its contents.`)) {
       remove.mutate(file.id);
     }
   };
@@ -137,8 +137,8 @@ export function FilesPage() {
         className={clsx(
           'rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors mb-4',
           dragActive
-            ? 'border-donna-400 bg-donna-50'
-            : 'border-surface-border bg-surface-raised hover:border-donna-300',
+            ? 'border-jarvis-400 bg-jarvis-50'
+            : 'border-surface-border bg-surface-raised hover:border-jarvis-300',
         )}
       >
         <UploadCloud className="h-8 w-8 mx-auto text-ink-faint mb-3" />
@@ -174,7 +174,7 @@ export function FilesPage() {
               {p.status === 'error' ? (
                 <AlertCircle className="h-3.5 w-3.5 text-red-600 shrink-0" />
               ) : (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-donna-600 shrink-0" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-jarvis-600 shrink-0" />
               )}
               <span className="flex-1 truncate">{p.name}</span>
               {p.status === 'queued' && <span className="text-xs text-ink-faint">Waiting…</span>}
@@ -204,7 +204,7 @@ export function FilesPage() {
         {files.data && items.length === 0 && (
           <EmptyState
             icon={<FileText />}
-            title="Drop a document to make it part of Donna’s world."
+            title="Drop a document to make it part of Jarvis’s world."
             description="Anything you upload is searchable and feeds your daily debrief."
           />
         )}

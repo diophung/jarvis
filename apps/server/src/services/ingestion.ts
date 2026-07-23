@@ -11,7 +11,7 @@ import {
   consoleConnectorLogger,
   type ConnectorContext,
   type ConnectorRegistry,
-} from '@donna/connectors';
+} from '@jarvis/connectors';
 import {
   fromJson,
   newId,
@@ -25,13 +25,13 @@ import {
   type SourceAccount,
   type SourceCategory,
   type SourceItem,
-} from '@donna/core';
+} from '@jarvis/core';
 import type {
   ConnectorRunsTable,
   Db,
   SourceAccountsTable,
   SourceItemsTable,
-} from '@donna/db';
+} from '@jarvis/db';
 import {
   SETTING_KEYS,
   type AuditService,

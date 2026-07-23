@@ -1,7 +1,7 @@
 /**
  * Google data-source authorization routes (docs/api-contract.md "Google
  * source authorization"). Browser-navigation flow, distinct from OAuth LOGIN:
- * an already-authenticated user grants Donna least-privilege, read-only
+ * an already-authenticated user grants Jarvis least-privilege, read-only
  * access to one Google source (gmail / google-drive / google-calendar).
  *
  * Security invariants:
@@ -11,9 +11,9 @@
  *  - tokens are AES-256-GCM encrypted before they touch the database and
  *    never appear in redirects, audits, logs, or error messages
  */
-import { GOOGLE_SOURCE_TYPES, newId, nowIso, toJson, type GoogleSourceType, type SourceCategory } from '@donna/core';
-import { createDefaultRegistry } from '@donna/connectors';
-import type { Db, OauthTokensTable } from '@donna/db';
+import { GOOGLE_SOURCE_TYPES, newId, nowIso, toJson, type GoogleSourceType, type SourceCategory } from '@jarvis/core';
+import { createDefaultRegistry } from '@jarvis/connectors';
+import type { Db, OauthTokensTable } from '@jarvis/db';
 import type { FastifyInstance } from 'fastify';
 import { createLocalJWKSet, jwtVerify, type JSONWebKeySet } from 'jose';
 import type { AppConfig } from '../config.js';
@@ -31,7 +31,7 @@ import {
   validateReturnTo,
 } from '../lib/oauth.js';
 
-export const SOURCE_STATE_COOKIE = 'donna_oauth_source';
+export const SOURCE_STATE_COOKIE = 'jarvis_oauth_source';
 
 const GOOGLE_AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -63,8 +63,8 @@ function isGoogleSourceType(value: unknown): value is GoogleSourceType {
 
 /** Web-app redirect target: relative in single-origin deploys, absolute in dev. */
 function webRedirect(config: AppConfig, path: string): string {
-  if (config.env.DONNA_PUBLIC_DIR) return path;
-  return `${config.env.DONNA_WEB_ORIGIN.replace(/\/$/, '')}${path}`;
+  if (config.env.JARVIS_PUBLIC_DIR) return path;
+  return `${config.env.JARVIS_WEB_ORIGIN.replace(/\/$/, '')}${path}`;
 }
 
 function appendQuery(path: string, queryString: string): string {
@@ -168,17 +168,17 @@ export function registerSourceOauthRoutes(app: FastifyInstance, deps: SourceOaut
       throw badRequest('Google OAuth is not configured', 'not_configured');
     }
     // Production indicator (Secure cookies = HTTPS) + a token encryption key
-    // derived from the publicly-known dev-default DONNA_SECRET: refuse to
-    // store new grants. Dev/localhost flows (DONNA_COOKIE_SECURE=false) keep
+    // derived from the publicly-known dev-default JARVIS_SECRET: refuse to
+    // store new grants. Dev/localhost flows (JARVIS_COOKIE_SECURE=false) keep
     // working.
     if (
-      config.env.DONNA_COOKIE_SECURE &&
-      !config.env.DONNA_TOKEN_ENCRYPTION_KEY &&
+      config.env.JARVIS_COOKIE_SECURE &&
+      !config.env.JARVIS_TOKEN_ENCRYPTION_KEY &&
       !config.isProdSecret
     ) {
       throw badRequest(
         'OAuth tokens would be encrypted with the development-default key. ' +
-          'Set DONNA_TOKEN_ENCRYPTION_KEY (or a strong DONNA_SECRET) and restart.',
+          'Set JARVIS_TOKEN_ENCRYPTION_KEY (or a strong JARVIS_SECRET) and restart.',
         'weak_token_key',
       );
     }
@@ -200,7 +200,7 @@ export function registerSourceOauthRoutes(app: FastifyInstance, deps: SourceOaut
         sourceType,
         issuedAt: nowIso(),
       },
-      { sameSite: 'lax', secure: config.env.DONNA_COOKIE_SECURE },
+      { sameSite: 'lax', secure: config.env.JARVIS_COOKIE_SECURE },
     );
 
     const url = buildAuthorizeUrl(GOOGLE_AUTHORIZE_URL, {

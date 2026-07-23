@@ -55,7 +55,7 @@ export function SourcesPage() {
     <div className="max-w-5xl mx-auto px-6 py-8">
       <PageHeader
         title="Connected sources"
-        subtitle="Everything Donna can see — email, chat, calendar, and cloud storage."
+        subtitle="Everything Jarvis can see — email, chat, calendar, and cloud storage."
       />
 
       {banner && (

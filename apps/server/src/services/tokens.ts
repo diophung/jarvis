@@ -7,8 +7,8 @@
  * messages. Storage uses AES-256-GCM via lib/crypto with
  * config.tokenEncryptionKey.
  */
-import { nowIso } from '@donna/core';
-import type { Db, OauthTokensTable } from '@donna/db';
+import { nowIso } from '@jarvis/core';
+import type { Db, OauthTokensTable } from '@jarvis/db';
 import type { AppConfig } from '../config.js';
 import type { AuditService, TokensService } from '../context.js';
 import { decryptSecret, encryptSecret } from '../lib/crypto.js';

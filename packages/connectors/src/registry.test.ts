@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SourceCategory } from '@donna/core';
+import type { SourceCategory } from '@jarvis/core';
 import { ConnectorRegistry, createDefaultRegistry } from './registry.js';
 import { MockEmailConnector } from './mock/mock-email.js';
 
@@ -79,8 +79,8 @@ describe('createDefaultRegistry', () => {
     ]);
     expect(registry.get('slack')?.descriptor.requiredEnv).toEqual(['SLACK_BOT_TOKEN']);
     expect(registry.get('s3')?.descriptor.requiredEnv).toEqual([
-      'DONNA_SOURCE_S3_BUCKET',
-      'DONNA_SOURCE_S3_REGION',
+      'JARVIS_SOURCE_S3_BUCKET',
+      'JARVIS_SOURCE_S3_REGION',
     ]);
     expect(registry.get('outlook')?.descriptor.requiredEnv).toEqual([
       'MS_CLIENT_ID',

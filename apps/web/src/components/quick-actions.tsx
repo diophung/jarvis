@@ -1,4 +1,4 @@
-import type { FeedbackKind } from '@donna/core';
+import type { FeedbackKind } from '@jarvis/core';
 import {
   ArrowDown,
   ArrowUp,

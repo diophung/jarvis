@@ -1,5 +1,5 @@
-import { newId, nowIso, toJson, MIN_ACTIONABLE_CONFIDENCE } from '@donna/core';
-import type { Db } from '@donna/db';
+import { newId, nowIso, toJson, MIN_ACTIONABLE_CONFIDENCE } from '@jarvis/core';
+import type { Db } from '@jarvis/db';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { LearningService } from '../context.js';
 import { createAuditService } from '../services/audit.js';

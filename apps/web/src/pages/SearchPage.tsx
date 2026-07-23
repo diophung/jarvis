@@ -1,4 +1,4 @@
-import type { SourceCategory } from '@donna/core';
+import type { SourceCategory } from '@jarvis/core';
 import { useQuery } from '@tanstack/react-query';
 import { ClipboardList, FileText, History, MessageSquare, Search as SearchIcon, SearchX } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -36,7 +36,7 @@ const TYPE_FILTERS = [
 type SearchType = (typeof TYPE_FILTERS)[number]['value'];
 
 const MODE_TOOLTIP =
-  'Semantic search needs an embedding-capable AI provider — without one, Donna matches keywords only.';
+  'Semantic search needs an embedding-capable AI provider — without one, Jarvis matches keywords only.';
 
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -50,7 +50,7 @@ function highlightTokens(text: string, query: string): ReactNode {
   // With a single capture group, matches land at odd indices after split.
   return text.split(re).map((part, i) =>
     i % 2 === 1 ? (
-      <mark key={i} className="bg-donna-100 text-inherit rounded-sm px-0.5">
+      <mark key={i} className="bg-jarvis-100 text-inherit rounded-sm px-0.5">
         {part}
       </mark>
     ) : (
@@ -168,7 +168,7 @@ export function SearchPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-8">
-      <PageHeader title="Search" subtitle="Everything Donna knows, in one place." />
+      <PageHeader title="Search" subtitle="Everything Jarvis knows, in one place." />
 
       <div className="relative">
         <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-faint" />
@@ -179,7 +179,7 @@ export function SearchPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search emails, files, memories, digests…"
           aria-label="Search"
-          className="w-full rounded-xl border border-surface-border bg-surface-raised pl-11 pr-4 py-3 text-base placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-donna-300 focus:border-donna-400"
+          className="w-full rounded-xl border border-surface-border bg-surface-raised pl-11 pr-4 py-3 text-base placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-jarvis-300 focus:border-jarvis-400"
         />
       </div>
 
@@ -191,7 +191,7 @@ export function SearchPage() {
           >
             <input
               type="checkbox"
-              className="h-3.5 w-3.5 accent-donna-600"
+              className="h-3.5 w-3.5 accent-jarvis-600"
               checked={types.includes(t.value)}
               onChange={() => toggleType(t.value)}
             />
@@ -203,7 +203,7 @@ export function SearchPage() {
       {!enabled && (
         <EmptyState
           icon={<SearchIcon />}
-          title="Search everything Donna knows"
+          title="Search everything Jarvis knows"
           description={
             types.length === 0
               ? 'Pick at least one type above, then start typing.'

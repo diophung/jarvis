@@ -1,5 +1,5 @@
-import type { ConnectorRegistry } from '@donna/connectors';
-import type { Db } from '@donna/db';
+import type { ConnectorRegistry } from '@jarvis/connectors';
+import type { Db } from '@jarvis/db';
 import type { AppConfig } from '../config.js';
 import type { Services } from '../context.js';
 import { createActionsService } from './actions.js';
@@ -39,10 +39,10 @@ export async function buildServices(deps: {
   const audit = createAuditService({ db });
   const tokens = createTokensService({ db, config, audit });
   const cacheOpts: Parameters<typeof createCacheService>[0] = {};
-  if (config.env.DONNA_REDIS_URL !== undefined) cacheOpts.redisUrl = config.env.DONNA_REDIS_URL;
+  if (config.env.JARVIS_REDIS_URL !== undefined) cacheOpts.redisUrl = config.env.JARVIS_REDIS_URL;
   const cache = createCacheService(cacheOpts);
   const settings = createSettingsService({ db, cache });
-  const secrets = createSecretsService({ appSecret: config.env.DONNA_SECRET });
+  const secrets = createSecretsService({ appSecret: config.env.JARVIS_SECRET });
   const idempotency = createIdempotencyService({ db });
   const vectors = await createVectorStore({ db });
   const llm = createLlmRouterService({ db, secrets, audit, config });

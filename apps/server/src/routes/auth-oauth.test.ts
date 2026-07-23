@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 import fastifyCookie from '@fastify/cookie';
-import type { Db } from '@donna/db';
+import type { Db } from '@jarvis/db';
 import fastify, { type FastifyInstance } from 'fastify';
 import { decodeProtectedHeader, exportJWK, exportPKCS8, generateKeyPair, SignJWT } from 'jose';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,8 +13,8 @@ import { createTestDb, seedWorkspace } from '../test/helpers.js';
 import { registerAuthOauthRoutes, webRedirect } from './auth-oauth.js';
 
 const COOKIE_SECRET = 'test-secret';
-const STATE_COOKIE = 'donna_oauth_login';
-const SESSION_COOKIE = 'donna_session';
+const STATE_COOKIE = 'jarvis_oauth_login';
+const SESSION_COOKIE = 'jarvis_session';
 
 /**
  * jose's createRemoteJWKSet fetches over node:http(s) (not global fetch), so
@@ -56,17 +56,17 @@ beforeAll(async () => {
 
 function makeConfig(overrides: Partial<Record<string, string>> = {}): AppConfig {
   return loadConfig({
-    DONNA_AUTH_MODE: 'password',
-    DONNA_ALLOW_SIGNUP: 'true',
-    DONNA_WEB_ORIGIN: 'http://web.test',
-    DONNA_PUBLIC_URL: 'http://api.test',
-    DONNA_PUBLIC_DIR: undefined,
-    DONNA_COOKIE_SECURE: 'false',
+    JARVIS_AUTH_MODE: 'password',
+    JARVIS_ALLOW_SIGNUP: 'true',
+    JARVIS_WEB_ORIGIN: 'http://web.test',
+    JARVIS_PUBLIC_URL: 'http://api.test',
+    JARVIS_PUBLIC_DIR: undefined,
+    JARVIS_COOKIE_SECURE: 'false',
     GOOGLE_CLIENT_ID: 'google-client-id',
     GOOGLE_CLIENT_SECRET: 'google-secret',
     FACEBOOK_CLIENT_ID: 'fb-client-id',
     FACEBOOK_CLIENT_SECRET: 'fb-secret',
-    APPLE_CLIENT_ID: 'com.donna.test',
+    APPLE_CLIENT_ID: 'com.jarvis.test',
     APPLE_TEAM_ID: 'TEAMID1234',
     APPLE_KEY_ID: 'KEYID12345',
     APPLE_PRIVATE_KEY: applePrivateKeyPem,
@@ -387,8 +387,8 @@ describe('OAuth callback — failure paths', () => {
     expect(await harness.db.selectFrom('users').select('id').execute()).toHaveLength(0);
   });
 
-  it('uses relative redirects when the API serves the web app (DONNA_PUBLIC_DIR)', async () => {
-    const harness = await buildApp({ DONNA_PUBLIC_DIR: '/srv/public' });
+  it('uses relative redirects when the API serves the web app (JARVIS_PUBLIC_DIR)', async () => {
+    const harness = await buildApp({ JARVIS_PUBLIC_DIR: '/srv/public' });
     const res = await harness.app.inject({
       method: 'GET',
       url: '/api/auth/oauth/google/callback?code=c&state=whatever-state-whatever',
@@ -506,15 +506,15 @@ describe('OAuth callback — google login', () => {
   });
 
   it('redirects to signup_disabled when registration is off in password mode', async () => {
-    const harness = await buildApp({ DONNA_ALLOW_SIGNUP: 'false' });
+    const harness = await buildApp({ JARVIS_ALLOW_SIGNUP: 'false' });
     const { res } = await googleLogin(harness, { sub: 'google-sub-5' });
     expect(res.headers.location).toBe('http://web.test/signin?error=signup_disabled');
     expect(await harness.db.selectFrom('users').select('id').execute()).toHaveLength(0);
   });
 
   it('local mode: an unknown OAuth identity never provisions a new user', async () => {
-    // DONNA_ALLOW_SIGNUP defaults to true — local mode must still refuse.
-    const harness = await buildApp({ DONNA_AUTH_MODE: 'local' });
+    // JARVIS_ALLOW_SIGNUP defaults to true — local mode must still refuse.
+    const harness = await buildApp({ JARVIS_AUTH_MODE: 'local' });
     const { res } = await googleLogin(harness, { sub: 'google-sub-6' });
     expect(res.headers.location).toBe('http://web.test/signin?error=signup_disabled');
     expect(await harness.db.selectFrom('users').select('id').execute()).toHaveLength(0);
@@ -535,7 +535,7 @@ describe('OAuth callback — apple form_post', () => {
       .setProtectedHeader({ alg: 'ES256', kid: 'a1' })
       .setSubject('apple-sub-1')
       .setIssuer('https://appleid.apple.com')
-      .setAudience('com.donna.test')
+      .setAudience('com.jarvis.test')
       .setIssuedAt()
       .setExpirationTime('1h')
       .sign(appleServerKeys.privateKey);

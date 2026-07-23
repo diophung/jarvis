@@ -1,12 +1,12 @@
 You are Claude Code running with Fable, using maximum reasoning effort. You are acting as a senior full-stack engineer, security engineer, identity architect, and product-minded platform engineer.
 
-Your task is to autonomously implement authentication and OAuth-based data-source authorization for Donna, a digital executive assistant.
+Your task is to autonomously implement authentication and OAuth-based data-source authorization for Jarvis, a digital executive assistant.
 
 Do not only propose the design. Inspect the repository, infer the current frontend, backend, database, routing, API, and deployment structure, then implement the feature end-to-end. If the repository is incomplete, create the necessary production-grade structure. Make pragmatic decisions, document them briefly, and continue.
 
 Goal
 
-Implement secure login for Donna using:
+Implement secure login for Jarvis using:
 
 1. Email and password.
 2. OAuth login with Google.
@@ -19,7 +19,7 @@ Also implement OAuth authorization workflows so a logged-in user can connect:
 2. Google Drive.
 3. Google Calendar.
 
-Important distinction: authentication and data-source authorization are related but separate. A user may sign in with Google, Facebook, Apple, or email/password. Separately, the user may authorize Donna to access Gmail, Google Drive, and Google Calendar. Do not assume Google login automatically grants Gmail, Drive, or Calendar access unless the required scopes were explicitly granted.
+Important distinction: authentication and data-source authorization are related but separate. A user may sign in with Google, Facebook, Apple, or email/password. Separately, the user may authorize Jarvis to access Gmail, Google Drive, and Google Calendar. Do not assume Google login automatically grants Gmail, Drive, or Calendar access unless the required scopes were explicitly granted.
 
 Implementation Principles
 
@@ -85,7 +85,7 @@ Google Data-Source Authorization Requirements
 
 Implement separate connection flows for Gmail, Google Drive, and Google Calendar.
 
-A logged-in Donna user should be able to go to Settings → Connected Sources and connect or disconnect:
+A logged-in Jarvis user should be able to go to Settings → Connected Sources and connect or disconnect:
 
 1. Gmail.
 2. Google Drive.
@@ -111,7 +111,7 @@ The Google connector model should store:
 12. Created timestamp.
 13. Updated timestamp.
 
-Implement token refresh logic. If an access token expires, Donna should use the refresh token to obtain a new access token. If refresh fails, mark the connection as requiring reauthorization and surface this state clearly in the UI.
+Implement token refresh logic. If an access token expires, Jarvis should use the refresh token to obtain a new access token. If refresh fails, mark the connection as requiring reauthorization and surface this state clearly in the UI.
 
 Implement disconnect logic. Disconnecting a source should remove or invalidate stored tokens for that source and mark the connection inactive. Where provider token revocation is supported, call the revocation endpoint.
 
@@ -187,7 +187,7 @@ Each card should show:
 5. Connect button.
 6. Reconnect button when authorization has expired.
 7. Disconnect button.
-8. Brief explanation of what Donna can access.
+8. Brief explanation of what Jarvis can access.
 
 Add or update Settings → Security or Account.
 
@@ -256,9 +256,9 @@ Implement strong security practices:
 
 Be careful with account linking. Only link OAuth accounts to an existing user when the provider email is verified and matches the authenticated user, or when the user is already logged in and intentionally links the account.
 
-Integration with Donna’s Connector Layer
+Integration with Jarvis’s Connector Layer
 
-After Google Gmail, Drive, and Calendar are connected, expose the connection status and token retrieval mechanism to Donna’s connector layer.
+After Google Gmail, Drive, and Calendar are connected, expose the connection status and token retrieval mechanism to Jarvis’s connector layer.
 
 Implement a secure server-side token access function such as:
 

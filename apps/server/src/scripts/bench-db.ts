@@ -1,7 +1,7 @@
 /**
  * Mixed-workload database benchmark.
  *
- * Simulates Donna's hottest access patterns against the configured database
+ * Simulates Jarvis's hottest access patterns against the configured database
  * (DATABASE_URL or a throwaway SQLite file):
  *   - preference reads (personalization lookup)        ~50%
  *   - recent memory reads (assistant context)          ~20%
@@ -9,15 +9,15 @@
  *   - learning signal writes                           ~15%
  *
  * Usage:
- *   pnpm --filter @donna/server exec tsx src/scripts/bench-db.ts [--seconds 10] [--concurrency 8]
+ *   pnpm --filter @jarvis/server exec tsx src/scripts/bench-db.ts [--seconds 10] [--concurrency 8]
  *
  * Honesty note: a laptop benchmark does NOT certify 20K TPS. It exists to
  * catch obvious inefficiencies (missing indexes, N+1s, slow hot paths) and
  * to compare adapters. The 20K TPS scale assumptions live in
  * docs/production-database.md.
  */
-import { newId, nowIso, toJson } from '@donna/core';
-import { createDb, createDbMetrics, getDbRuntime, migrateToLatest } from '@donna/db';
+import { newId, nowIso, toJson } from '@jarvis/core';
+import { createDb, createDbMetrics, getDbRuntime, migrateToLatest } from '@jarvis/db';
 import { rmSync } from 'node:fs';
 import process from 'node:process';
 import { createAuditService } from '../services/audit.js';
@@ -67,7 +67,7 @@ async function main(): Promise<void> {
     ...(usingUrl !== undefined ? { databaseUrl: usingUrl } : { sqlitePath: tempSqlite }),
     metrics,
     pool: { size: Math.max(10, args.concurrency) },
-    applicationName: 'donna-bench',
+    applicationName: 'jarvis-bench',
   });
   await migrateToLatest(db);
   console.log(`dialect: ${getDbRuntime(db).dialect}, concurrency ${args.concurrency}, ${args.seconds}s, cache ${args.cache ? 'on' : 'off'}`);

@@ -12,7 +12,7 @@
  * have been surfaced it terminates with a `{type:'error'}` event instead of
  * throwing, so UI consumers can render partial output plus the error.
  */
-import type { LlmTask } from '@donna/core';
+import type { LlmTask } from '@jarvis/core';
 import { toLlmError } from './adapters/shared.js';
 import { LlmError } from './types.js';
 import type {

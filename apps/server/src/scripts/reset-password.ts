@@ -6,8 +6,8 @@
  *
  * The password is taken from argv (never echoed back, never logged).
  */
-import { nowIso } from '@donna/core';
-import { createDb } from '@donna/db';
+import { nowIso } from '@jarvis/core';
+import { createDb } from '@jarvis/db';
 import bcrypt from 'bcryptjs';
 import { validatePassword } from '../auth.js';
 import { loadConfig } from '../config.js';
